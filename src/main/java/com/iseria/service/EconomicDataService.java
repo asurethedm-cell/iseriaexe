@@ -183,7 +183,7 @@ public class EconomicDataService {
                         hexKey, nearestWarehouse.getHexKey(), resource, quantity
                 );
 
-                // La ressource arrivera au warehouse dans 'transportTime' jours
+                // La ressource arrivera au warehouse dans 'transportTime' tours
                 scheduleResourceDelivery(resource, quantity, transportTime, nearestWarehouse);
             }
         }

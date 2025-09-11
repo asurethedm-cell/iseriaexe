@@ -1143,7 +1143,7 @@ public class UI {
 
             if (availableResources.isEmpty()) {
                 JOptionPane.showMessageDialog(this,
-                        "Aucune ressource disponible pour ce bâtiment:\n" + buildingLabel,
+                        "Aucune ressource disponible pour ce bâtiment:\n" + building.getBuildName(),
                         "Pas de production possible",
                         JOptionPane.INFORMATION_MESSAGE);
                 return;
@@ -1152,7 +1152,7 @@ public class UI {
             // Créer et afficher le dialog avec l'hex
             ProductionDialog dialog = new ProductionDialog(
                     (JFrame) SwingUtilities.getWindowAncestor(this),
-                    hexKey, buildingType, buildingLabel,
+                    hexKey, buildingType, building.getBuildName(),
                     hex.getWorkerCountByType(buildingType),
                     economicService,
                     hex  // ← NOUVEAU paramètre

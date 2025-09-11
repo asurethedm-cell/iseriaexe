@@ -8,9 +8,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.List;
 
 public class ProductionDialog extends JDialog {
@@ -38,15 +36,17 @@ public class ProductionDialog extends JDialog {
                             EconomicDataService economicService,
                             HexDetails hex) {
 
-        super(parent, "Configuration Production - " + buildingName, true);
+        super(parent, "Configuration Production - " + buildingName , true);
+        this.hex = hex;
         this.hexKey = hexKey;
+        this.building = UIHelpers.getBuildingFromHex(hex, buildingType);
+        this.buildingName = Objects.requireNonNull(building).getBuildName();
         this.buildingType = buildingType;
-        this.buildingName = buildingName;
         this.currentWorkerCount = currentWorkers;
         this.economicService = economicService;
-        this.hex = hex;
 
-        this.building = UIHelpers.getBuildingFromHex(hex, buildingType);
+
+
         initializeDialog();
     }
 

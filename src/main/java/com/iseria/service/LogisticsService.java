@@ -14,58 +14,6 @@ public class LogisticsService {
         this.hexRepository = hexRepository;
         initializeNetwork();
     }
-
-    public int calculateTransportTime(String fromHex, String toHex,
-                                      String resourceType, double quantity) {
-        Route route = findRoute(fromHex, toHex);
-        TransportVehicle vehicle = getBestVehicleForResource(fromHex, resourceType);
-
-        if (route == null) return Integer.MAX_VALUE; // Pas de route
-
-        int baseTime = route.getDistance();
-        double speedMultiplier = route.getSpeedMultiplier(vehicle);
-        int vehicleCapacity = vehicle.getCapacityForResource(resourceType);
-        int trips = (int) Math.ceil(quantity / vehicleCapacity);
-
-        return (int) (baseTime / speedMultiplier * trips);
-    }
-
-    public StorageWarehouse findNearestWarehouse(String hexKey) {
-        return warehouses.values().stream()
-                .min((w1, w2) -> Integer.compare(
-                        calculateDistance(hexKey, w1.getHexKey()),
-                        calculateDistance(hexKey, w2.getHexKey())
-                ))
-                .orElse(null);
-    }
-
-    public boolean assignVehicle(String hexKey, TransportVehicle vehicle) {
-        HexDetails hex = hexRepository.getHexDetails(hexKey);
-        if (hex != null) {
-            hex.addVehicle(vehicle);
-            hexRepository.updateHexDetails(hexKey, hex);
-            return true;
-        }
-        return false;
-    }
-
-    private TransportVehicle getBestVehicleForResource(String hexKey, String resourceType) {
-        HexDetails hex = hexRepository.getHexDetails(hexKey);
-        if (hex == null) return TransportVehicle.DEFAULT;
-
-        List<TransportVehicle> vehicles = hex.getAssignedVehicles();
-        if (vehicles.isEmpty()) {
-            return TransportVehicle.DEFAULT;
-        }
-
-        return vehicles.stream()
-                .max((v1, v2) -> Integer.compare(
-                        v1.getCapacityForResource(resourceType),
-                        v2.getCapacityForResource(resourceType)
-                ))
-                .orElse(TransportVehicle.DEFAULT);
-    }
-
     private void initializeNetwork() {
         Map<String, HexDetails> hexGrid = hexRepository.loadAll();
 
@@ -122,7 +70,7 @@ public class LogisticsService {
             return;
         }
 
-        // ✅ MODIFIÉ: Créer les routes seulement entre hexagones de la faction du joueur
+
         for (String hexKey : playerHexes.keySet()) {
             List<String> neighbors = getNeighboringHexes(hexKey);
             for (String neighbor : neighbors) {
@@ -156,7 +104,56 @@ public class LogisticsService {
             }
         }
     }
+    public int calculateTransportTime(String fromHex, String toHex,
+                                      String resourceType, double quantity) {
+        Route route = findRoute(fromHex, toHex);
+        TransportVehicle vehicle = getBestVehicleForResource(fromHex, resourceType);
 
+        if (route == null) return Integer.MAX_VALUE; // Pas de route
+
+        int baseTime = route.getDistance();
+        double speedMultiplier = route.getSpeedMultiplier(vehicle);
+        int vehicleCapacity = vehicle.getCapacityForResource(resourceType);
+        int trips = (int) Math.ceil(quantity / vehicleCapacity);
+
+        return (int) (baseTime / speedMultiplier * trips);
+    }
+
+    public StorageWarehouse findNearestWarehouse(String hexKey) {
+        return warehouses.values().stream()
+                .min((w1, w2) -> Integer.compare(
+                        calculateDistance(hexKey, w1.getHexKey()),
+                        calculateDistance(hexKey, w2.getHexKey())
+                ))
+                .orElse(null);
+    }
+
+    public boolean assignVehicle(String hexKey, TransportVehicle vehicle) {
+        HexDetails hex = hexRepository.getHexDetails(hexKey);
+        if (hex != null) {
+            hex.addVehicle(vehicle);
+            hexRepository.updateHexDetails(hexKey, hex);
+            return true;
+        }
+        return false;
+    }
+
+    private TransportVehicle getBestVehicleForResource(String hexKey, String resourceType) {
+        HexDetails hex = hexRepository.getHexDetails(hexKey);
+        if (hex == null) return TransportVehicle.DEFAULT;
+
+        List<TransportVehicle> vehicles = hex.getAssignedVehicles();
+        if (vehicles.isEmpty()) {
+            return TransportVehicle.DEFAULT;
+        }
+
+        return vehicles.stream()
+                .max((v1, v2) -> Integer.compare(
+                        v1.getCapacityForResource(resourceType),
+                        v2.getCapacityForResource(resourceType)
+                ))
+                .orElse(TransportVehicle.DEFAULT);
+    }
 
     private boolean isWarehouseBuilding(HexDetails hex) {
         if (hex.getMainBuildingIndex() == 0) return false;

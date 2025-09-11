@@ -64,7 +64,7 @@ public class HexDetails implements Serializable {
         this.selectedResourceTypes = new HashMap<>(other.selectedResourceTypes);
         this.selectedResourceProductions = new HashMap<>(other.selectedResourceProductions);
         this.livestockFarm = new LivestockFarm(hexKey);
-        this.assignedVehicles = new ArrayList<>();
+        this.assignedVehicles = new ArrayList<>(other.assignedVehicles);
     }
 
     // Getters & setters only for domain fields

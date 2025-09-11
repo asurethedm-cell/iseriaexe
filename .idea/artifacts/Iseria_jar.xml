@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="Iseria:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Iseria_jar</output-path>
+    <root id="archive" name="Iseria.jar">
+      <element id="module-output" name="Iseria" />
+    </root>
+  </artifact>
+</component>

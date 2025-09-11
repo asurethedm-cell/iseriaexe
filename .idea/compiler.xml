@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel target="17">
+      <module name="Iseria.core-domain.main" target="24" />
+      <module name="Iseria.core-domain.test" target="24" />
+      <module name="Iseria.core-infra.main" target="24" />
+      <module name="Iseria.core-infra.test" target="24" />
+      <module name="Iseria.service.main" target="24" />
+      <module name="Iseria.service.test" target="24" />
+      <module name="Iseria.ui.main" target="24" />
+      <module name="Iseria.ui.test" target="24" />
+    </bytecodeTargetLevel>
+  </component>
+</project>

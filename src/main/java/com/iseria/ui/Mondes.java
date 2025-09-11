@@ -447,7 +447,7 @@ public class Mondes extends JFrame {
                 g.drawImage(hexIcon.getImage(), -10, 150, 850, 597, this);
             }
         };
-        Faction faction = FactionRegistry.get(details.getFactionClaim());
+        Faction faction = FactionRegistry.getFactionId(details.getFactionClaim());
         ImageIcon originalClaimIcon =
                 new ImageIcon(Objects.requireNonNull(getClass().getResource(faction.getEmblemImage()))
         );        Image scaledClaimImage = originalClaimIcon.getImage().getScaledInstance(
@@ -1153,7 +1153,7 @@ public class Mondes extends JFrame {
         g2d.drawString(label, tx, ty);
 
         // Draw emblem icon if not Free
-        Faction faction = FactionRegistry.get(factionId);
+        Faction faction = FactionRegistry.getFactionId(factionId);
         if (!"Free".equals(faction.getId())) {
             String emblemPath = faction.getEmblemImage();
             Image raw = emblemCache.computeIfAbsent(emblemPath, p -> {

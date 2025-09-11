@@ -1,6 +1,7 @@
 package com.iseria.ui;
 
 import com.iseria.domain.*;
+import com.iseria.infra.FactionRegistry;
 import com.iseria.service.LogisticsService;
 import javax.swing.*;
 import java.awt.*;
@@ -98,15 +99,20 @@ public class LogisticsPanel extends JPanel {
     }
 
     private JPanel createVehicleManagementPanel() {
+        String factionId = MainMenu.getCurrentFactionId();
+        Faction faction = FactionRegistry.getFactionId(factionId);  // ou via votre service
+        Color factionColor = faction != null
+                ? faction.getFactionColor()
+                : Color.CYAN;
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.CYAN, 1),
+                BorderFactory.createLineBorder(factionColor, 1),
                 "🚗 Véhicules Assignés",
                 0, 0,
                 new Font("Arial", Font.BOLD, 14),
-                Color.CYAN));
+                Color.WHITE));
         panel.setOpaque(true);
-        panel.setBackground(new Color(20, 40, 60, 200));
+        panel.setBackground(factionColor);
 
         vehicleListModel = new DefaultListModel<>();
         vehicleList = new JList<>(vehicleListModel);
@@ -169,15 +175,21 @@ public class LogisticsPanel extends JPanel {
     }
 
     private JPanel createTransportTimesPanel() {
+
+        String factionId = MainMenu.getCurrentFactionId();
+        Faction faction = FactionRegistry.getFactionId(factionId);  // ou via votre service
+        Color factionColor = faction != null
+                ? faction.getFactionColor()
+                : Color.MAGENTA;
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.MAGENTA, 1),
+                BorderFactory.createLineBorder(factionColor, 1),
                 "⏱️ Temps de Transport",
                 0, 0,
                 new Font("Arial", Font.BOLD, 14),
-                Color.MAGENTA));
+                Color.WHITE));
         panel.setOpaque(true);
-        panel.setBackground(new Color(40, 20, 60, 200));
+        panel.setBackground(factionColor);
 
         transportTimesArea = new JTextArea(8, 20);
         transportTimesArea.setEditable(false);

@@ -94,7 +94,7 @@ public class FactionRegistry {
     );
 
     // PUBLIC API
-    public static Faction get(String id) {
+    public static Faction getFactionId(String id) {
         return FACTIONS.getOrDefault(id, FACTIONS.get("Free"));
     }
 
@@ -108,7 +108,7 @@ public class FactionRegistry {
 
     public static Faction getFactionForUser(String username) {
         String factionId = USER_FACTION_MAP.getOrDefault(username, "Free");
-        return get(factionId);
+        return getFactionId(factionId);
     }
 
     public static boolean exists(String id) {
@@ -117,14 +117,14 @@ public class FactionRegistry {
 
     // Convenience methods for common UI operations
     public static Color getColorFor(String factionId) {
-        return get(factionId).getFactionColor();
+        return getFactionId(factionId).getFactionColor();
     }
 
     public static String getEmblemPathFor(String factionId) {
-        return get(factionId).getEmblemImage();
+        return getFactionId(factionId).getEmblemImage();
     }
 
     public static String getBackgroundFor(String factionId) {
-        return get(factionId).getBackgroundImage();
+        return getFactionId(factionId).getBackgroundImage();
     }
 }

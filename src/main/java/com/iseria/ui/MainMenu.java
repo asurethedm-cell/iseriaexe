@@ -89,7 +89,7 @@ public class MainMenu extends JFrame implements ActionListener {
 //================================================INITIAL=============================================================\\
         ToolTipManager.sharedInstance().setInitialDelay(100);
         AtomicBoolean factionTheme = new AtomicBoolean(false);
-        this.setTitle("IseriaTest");
+        this.setTitle("Iseria");
         this.setSize(1600, 900);
 
         // Centered on launch

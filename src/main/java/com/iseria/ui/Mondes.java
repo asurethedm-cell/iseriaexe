@@ -525,7 +525,7 @@ public class Mondes extends JFrame {
                     if (selectedFaction != null) {
                         chosen = selectedFaction;
                         details.setFactionClaim(chosen.getId());
-                        ClaimButtonTrigger(e);
+                        ClaimButtonTrigger(e); //AdminTrigger
                         ImageIcon updatedIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource(chosen.getEmblemImage())));
                         Image scaledUpdatedImageChosen = updatedIcon.getImage().getScaledInstance(
                                 180,
@@ -545,7 +545,6 @@ public class Mondes extends JFrame {
                 }
                 else {
                 String userFactionId = MainMenu.getCurrentFactionId();
-                details.setFactionClaim(userFactionId);
                 Faction userFaction = MainMenu.getCurrentUserFaction();
                 String emblemPath = userFaction.getEmblemImage();
                 ClaimButtonTrigger(e);

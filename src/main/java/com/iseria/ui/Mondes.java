@@ -432,7 +432,7 @@ public class Mondes extends JFrame {
             SaveButton.removeActionListener(al);
         }
 
-            System.out.println(hexKey);
+            //System.out.println(hexKey);
             HexDetails details = repo.getHexDetails(hexKey);
             currentIconMainIndex = details.getMainBuildingIndex();
             currentIconAuxIndex = details.getAuxBuildingIndex();
@@ -542,7 +542,8 @@ public class Mondes extends JFrame {
 
 
                     }
-                } else {
+                }
+                else {
                 String userFactionId = MainMenu.getCurrentFactionId();
                 details.setFactionClaim(userFactionId);
                 Faction userFaction = MainMenu.getCurrentUserFaction();
@@ -919,13 +920,14 @@ public class Mondes extends JFrame {
         isSaving = true;
 
         HexDetails details = repo.getHexDetails(hexKey);
+        System.out.println("===========================================");
         System.out.println("Saving details for " +hexKey );
-
+        System.out.println("===========================================");
         if (details == null) {
             System.out.println("Creating new Java.HexDetails for " + hexKey);
             details = new HexDetails(hexKey);
         } else {
-            System.out.println("Updating existing Java.HexDetails for " + hexKey + " -> ");
+            System.out.println("Updating existing Java.HexDetails for " + hexKey + " : ");
         }
 
 
@@ -934,6 +936,10 @@ public class Mondes extends JFrame {
         boolean FortChanged = details.getFortBuildingIndex() != currentIconFortIndex;
         String currentClaim = details.getFactionClaim();
         boolean ClaimChanged = !Objects.equals(currentClaim, currentUserFaction.getDisplayName());
+        System.out.println("======================MainChanged = " + MainChanged+ " =====================");
+        System.out.println("======================AuxChanged = " + AuxChanged+ " =====================");
+        System.out.println("======================currentClaim = " + currentClaim+ " =====================");
+        System.out.println("======================ClaimChanged = " + ClaimChanged+ " =====================");
 
 
         boolean changed = MainChanged || AuxChanged || FortChanged || ClaimChanged;
@@ -953,11 +959,10 @@ public class Mondes extends JFrame {
             }
             if (ClaimChanged) {
                 String userFactionId = MainMenu.getCurrentFactionId();
-                if(!isAdmin){details.setFactionClaim(userFactionId); System.out.println("Claim changed: " + userFactionId);} else{details.setFactionClaim(chosen.getId()); System.out.println("Claim changed: " + chosen.getId()    );}
-
-
-
+                if(!isAdmin){details.setFactionClaim(userFactionId); System.out.println("Claim changed: " + userFactionId);}
+                else{details.setFactionClaim(chosen.getId()); System.out.println("Claim changed: " + chosen.getId());}
             }
+
             System.out.println("Saved: " + details);
             repo.updateHexDetails(hexKey, details);
         } else {
@@ -1100,8 +1105,15 @@ public class Mondes extends JFrame {
 
                 if (isPointInHexagon(col, row, x, y)) {
                     labelclick = new Point(col, row);
+                    System.out.println("===========================================");
                     hexKey = "hex_" + labelclick.x + "_" + labelclick.y;
                     System.out.println("hex cliqué : " + hexKey);
+                    HexDetails details = repo.getHexDetails(hexKey);
+                    System.out.println("Claim : "+details.getFactionClaim());
+                    System.out.println("===========================================");
+                    System.out.println(" ");
+                    System.out.println("===========================================");
+
                     return;
                 }
             }
@@ -1238,9 +1250,11 @@ public class Mondes extends JFrame {
         String newClaim;
 
         if(isAdmin){newClaim = chosen.getId();
-            System.out.println("admin claimed : "+chosen.getId());}
+            System.out.println("admin claimed : "+newClaim);}
         else{newClaim=userFactionId;}
-
+        System.out.println("===========================================");
+        System.out.println("newClaim :"+ newClaim +"|| Previous Claim : "+details.getFactionClaim());
+        System.out.println("===========================================");
         if (!Objects.equals(details.getFactionClaim(), newClaim)) {
             details.setFactionClaim(newClaim);
             System.out.println("Faction claim updated to: " + newClaim);

@@ -2,7 +2,6 @@
 ../../out/
 !**/src/main/**/out/
 !**/src/test/**/out/
-
 # Gradle - ne pas versionner les fichiers générés
 .gradle/
 build/

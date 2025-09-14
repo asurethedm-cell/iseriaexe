@@ -127,13 +127,14 @@ public class Mondes extends JFrame {
             @Override
             public void keyPressed(KeyEvent e) {
                 int keyCode = e.getKeyCode();
-                if (keyCode == KeyEvent.VK_ESCAPE) {
-                    if (detailViewOpen) {
-                        closeDetailView();
-                    } else {
-                        dispose();
-                        Login.mondeOpen = false;
+                switch (e.getKeyCode()) {
+                    case KeyEvent.VK_ESCAPE -> {
+                        if (detailViewOpen) closeDetailView();
+                        else { dispose(); Login.mondeOpen = false; }
                     }
+                    case KeyEvent.VK_C -> ClaimButtonKeyTrigger(e);
+                    case KeyEvent.VK_M -> MoreDetailedView();
+                    case KeyEvent.VK_S -> saveHexDetails();
                 }
             }
         });
@@ -654,6 +655,22 @@ public class Mondes extends JFrame {
             detailsPanel.setVisible(true);
         });
 
+        JButton adminFowSet = new JButton();
+        adminFowSet.setFont(new Font("Oswald", Font.BOLD, 15));
+        adminFowSet.setText("adminFowSet");
+        adminFowSet.setBounds(630, 700, 200, 75);
+        adminFowSet.setOpaque(true);
+        adminFowSet.setBackground(Color.lightGray);
+        adminFowSet.setBorderPainted(false);
+        adminFowSet.setForeground(Color.BLACK);
+        adminFowSet.setContentAreaFilled(true);
+        adminFowSet.setFocusable(false);
+        adminFowSet.setVisible(false);
+        adminFowSet.addActionListener(e -> {
+            audio.playClick();
+            openFowManagementDialog(hexKey);
+        });
+
         // NOUVEAU: Bouton Logistics
         JButton LogisticsDetail = new JButton();
         LogisticsDetail.setFont(new Font("Oswald", Font.BOLD, 15));
@@ -735,8 +752,11 @@ public class Mondes extends JFrame {
         moreBuildingPanel.add(infoScrollPane);
 
         moreBuildingPanel.add(LessDetail);
+        moreBuildingPanel.add(adminFowSet);
+        if(Login.currentUser.equals("Admin")){adminFowSet.setVisible(true);}
         moreBuildingPanel.add(LogisticsDetail);
         moreBuildingPanel.add(ProductionDetail);
+
         moredetailsPanel.add(closeButton);
 
         moredetailsPanel.add(moreBuildingPanel);
@@ -1262,7 +1282,25 @@ public class Mondes extends JFrame {
             System.out.println("Faction claim unchanged.");
         }
     }
+    public void ClaimButtonKeyTrigger(KeyEvent e) {
+        HexDetails details = repo.getHexDetails(hexKey);
+        String userFactionId = MainMenu.getCurrentFactionId();
+        String newClaim;
 
+        if(isAdmin){newClaim = chosen.getId();
+            System.out.println("admin claimed : "+newClaim);}
+        else{newClaim=userFactionId;}
+        System.out.println("===========================================");
+        System.out.println("newClaim :"+ newClaim +"|| Previous Claim : "+details.getFactionClaim());
+        System.out.println("===========================================");
+        if (!Objects.equals(details.getFactionClaim(), newClaim)) {
+            details.setFactionClaim(newClaim);
+            System.out.println("Faction claim updated to: " + newClaim);
+            repo.updateHexDetails(hexKey, details);
+        } else {
+            System.out.println("Faction claim unchanged.");
+        }
+    }
     private void closeDetailView() {
         if (detailViewOpen) {
             detailsPanel.setVisible(false);
@@ -1350,6 +1388,50 @@ public class Mondes extends JFrame {
                 Image scaled100 = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
                 scaledIconsFort.put(i, new ImageIcon(scaled100));
             }
+        }
+    }
+    private void openFowManagementDialog(String hexKey) {
+        // Récupérer toutes les factions
+        Collection<Faction> all = FactionRegistry.all();
+        String[] factionIds = all.stream().map(Faction::getId).toArray(String[]::new);
+
+        // Récupérer état actuel
+        HexDetails hex = repo.getHexDetails(hexKey);
+        Set<String> discovered = new HashSet<>(hex.getDiscoveredByFaction()); // nouvelle méthode a implémenter
+
+        // Liste de checkboxes
+        JPanel panel = new JPanel(new GridLayout(0, 2));
+        Map<String,JCheckBox> map = new HashMap<>();
+        for (String fid : factionIds) {
+            JCheckBox cb = new JCheckBox(fid, discovered.contains(fid));
+            map.put(fid, cb);
+            panel.add(cb);
+        }
+
+        int res = JOptionPane.showConfirmDialog(
+                this, panel,
+                "Gérer Fog of War - " + hexKey,
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+        if (res == JOptionPane.OK_OPTION) {
+            // Appliquer les choix
+            discovered.clear();
+            for (Map.Entry<String,JCheckBox> entry : map.entrySet()) {
+                if (entry.getValue().isSelected()) {
+                    discovered.add(entry.getKey());
+                }
+            }
+            // Mettre à jour HexDetails
+            hex.setDiscoveredByFaction(discovered);
+            repo.updateHexDetails(hexKey, hex);
+
+            JOptionPane.showMessageDialog(
+                    this,
+                    "✅ Visibilité mise à jour pour " + discovered.size() + " factions.",
+                    "Succès",
+                    JOptionPane.INFORMATION_MESSAGE
+            );
         }
     }
 }

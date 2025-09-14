@@ -169,7 +169,12 @@ public class HexDetails implements Serializable {
     public int getTotalWorkers() {
         return mainWorkerCount + auxWorkerCount + fortWorkerCount;
     }
-
+    public Set<String> getDiscoveredByFaction() {
+        return discoveredByFaction;
+    }
+    public void setDiscoveredByFaction(Set<String> factions) {
+        this.discoveredByFaction = new HashSet<>(factions);
+    }
 
 //====================================================================================================================\\
 

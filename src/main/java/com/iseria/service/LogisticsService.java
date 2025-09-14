@@ -106,19 +106,113 @@ public class LogisticsService {
     }
     public int calculateTransportTime(String fromHex, String toHex,
                                       String resourceType, double quantity) {
+        System.out.println("🚛 Calcul transport: " + fromHex + " → " + toHex +
+                " (" + quantity + " " + resourceType + ")");
+
+        // 🆕 NOUVEAU : Distance de base (toujours possible)
+        int baseDistance = calculateDistance(fromHex, toHex);
+        if (baseDistance == Integer.MAX_VALUE) {
+            System.out.println("❌ Hexagones non connectés");
+            return Integer.MAX_VALUE; // Vraiment impossible
+        }
+
+        // 🆕 Temps de base : 1 jour par tuile (règle de base)
+        int baseTime = Math.max(1, baseDistance);
+        double speedMultiplier = 1.0;
+
+        System.out.println("📏 Distance de base: " + baseDistance + " tuiles");
+        System.out.println("⏰ Temps de base: " + baseTime + " jours");
+
+        // 🆕 Chercher route explicite pour les BONUS seulement
         Route route = findRoute(fromHex, toHex);
+        if (route != null && route.hasRoad()) {
+            speedMultiplier += 1.0; // +100% si route
+            System.out.println("🛣️ Bonus route: +100% vitesse");
+        }
+
+        // 🆕 Bonus véhicule selon les règles
         TransportVehicle vehicle = getBestVehicleForResource(fromHex, resourceType);
+        if (vehicle.getType() != TransportVehicle.VehicleType.NONE) {
+            System.out.println("🚚 Véhicule utilisé: " + vehicle.getType().name());
 
-        if (route == null) return Integer.MAX_VALUE; // Pas de route
+            if (isLandVehicle(vehicle.getType())) {
+                speedMultiplier += 1.0; // +100% pour véhicules terrestres
+                System.out.println("⚡ Bonus véhicule terrestre: +100% vitesse");
+            }
 
-        int baseTime = route.getDistance();
-        double speedMultiplier = route.getSpeedMultiplier(vehicle);
+            // 🆕 Bonus bateaux selon terrain de la route
+            if (route != null) {
+                if (vehicle.getType() == TransportVehicle.VehicleType.BATEAU_RIVIERE && route.hasRiver()) {
+                    speedMultiplier += 1.5; // +150% sur rivière
+                    System.out.println("🚤 Bonus bateau rivière: +150% vitesse");
+                } else if (vehicle.getType() == TransportVehicle.VehicleType.BATEAU_MER && route.hasSea()) {
+                    speedMultiplier += 3.0; // +300% sur mer
+                    System.out.println("🚢 Bonus bateau mer: +300% vitesse");
+                }
+            }
+        } else {
+            System.out.println("🚶 Pas de véhicule - transport à pied");
+        }
+
+        // 🆕 Bonus bâtiments producteurs près de l'eau (selon règles)
+        double buildingBonus = calculateBuildingBonus(fromHex, toHex);
+        if (buildingBonus > 0) {
+            speedMultiplier += buildingBonus;
+            System.out.println("🏭 Bonus bâtiments: +" + (buildingBonus * 100) + "% vitesse");
+        }
         int vehicleCapacity = vehicle.getCapacityForResource(resourceType);
-        int trips = (int) Math.ceil(quantity / vehicleCapacity);
+        int trips = Math.max(1, (int) Math.ceil(quantity / vehicleCapacity));
+        int finalTime = Math.max(1, (int) (baseTime / speedMultiplier * trips));
 
-        return (int) (baseTime / speedMultiplier * trips);
+        System.out.println("📊 Résumé transport:");
+        System.out.println("  - Multiplicateur vitesse: " + String.format("%.2f", speedMultiplier));
+        System.out.println("  - Capacité véhicule: " + vehicleCapacity + " " + resourceType);
+        System.out.println("  - Voyages nécessaires: " + trips);
+        System.out.println("  - Temps total: " + finalTime + " jours");
+
+        return finalTime;
     }
+    private boolean isLandVehicle(TransportVehicle.VehicleType type) {
+        return type == TransportVehicle.VehicleType.CHARRETTE ||
+                type == TransportVehicle.VehicleType.CHARIOT ||
+                type == TransportVehicle.VehicleType.WAGON;
+    }
+    private double calculateBuildingBonus(String fromHex, String toHex) {
+        try {
+            HexDetails fromDetails = hexRepository.getHexDetails(fromHex);
+            HexDetails toDetails = hexRepository.getHexDetails(toHex);
 
+            double bonus = 0.0;
+
+            // Vérifier bâtiments producteurs sur le trajet
+            if (fromDetails != null && hasProducerBuilding(fromDetails)) {
+                if (fromDetails.getLogisticsData().hasRiver()) {
+                    bonus += 1.5; // +150% rivière
+                } else if (fromDetails.getLogisticsData().hasSea()) {
+                    bonus += 3.0; // +300% mer
+                }
+            }
+
+            if (toDetails != null && hasProducerBuilding(toDetails)) {
+                if (toDetails.getLogisticsData().hasRiver()) {
+                    bonus += 1.5; // +150% rivière
+                } else if (toDetails.getLogisticsData().hasSea()) {
+                    bonus += 3.0; // +300% mer
+                }
+            }
+
+            return Math.min(bonus, 3.0); // Plafonner le bonus total
+
+        } catch (Exception e) {
+            System.err.println("Erreur calcul bonus bâtiments: " + e.getMessage());
+            return 0.0;
+        }
+    }
+    private boolean hasProducerBuilding(HexDetails hex) {
+        // À adapter selon votre logique de bâtiments producteurs
+        return hex.getMainBuildingIndex() > 0 ||
+                hex.getAuxBuildingIndex() > 0;
+    }
     public StorageWarehouse findNearestWarehouse(String hexKey) {
         return warehouses.values().stream()
                 .min((w1, w2) -> Integer.compare(

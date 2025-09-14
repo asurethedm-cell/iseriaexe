@@ -52,6 +52,82 @@ public class SoundTechs {
             JOptionPane.showMessageDialog(null, "Le fichier audio n'a pas été trouvé.", "Erreur", JOptionPane.ERROR_MESSAGE);
         }
     }
+    public static void playRandomMainThemeAuto() {
+        try {
+            String basePath = "/Music/IseriaOST/WAV/";
+            List<String> availableThemes = new ArrayList<>();
+
+            // ✨ Tester les thèmes de 0 à 10 (ajustez selon vos besoins)
+            for (int i = 0; i <= 10; i++) {
+                String themeName = "Main" + i + ".wav";
+                if (SoundTechs.class.getResource(basePath + themeName) != null) {
+                    availableThemes.add(themeName);
+                    System.out.println("🎵 Trouvé : " + themeName);
+                }
+            }
+
+            if (availableThemes.isEmpty()) {
+                System.err.println("⚠️ Aucun thème MainX.wav trouvé");
+                playMainThemeDefault();
+                return;
+            }
+
+            // Sélection aléatoire
+            Random random = new Random();
+            String selectedTheme = availableThemes.get(random.nextInt(availableThemes.size()));
+
+            System.out.println("🎲 Thème sélectionné : " + selectedTheme +
+                    " (parmi " + availableThemes.size() + " disponibles)");
+
+            // Jouer le thème sélectionné
+            playSpecificTheme(basePath + selectedTheme);
+
+        } catch (Exception e) {
+            System.err.println("❌ Erreur détection automatique : " + e.getMessage());
+            playMainThemeDefault();
+        }
+    }
+    private static void playSpecificTheme(String themePath) {
+        URL soundURL = SoundTechs.class.getResource(themePath);
+        if (soundURL != null) {
+            try (AudioInputStream audioStream = AudioSystem.getAudioInputStream(soundURL)) {
+                if (clip != null && clip.isRunning()) {
+                    clip.stop();
+                    clip.close();
+                }
+                clip = AudioSystem.getClip();
+                clip.open(audioStream);
+                volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                volumeControl.setValue(-30.0f);
+                clip.loop(Clip.LOOP_CONTINUOUSLY);
+            } catch (Exception e) {
+                System.err.println("❌ Erreur lecture thème : " + e.getMessage());
+                playMainThemeDefault();
+            }
+        }
+    }
+
+    public static void playMainThemeDefault() {
+        URL soundURL = SoundTechs.class.getResource("/Music/IseriaOST/WAV/Main2.wav");
+        if (soundURL != null) {
+            try (AudioInputStream MainMenuTheme = AudioSystem.getAudioInputStream(soundURL)) {
+                if (clip != null && clip.isRunning()) {
+                    clip.stop();
+                    clip.close();
+                }
+                clip = AudioSystem.getClip();
+                clip.open(MainMenuTheme);
+                volumeControl = (FloatControl) clip.getControl(FloatControl.Type.MASTER_GAIN);
+                volumeControl.setValue(-30.0f);
+                clip.loop(Clip.LOOP_CONTINUOUSLY);
+                System.out.println("🔄 Lecture du thème par défaut : Main2.wav");
+            } catch (IOException | UnsupportedAudioFileException | LineUnavailableException e) {
+                System.out.println("❌ Erreur critique audio: " + e.getMessage());
+            }
+        } else {
+            JOptionPane.showMessageDialog(null, "Le fichier audio n'a pas été trouvé.", "Erreur", JOptionPane.ERROR_MESSAGE);
+        }
+    }
 
     public static void HexMusicMenu() {
         themes = new ArrayList<>();
@@ -201,7 +277,7 @@ public class SoundTechs {
         isFading = true;
         new Thread(() -> {
             if (clip == null) {
-                playMainTheme();
+                playRandomMainThemeAuto();
             }
             try {
                 clip.start();

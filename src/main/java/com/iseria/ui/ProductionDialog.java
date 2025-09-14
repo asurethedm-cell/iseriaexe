@@ -51,7 +51,7 @@ public class ProductionDialog extends JDialog {
     }
 
     private void initializeDialog() {
-        setSize(800, 700);
+        setSize(1000, 900);
         setLocationRelativeTo(getParent());
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 

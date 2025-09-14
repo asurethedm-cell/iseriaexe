@@ -35,6 +35,9 @@ public class SoundAudioService implements IAudioService {
         SoundTechs.fadeOutAudio();
     }
 
+    @Override
+    public  void playRandomMainThemeAuto() { SoundTechs.playRandomMainThemeAuto();}
+
     // Nouvelles méthodes
     @Override
     public void playHexMusicMenu() {

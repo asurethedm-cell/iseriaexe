@@ -7,6 +7,7 @@ public interface IAudioService {
     void fadeIn();
     void fadeOut();
     void playHexMusicMenu();
+    void playRandomMainThemeAuto();
     void adjustVolume(int volume);
     void setVolume(float volume);
 

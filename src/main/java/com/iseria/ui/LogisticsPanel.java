@@ -208,7 +208,21 @@ public class LogisticsPanel extends JPanel {
         panel.setOpaque(false);
 
         JButton refreshButton = createStyledButton("🔄 Actualiser", Color.BLUE);
-        refreshButton.addActionListener(e -> updateLogisticsDisplay());
+        refreshButton.addActionListener(e -> {
+            System.out.println("🔄 Actualisation manuelle des données logistiques...");
+
+            // Recharger toutes les données
+            refreshData();
+
+            // Feedback utilisateur
+            JOptionPane.showMessageDialog(this,
+                    "✅ Données logistiques actualisées!\n" +
+                            "• Liste des hexagones rechargée\n" +
+                            "• Véhicules mis à jour\n" +
+                            "• Entrepôts recalculés",
+                    "Actualisation réussie",
+                    JOptionPane.INFORMATION_MESSAGE);
+        });
         panel.add(refreshButton);
 
         JButton networkButton = createStyledButton("🗺️ Réseau", Color.DARK_GRAY);
@@ -411,27 +425,41 @@ public class LogisticsPanel extends JPanel {
         sb.append("=== TEMPS DE TRANSPORT ===\n");
         sb.append("Depuis: ").append(selectedHexKey).append("\n\n");
 
-        // Exemple de calculs vers quelques destinations importantes
-        Map<String, StorageWarehouse> warehouses = logisticsService.getWarehouses();
+        // 🆕 NOUVEAU: Règles de base affichées
+        sb.append("📋 Règles de base:\n");
+        sb.append("• 1 tuile = 1 jour de base\n");
+        sb.append("• Route: +100% vitesse\n");
+        sb.append("• Véhicule terrestre: +100% vitesse\n");
+        sb.append("• Bâtiment sur rivière: +150% vitesse\n");
+        sb.append("• Bâtiment sur mer: +300% vitesse\n\n");
 
+        // Calculs vers entrepôts
+        Map<String, StorageWarehouse> warehouses = logisticsService.getWarehouses();
         if (warehouses.isEmpty()) {
-            sb.append("Aucun entrepôt configuré\n");
+            sb.append("⚠️ Aucun entrepôt configuré\n");
         } else {
-            sb.append("Vers les entrepôts:\n");
-            sb.append("─".repeat(25)).append("\n");
+            sb.append("🎯 Vers les entrepôts:\n");
+            sb.append("─".repeat(40)).append("\n");
 
             for (StorageWarehouse warehouse : warehouses.values()) {
                 String destination = warehouse.getHexKey();
                 if (!destination.equals(selectedHexKey)) {
-                    // Exemple avec ressource standard
-                    int transportTime = logisticsService.calculateTransportTime(
-                            selectedHexKey, destination, "nourriture", 10.0);
+                    // Test avec différentes ressources/quantités
+                    String[] testResources = {"nourriture", "bois", "minerais"};
+                    double[] testQuantities = {10.0, 5.0, 20.0};
 
-                    if (transportTime < Integer.MAX_VALUE) {
-                        sb.append(String.format("→ %s: %d jours\n", destination, transportTime));
-                    } else {
-                        sb.append(String.format("→ %s: Pas de route\n", destination));
+                    for (int i = 0; i < testResources.length; i++) {
+                        int transportTime = logisticsService.calculateTransportTime(
+                                selectedHexKey, destination, testResources[i], testQuantities[i]);
+
+                        if (transportTime < Integer.MAX_VALUE) {
+                            sb.append(String.format("→ %s (%s, %.0f): %d jours\n",
+                                    destination, testResources[i], testQuantities[i], transportTime));
+                        } else {
+                            sb.append(String.format("→ %s: Inaccessible\n", destination));
+                        }
                     }
+                    sb.append("\n");
                 }
             }
         }

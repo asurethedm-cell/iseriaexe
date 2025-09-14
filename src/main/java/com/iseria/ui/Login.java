@@ -4,12 +4,14 @@ import java.awt.GraphicsEnvironment;
 import com.iseria.domain.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.Random;
 
 import static com.iseria.ui.Login.ListJavaFonts.printFonts;
 
@@ -39,7 +41,6 @@ public class Login extends JFrame implements ActionListener {
     public static boolean isPlaceForteEnabled() {
         return placeForteEnabled;
     }
-
     public static void setPlaceForteEnabled(boolean enabled) {
         placeForteEnabled = enabled;
     }
@@ -51,13 +52,7 @@ public class Login extends JFrame implements ActionListener {
         waitNextTurn = false;
         System.out.println("Turn paused : " + waitNextTurn);
 
-        try {
-            backgroundImage = ImageIO.read(getClass().getResource("/RessourceGen/background_logger.jpg"));
-            System.out.println("✅ Image de fond chargée avec succès");
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.err.println("❌ Impossible de charger l'image de fond: /RessourceGen/background_logger.jpg");
-        }
+        backgroundImage = loadRandomBackgroundImage();
 
         users.put("Admin", "admin");
         users.put("Bladjorn", "orange");
@@ -77,13 +72,9 @@ public class Login extends JFrame implements ActionListener {
 
         setupTransparentComponents();
         setupWindow();
-        printFonts();
+        //ListJavaFonts.printFonts(); //Prints for Logo Police Choice
         layoutComponents();
     }
-
-    /**
-     * ✨ NOUVEAU: Crée un wrapper transparent pour JTextField
-     */
     private JComponent createTransparentTextField(int columns) {
         // Panel wrapper avec fond semi-transparent
         JPanel wrapper = new JPanel(new BorderLayout());
@@ -98,16 +89,12 @@ public class Login extends JFrame implements ActionListener {
         JTextField textField = new JTextField(columns);
         textField.setOpaque(false); // ✨ Transparent pour voir le wrapper
         textField.setBorder(null);  // ✨ Pas de bordure interne
-        textField.setFont(new Font("Arial", Font.PLAIN, 14));
+        textField.setFont(new Font("Bahnschrift", Font.PLAIN, 14));
         textField.setForeground(Color.BLACK);
 
         wrapper.add(textField, BorderLayout.CENTER);
         return wrapper;
     }
-
-    /**
-     * ✨ NOUVEAU: Crée un wrapper transparent pour JPasswordField
-     */
     private JComponent createTransparentPasswordField(int columns) {
         // Panel wrapper avec fond semi-transparent
         JPanel wrapper = new JPanel(new BorderLayout());
@@ -122,20 +109,16 @@ public class Login extends JFrame implements ActionListener {
         JPasswordField passwordField = new JPasswordField(columns);
         passwordField.setOpaque(false); // ✨ Transparent pour voir le wrapper
         passwordField.setBorder(null);  // ✨ Pas de bordure interne
-        passwordField.setFont(new Font("Arial", Font.PLAIN, 14));
+        passwordField.setFont(new Font("Bahnschrift", Font.PLAIN, 14));
         passwordField.setForeground(Color.BLACK);
 
         wrapper.add(passwordField, BorderLayout.CENTER);
         return wrapper;
     }
-
-    /**
-     * ✨ REFACTORISÉ: Setup avec wrappers transparents
-     */
     private void setupTransparentComponents() {
         // Labels (inchangés)
         label1 = new JLabel("Username:");
-        label1.setFont(new Font("Arial", Font.BOLD, 16));
+        label1.setFont(new Font("Bahnschrift", Font.BOLD, 16));
         label1.setForeground(Color.WHITE);
         label1.setOpaque(true);
         label1.setBackground(new Color(100, 100, 100, 150));
@@ -143,7 +126,7 @@ public class Login extends JFrame implements ActionListener {
         label1.setBorder(BorderFactory.createEmptyBorder(8, 12, 8, 12));
 
         label2 = new JLabel("Password:");
-        label2.setFont(new Font("Arial", Font.BOLD, 16));
+        label2.setFont(new Font("Bahnschrift", Font.BOLD, 16));
         label2.setForeground(Color.WHITE);
         label2.setOpaque(true);
         label2.setBackground(new Color(100, 100, 100, 150));
@@ -160,7 +143,7 @@ public class Login extends JFrame implements ActionListener {
 
         // Bouton (inchangé)
         SUBMIT = new JButton("SUBMIT");
-        SUBMIT.setFont(new Font("Arial", Font.BOLD, 16));
+        SUBMIT.setFont(new Font("Bahnschrift", Font.BOLD, 16));
         SUBMIT.setOpaque(true);
         SUBMIT.setBackground(new Color(70, 130, 180, 200));
         SUBMIT.setForeground(Color.WHITE);
@@ -174,7 +157,6 @@ public class Login extends JFrame implements ActionListener {
         SUBMIT.addActionListener(this);
         text2.addActionListener(e -> SUBMIT.doClick());
     }
-
     private void setupWindow() {
         setTitle("Iseria Logger");
         setSize(1600, 900);
@@ -197,7 +179,7 @@ public class Login extends JFrame implements ActionListener {
 
         // Titre
         JLabel titleLabel = new JLabel("ISERIA");
-        titleLabel.setFont(new Font("Bahnschrift", Font.BOLD, 48));
+        titleLabel.setFont(new Font("Baskerville Old Face", Font.BOLD, 48));
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setOpaque(true);
         titleLabel.setBackground(new Color(0, 0, 0, 100));
@@ -216,7 +198,7 @@ public class Login extends JFrame implements ActionListener {
         gbc.anchor = GridBagConstraints.EAST;
         panel.add(label1, gbc);
 
-        // ✨ Username field wrapper (au lieu de text1)
+
         gbc.gridx = 1; gbc.gridy = 1;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(10, 10, 10, 20);
@@ -228,7 +210,7 @@ public class Login extends JFrame implements ActionListener {
         gbc.insets = new Insets(10, 20, 10, 10);
         panel.add(label2, gbc);
 
-        // ✨ Password field wrapper (au lieu de text2)
+
         gbc.gridx = 1; gbc.gridy = 2;
         gbc.anchor = GridBagConstraints.WEST;
         gbc.insets = new Insets(10, 10, 10, 20);
@@ -241,7 +223,35 @@ public class Login extends JFrame implements ActionListener {
         gbc.insets = new Insets(30, 20, 20, 20);
         panel.add(SUBMIT, gbc);
     }
+    private BufferedImage loadRandomBackgroundImage() {
+        try {
+            String basePath = "/RessourceGen/";
+            String[] imageFiles = {
+                    "background_logger_0.jpg",
+                    "background_logger_1.jpg",
+                    "background_logger_2.jpg",
+                    "background_logger_3.jpg",
 
+            };
+            Random random = new Random();
+            String selectedImage = imageFiles[random.nextInt(imageFiles.length)];
+            System.out.println("🎲 Image sélectionnée : " + selectedImage);
+            BufferedImage image = ImageIO.read(getClass().getResource(basePath + selectedImage));
+            System.out.println("✅ Image de fond chargée avec succès : " + selectedImage);
+
+            return image;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("❌ Erreur lors du chargement aléatoire, fallback vers image par défaut");
+            try {
+                return ImageIO.read(getClass().getResource("/RessourceGen/background_logger_0.jpg"));
+            } catch (IOException fallbackEx) {
+                System.err.println("❌ Impossible de charger l'image par défaut");
+                return null;
+            }
+        }
+    }
     @Override
     public void actionPerformed(ActionEvent e) {
         String username = text1.getText();
@@ -264,14 +274,186 @@ public class Login extends JFrame implements ActionListener {
     }
 
     public static class ListJavaFonts {
+
+        /**
+         * ✨ NOUVEAU: Affiche une fenêtre avec toutes les polices disponibles
+         */
         public static void printFonts() {
-            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-            String[] fontNames = ge.getAvailableFontFamilyNames();
-            System.out.println("=== POLICES DISPONIBLES ===");
-            for (String fontName : fontNames) {
-                System.out.println(fontName);
+            SwingUtilities.invokeLater(() -> {
+                FontPreviewWindow window = new FontPreviewWindow();
+                window.setVisible(true);
+            });
+        }
+
+        /**
+         * ✨ NOUVEAU: Fenêtre de prévisualisation des polices
+         */
+        private static class FontPreviewWindow extends JFrame {
+
+            public FontPreviewWindow() {
+                setupWindow();
+                createFontTable();
             }
-            System.out.println("\nNombre total de polices : " + fontNames.length);
+
+            private void setupWindow() {
+                setTitle("🔤 Polices Disponibles - Iseria Font Preview");
+                setSize(1000, 700);
+                setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                setLocationRelativeTo(null);
+
+                // Icône de la fenêtre (optionnel)
+                try {
+                    setIconImage(new ImageIcon(getClass().getResource("/Icon.png")).getImage());
+                } catch (Exception e) {
+                    // Ignorer si l'icône n'existe pas
+                }
+            }
+
+            private void createFontTable() {
+                // Récupérer toutes les polices disponibles
+                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                String[] fontNames = ge.getAvailableFontFamilyNames();
+
+                // Créer les colonnes
+                String[] columnNames = {"Nom de la Police", "Aperçu : ISERIA"};
+
+                // Créer le modèle de données
+                Object[][] data = new Object[fontNames.length][2];
+                for (int i = 0; i < fontNames.length; i++) {
+                    data[i][0] = fontNames[i];
+                    data[i][1] = "ISERIA"; // Le texte sera stylisé par le renderer
+                }
+
+                // Créer la JTable avec un modèle personnalisé
+                JTable table = new JTable(data, columnNames) {
+                    @Override
+                    public boolean isCellEditable(int row, int column) {
+                        return false; // Aucune cellule n'est éditable
+                    }
+                };
+
+                // ✨ Renderer personnalisé pour la colonne "Aperçu"
+                table.getColumnModel().getColumn(1).setCellRenderer(new FontPreviewRenderer(fontNames));
+
+                // ✨ Renderer pour la colonne "Nom" (police simple)
+                table.getColumnModel().getColumn(0).setCellRenderer(new FontNameRenderer());
+
+                // Configuration de la table
+                table.setRowHeight(35); // Hauteur suffisante pour le texte
+                table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+                table.getTableHeader().setReorderingAllowed(false);
+
+                // Largeurs des colonnes
+                table.getColumnModel().getColumn(0).setPreferredWidth(300);  // Nom
+                table.getColumnModel().getColumn(1).setPreferredWidth(500);  // Aperçu
+
+                // Style de la table
+                table.setGridColor(Color.LIGHT_GRAY);
+                table.setShowGrid(true);
+                table.setBackground(Color.WHITE);
+                table.setSelectionBackground(new Color(230, 230, 250));
+
+                // Header styling
+                table.getTableHeader().setFont(new Font("Arial", Font.BOLD, 14));
+                table.getTableHeader().setBackground(new Color(70, 130, 180));
+                table.getTableHeader().setForeground(Color.WHITE);
+
+                // ScrollPane
+                JScrollPane scrollPane = new JScrollPane(table);
+                scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+                // Panel d'informations en bas
+                JPanel infoPanel = createInfoPanel(fontNames.length);
+
+                // Layout principal
+                setLayout(new BorderLayout());
+                add(scrollPane, BorderLayout.CENTER);
+                add(infoPanel, BorderLayout.SOUTH);
+            }
+
+            private JPanel createInfoPanel(int fontCount) {
+                JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER));
+                panel.setBackground(new Color(245, 245, 245));
+                panel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+                JLabel infoLabel = new JLabel("📊 Total : " + fontCount + " polices disponibles");
+                infoLabel.setFont(new Font("Arial", Font.BOLD, 12));
+                infoLabel.setForeground(new Color(70, 130, 180));
+
+                panel.add(infoLabel);
+                return panel;
+            }
+        }
+
+        /**
+         * ✨ Renderer pour la colonne des noms de polices
+         */
+        private static class FontNameRenderer extends DefaultTableCellRenderer {
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                                                           boolean isSelected, boolean hasFocus, int row, int column) {
+
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                // Police standard pour le nom
+                setFont(new Font("Arial", Font.PLAIN, 12));
+                setHorizontalAlignment(SwingConstants.LEFT);
+
+                if (isSelected) {
+                    setBackground(table.getSelectionBackground());
+                    setForeground(table.getSelectionForeground());
+                } else {
+                    setBackground(table.getBackground());
+                    setForeground(Color.BLACK);
+                }
+
+                return c;
+            }
+        }
+
+        /**
+         * ✨ Renderer personnalisé pour afficher "ISERIA" dans chaque police
+         */
+        private static class FontPreviewRenderer extends DefaultTableCellRenderer {
+            private final String[] fontNames;
+
+            public FontPreviewRenderer(String[] fontNames) {
+                this.fontNames = fontNames;
+            }
+
+            @Override
+            public Component getTableCellRendererComponent(JTable table, Object value,
+                                                           boolean isSelected, boolean hasFocus, int row, int column) {
+
+                Component c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+
+                try {
+                    // Utiliser la police de cette ligne
+                    String fontName = fontNames[row];
+                    Font previewFont = new Font(fontName, Font.BOLD, 16);
+                    setFont(previewFont);
+
+                    // Centrer le texte
+                    setHorizontalAlignment(SwingConstants.CENTER);
+
+                    // Couleurs
+                    if (isSelected) {
+                        setBackground(table.getSelectionBackground());
+                        setForeground(new Color(70, 130, 180)); // Bleu pour contraste
+                    } else {
+                        setBackground(table.getBackground());
+                        setForeground(new Color(50, 50, 50)); // Gris foncé pour lisibilité
+                    }
+
+                } catch (Exception e) {
+                    // Si la police ne peut pas être chargée, utiliser Arial
+                    setFont(new Font("Arial", Font.BOLD, 16));
+                    setText("ISERIA (erreur police)");
+                }
+
+                return c;
+            }
         }
     }
+
 }

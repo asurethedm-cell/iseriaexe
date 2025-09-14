@@ -560,7 +560,7 @@ public class MainMenu extends JFrame implements ActionListener {
                 setContentPane(layeredPane);
                 this.setVisible(true);
 
-                audio.playMainThemeAudio();
+                audio.playRandomMainThemeAuto();
             }
 
     private ImageIcon resizeIcon(ImageIcon icon, int width, int height) {

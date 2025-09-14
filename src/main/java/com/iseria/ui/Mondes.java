@@ -18,11 +18,13 @@ import javax.imageio.ImageIO;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.awt.geom.Path2D;
 import java.awt.geom.AffineTransform;
+import java.util.stream.Collectors;
 
 
 import static com.iseria.ui.MainMenu.*;
@@ -30,6 +32,7 @@ import static javax.swing.BorderFactory.createLineBorder;
 
 public class Mondes extends JFrame {
 
+    private javax.swing.Timer repaintTimer;
     private BufferedImage mapmonde;
     JLayeredPane layeredPane;
     private double imgWidth, imgHeight;
@@ -46,7 +49,10 @@ public class Mondes extends JFrame {
     JLabel title2;
     private JLabel claimIconLabel;
     private JPanel MAPMONDE;
-
+    private String currentViewFactionId = null; // null = vue normale
+    private List<String> playerFactionList = new ArrayList<>();
+    private int currentFactionViewIndex = -1; // -1 = vue normale
+    private JButton factionViewToggle = new JButton();
     boolean isSaving = false;
     private JButton quitButton = new JButton("Quit");
     private JButton repaintButton = new JButton("repaint");
@@ -87,7 +93,7 @@ public class Mondes extends JFrame {
     private Faction chosen;
     String emblemPath = FactionRegistry.getEmblemPathFor(getCurrentFactionId());
     private boolean detailViewOpen = false;
-
+    private final Map<String, Float> alphaCache = new HashMap<>();
 
     Mondes(IDataProvider data, IAudioService audio, IHexRepository repo) {
         this.data = data;
@@ -132,7 +138,21 @@ public class Mondes extends JFrame {
                         if (detailViewOpen) closeDetailView();
                         else { dispose(); Login.mondeOpen = false; }
                     }
-                    case KeyEvent.VK_C -> ClaimButtonKeyTrigger(e);
+                    case KeyEvent.VK_C -> {
+                        if ("Admin".equals(Login.currentUser)) {
+                            Collection<Faction> allFactions = FactionRegistry.all();
+                            Faction[] factionArray = allFactions.toArray(new Faction[0]);
+
+                            Faction selectedFaction = (Faction) JOptionPane.showInputDialog(
+                                    detailsPanel, "Choisissez la faction :", "Admin Override",
+                                    JOptionPane.QUESTION_MESSAGE, null, factionArray, factionArray);
+
+                            if (selectedFaction != null) {
+                                chosen = selectedFaction;
+                                doClaimHex();
+                            }
+                        }
+                    }
                     case KeyEvent.VK_M -> MoreDetailedView();
                     case KeyEvent.VK_S -> saveHexDetails();
                 }
@@ -164,78 +184,41 @@ public class Mondes extends JFrame {
                 super.paintComponents(g);
                 Graphics2D g2d = (Graphics2D)g.create();
 
-                // High-quality rendering
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
-                        RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL,
-                        RenderingHints.VALUE_STROKE_PURE);
+                // High-quality rendering (existant)
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
-                // Draw background map
+                // Draw background map (existant)
                 if (mapmonde != null) {
                     int w = (int)(imgWidth * zoomFactor);
                     int h = (int)(imgHeight * zoomFactor);
                     g2d.drawImage(mapmonde, (int)imgX, (int)imgY, w, h, null);
                 }
 
-                // Compute sizes
+                // Compute sizes (existant)
                 double unitSize = HEX_SIZE * zoomFactor;
                 double horiz = 1.5 * unitSize;
-                double vert  = Math.sqrt(3) * unitSize;
+                double vert = Math.sqrt(3) * unitSize;
 
-                // One stroke for all borders
                 float stroke = 0.01f;
                 g2d.setStroke(new BasicStroke(stroke, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER));
-
-                // Save original transform
                 AffineTransform orig = g2d.getTransform();
 
-                // Loop rows/cols
                 int ROWS = 50;
                 int COLS = 100;
 
-
-
+                // 🆕 MODIFIÉ: Rendu avec FoW
                 for (int row = 0; row < ROWS; row++) {
                     for (int col = 0; col < COLS; col++) {
-                        // Pixel center of this hex
                         double cx = imgX + col * horiz;
                         double cy = imgY + row * vert + ((col & 1) == 1 ? vert * 0.5 : 0);
 
-                        // Fetch data
                         String key = "hex_" + col + "_" + row;
                         HexDetails data = hexCache.get(key);
                         if (data == null) continue;
 
-                        // Reset and position
-                        g2d.setTransform(orig);
-                        g2d.translate(cx, cy);
-                        g2d.scale(unitSize, unitSize);
-
-                        // Fill (semi-transparent)
-                        Color colr = UIHelpers.getFactionColor(data.getFactionClaim());
-                        if (!"Free".equals(data.getFactionClaim())) {
-                            g2d.setColor(new Color(colr.getRed(), colr.getGreen(), colr.getBlue(), 64));
-                            g2d.fill(unitHexagon);
-                        }
-
-                        // Draw border
-                        g2d.setColor(Color.BLACK);
-                        g2d.draw(unitHexagon);
-                    }
-                }
-
-                // Restore for labels
-                g2d.setTransform(orig);
-                g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int)(14 * zoomFactor))));
-
-                // Draw labels *after* borders so they’re always on top
-                for (int row = 0; row < ROWS; row++) {
-                    for (int col = 0; col < COLS; col++) {
-                        String key = "hex_" + col + "_" + row;
-                        if (!hexCache.containsKey(key)) continue;
-                        double cx = imgX + col * horiz;
-                        double cy = imgY + row * vert + ((col & 1) == 1 ? vert * 0.5 : 0);
-                        drawHexLabelCached(g2d, col, row, cx, cy, unitSize);
+                        // 🆕 NOUVEAU: Rendu avec Fog of War
+                        renderHexWithFow(g2d, orig, cx, cy, unitSize, key, data, col, row);
                     }
                 }
 
@@ -291,6 +274,12 @@ public class Mondes extends JFrame {
                 repo.clearAllFactionClaims();
             }
         });
+        factionViewToggle.setText("View: Normal");
+        factionViewToggle.setBounds(1450, 650, 130, 30); // Au-dessus du reset
+        factionViewToggle.setFont(new Font("Arial", Font.BOLD, 10));
+        factionViewToggle.setVisible(false); // Caché par défaut
+        factionViewToggle.addActionListener(e -> toggleFactionView());
+        initializePlayerFactionList();
 
         repo.addAllHexes(100, 50);
         initializeCache();
@@ -305,6 +294,10 @@ public class Mondes extends JFrame {
         layeredPane.add(quitButton, Integer.valueOf(3));
         layeredPane.add(repaintButton, Integer.valueOf(3));
         layeredPane.add(resetButton, Integer.valueOf(3));
+        layeredPane.add(factionViewToggle, Integer.valueOf(3));
+        if (Login.currentUser.equals("Admin")) {
+            factionViewToggle.setVisible(true);
+        }
         setVisible(true);
         if (!MainMenu.isFactionMenuOpen && Login.mondeOpen) {
             audio.playHexMusicMenu();
@@ -376,6 +369,7 @@ public class Mondes extends JFrame {
                     imgX = Math.min(0, Math.max(imgX, minX));
                     imgY = Math.min(0, Math.max(imgY, minY));
                     MAPMONDE.repaint();
+
                 }
             }
         });
@@ -401,6 +395,10 @@ public class Mondes extends JFrame {
                         // clicked empty hex—ignore
                         return;
                     }
+                    if (e.isControlDown()&&Login.currentUser.equals("Admin")) {
+                        setVisibilityForAllPlayerFactions(hexKey);
+                        return; // Ne pas ouvrir DetailedView
+                    }
                     if (detailViewOpen) {
                         closeDetailView();
                     }
@@ -418,8 +416,37 @@ public class Mondes extends JFrame {
 
         });
     }
+    private void setVisibilityForAllPlayerFactions(String hexKey) {
+        if (hexKey == null) {
+            JOptionPane.showMessageDialog(this,
+                    "⚠️ Aucun hexagone sélectionné",
+                    "Erreur", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
-    void DetailedView() {
+        // Récupérer toutes les factions de joueurs
+        Collection<Faction> allFactions = FactionRegistry.all();
+        Set<String> playerFactionIds = allFactions.stream()
+                .filter(Faction::getIsPlayer)
+                .map(Faction::getId)
+                .collect(Collectors.toSet());
+
+        // Appliquer la visibilité
+        HexDetails hex = repo.getHexDetails(hexKey);
+        Set<String> currentDiscovered = new HashSet<>(hex.getDiscoveredByFaction());
+
+        // Ajouter toutes les factions de joueurs
+        currentDiscovered.addAll(playerFactionIds);
+
+        // Mettre à jour
+        hex.setDiscoveredByFaction(currentDiscovered);
+        repo.updateHexDetails(hexKey, hex);
+
+        // Rafraîchir la carte
+        MAPMONDE.repaint();
+        System.out.println("🔍 Visibilité automatique accordée sur " + hexKey + " pour: " + playerFactionIds);
+    }
+        void DetailedView() {
         if (detailViewOpen) {
             closeDetailView();
         }
@@ -507,73 +534,20 @@ public class Mondes extends JFrame {
         Claim.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-
                 if ("Admin".equals(Login.currentUser)) {
-
                     Collection<Faction> allFactions = FactionRegistry.all();
                     Faction[] factionArray = allFactions.toArray(new Faction[0]);
 
                     Faction selectedFaction = (Faction) JOptionPane.showInputDialog(
-                            detailsPanel,
-                            "Choisissez la faction :",
-                            "Admin Override",
-                            JOptionPane.QUESTION_MESSAGE,
-                            null,
-                            factionArray,
-                            factionArray
-                    );
+                            detailsPanel, "Choisissez la faction :", "Admin Override",
+                            JOptionPane.QUESTION_MESSAGE, null, factionArray, factionArray);
 
                     if (selectedFaction != null) {
                         chosen = selectedFaction;
-                        details.setFactionClaim(chosen.getId());
-                        ClaimButtonTrigger(e); //AdminTrigger
-                        ImageIcon updatedIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource(chosen.getEmblemImage())));
-                        Image scaledUpdatedImageChosen = updatedIcon.getImage().getScaledInstance(
-                                180,
-                                256,
-                                Image.SCALE_SMOOTH
-                        );
-                        saveHexDetails();
-                        SwingUtilities.invokeLater(() -> {
-                            claimIconLabel.setIcon(new ImageIcon(scaledUpdatedImageChosen));
-                            buildingPanel.setBorder(BorderFactory.createLineBorder(chosen.getFactionColor(), 5));
-                            detailsPanel.revalidate();
-                            detailsPanel.repaint();
-                        });
-
-
+                        doClaimHex();
                     }
-                }
-                else {
-                String userFactionId = MainMenu.getCurrentFactionId();
-                Faction userFaction = MainMenu.getCurrentUserFaction();
-                String emblemPath = userFaction.getEmblemImage();
-                ClaimButtonTrigger(e);
-
-                if (userFactionId != null) {
-                    ImageIcon updatedIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource(emblemPath)));
-                    Image scaledUpdatedImage = updatedIcon.getImage().getScaledInstance(
-                            180,
-                            256,
-                            Image.SCALE_SMOOTH
-                    );
-
-                    saveHexDetails();
-                    SwingUtilities.invokeLater(() -> {
-                        claimIconLabel.setIcon(new ImageIcon(scaledUpdatedImage));
-                        buildingPanel.setBorder(createLineBorder(
-                                UIHelpers.getFactionColor(details.getFactionClaim()), 5));
-                        claimIconLabel.revalidate();
-                        claimIconLabel.repaint();
-                        buildingPanel.repaint();
-                        buildingPanel.revalidate();
-                        detailsPanel.repaint();
-                        detailsPanel.updateUI();
-                    });
-
-
-
-                    }
+                } else {
+                    doClaimHex();
                 }
             }
         });
@@ -1135,6 +1109,34 @@ public class Mondes extends JFrame {
 
                     return;
                 }
+                if (isPointInHexagon(col, row, x, y)) {
+                    labelclick = new Point(col, row);
+                    hexKey = "hex_" + labelclick.x + "_" + labelclick.y;
+                    HexDetails details = repo.getHexDetails(hexKey);
+
+                    String currentFactionId = MainMenu.getCurrentFactionId();
+                    boolean isDiscovered = details.isDiscoveredBy(currentFactionId);
+                    boolean isOwned = currentFactionId.equals(details.getFactionClaim());
+
+                    if (isAdmin || isDiscovered) {
+                        // Comportement normal - ouvrir DetailedView
+                        if (detailViewOpen) closeDetailView();
+                        resetIndexValue();
+                        DetailedView();
+                        alphaCache.clear();
+
+                    } else if (isOwned) {
+                        // Hex fantôme - proposer exploration
+                        openFowManagementDialog(hexKey);
+
+                    } else {
+                        // Hex obscurci - message d'information
+                        JOptionPane.showMessageDialog(this,
+                                "🌫️ Territoire inexploré\nVous devez d'abord explorer cette zone.",
+                                "Zone inconnue", JOptionPane.INFORMATION_MESSAGE);
+                    }
+                    return;
+                }
             }
         }
     }
@@ -1161,54 +1163,6 @@ public class Mondes extends JFrame {
         return abs_relY <= maxY;
 }
 
-    private void drawHexLabelCached(Graphics2D g2d,
-                                    int col, int row,
-                                    double cx, double cy,
-                                    double unitSize) {
-        // Draw coordinate label
-        String label = "(" + col + "," + row + ")";
-        hexLabels.put(new Point(col, row), label);
-        HexDetails details = hexCache.get("hex_" + col + "_" + row);
-        if (details == null) return;
-
-        // Text metrics
-        FontMetrics fm = g2d.getFontMetrics();
-        int textW = fm.stringWidth(label);
-        int textH = fm.getAscent();
-        int tx = (int)(cx - textW / 2.0);
-        int ty = (int)(cy + textH / 2.0);
-
-        String factionId = details.getFactionClaim();
-        Color color = FactionRegistry.getColorFor(factionId);
-        g2d.setColor(color);
-        g2d.drawString(label, tx, ty);
-
-        // Draw emblem icon if not Free
-        Faction faction = FactionRegistry.getFactionId(factionId);
-        if (!"Free".equals(faction.getId())) {
-            String emblemPath = faction.getEmblemImage();
-            Image raw = emblemCache.computeIfAbsent(emblemPath, p -> {
-                try {
-                    return ImageIO.read(getClass().getResource(p));
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                }
-            });
-            if (raw != null) {
-                // Scale and position emblem next to label
-                double hexW = 2 * unitSize;
-                int eW = (int)(hexW * 0.2);
-                double aspect = (double) raw.getHeight(null) / raw.getWidth(null);
-                int eH = (int)(eW * aspect);
-                int ex = (int)(cx + textW / 2.0 + 5);
-                int ey = (int)(cy - eH / 2.0);
-                g2d.drawImage(raw, ex, ey, eW, eH, null);
-            }
-        }
-    }
-
-
     public static Rectangle getHexPixelBounds(String hexKey, IHexRepository repo) {
         int[] gridPos = repo.getHexPosition(hexKey);
         double rawCX = gridPos[0], rawCY = gridPos[1];
@@ -1221,9 +1175,6 @@ public class Mondes extends JFrame {
         int h = (int) (size * zy);
         return new Rectangle((int)(px - w/2.0), (int)(py - h/2.0), w, h);
     }
-
-
-
     private void initializeCache() {
         // Load all hex data once
         Map<String, HexDetails> allHexes = repo.loadAll();
@@ -1237,12 +1188,6 @@ public class Mondes extends JFrame {
             }
         }
         hexCache.putAll(allHexes);
-    }
-
-    public void invalidateHexCache() {
-        cacheInitialized = false;
-        hexCache.clear();
-        factionColorCache.clear();
     }
 
     private final Map<String, Image> emblemCache = new HashMap<>();
@@ -1263,42 +1208,73 @@ public class Mondes extends JFrame {
         return max;
     }
 
-    public void ClaimButtonTrigger(ActionEvent e) {
+    private void doClaimHex() {
+        if (hexKey == null) {
+            JOptionPane.showMessageDialog(this,
+                    "⚠️ Aucun hexagone sélectionné",
+                    "Erreur", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         HexDetails details = repo.getHexDetails(hexKey);
-        String userFactionId = MainMenu.getCurrentFactionId();
         String newClaim;
 
-        if(isAdmin){newClaim = chosen.getId();
-            System.out.println("admin claimed : "+newClaim);}
-        else{newClaim=userFactionId;}
+        if (isAdmin && chosen != null) {
+            newClaim = chosen.getId();
+            System.out.println("Admin claimed: " + newClaim);
+        } else {
+            newClaim = MainMenu.getCurrentFactionId();
+        }
+
         System.out.println("===========================================");
-        System.out.println("newClaim :"+ newClaim +"|| Previous Claim : "+details.getFactionClaim());
+        System.out.println("doClaimHex - hexKey: " + hexKey);
+        System.out.println("newClaim: " + newClaim + " || Previous: " + details.getFactionClaim());
         System.out.println("===========================================");
+
         if (!Objects.equals(details.getFactionClaim(), newClaim)) {
             details.setFactionClaim(newClaim);
-            System.out.println("Faction claim updated to: " + newClaim);
+            Set<String> discovered = details.getDiscoveredByFaction();
+            if (discovered == null) {
+                discovered = new HashSet<>();
+            }
+            discovered.add(newClaim);
             repo.updateHexDetails(hexKey, details);
+            hexCache.put(hexKey, details);
+            // Mise à jour UI si DetailView ouverte
+            if (detailViewOpen) {
+                updateClaimIconInUI(newClaim);
+            }
+
+            // Rafraîchir la carte
+            MAPMONDE.repaint();
+
+            JOptionPane.showMessageDialog(this,
+                    "✅ Hex " + hexKey + " claimé par " + newClaim + "\n🔍 Hexagone automatiquement découvert !",
+                    "Claim réussi", JOptionPane.INFORMATION_MESSAGE);
         } else {
-            System.out.println("Faction claim unchanged.");
+            JOptionPane.showMessageDialog(this,
+                    "⚠️ Hexagone déjà claimé par " + newClaim,
+                    "Information", JOptionPane.INFORMATION_MESSAGE);
         }
     }
-    public void ClaimButtonKeyTrigger(KeyEvent e) {
-        HexDetails details = repo.getHexDetails(hexKey);
-        String userFactionId = MainMenu.getCurrentFactionId();
-        String newClaim;
 
-        if(isAdmin){newClaim = chosen.getId();
-            System.out.println("admin claimed : "+newClaim);}
-        else{newClaim=userFactionId;}
-        System.out.println("===========================================");
-        System.out.println("newClaim :"+ newClaim +"|| Previous Claim : "+details.getFactionClaim());
-        System.out.println("===========================================");
-        if (!Objects.equals(details.getFactionClaim(), newClaim)) {
-            details.setFactionClaim(newClaim);
-            System.out.println("Faction claim updated to: " + newClaim);
-            repo.updateHexDetails(hexKey, details);
-        } else {
-            System.out.println("Faction claim unchanged.");
+    private void updateClaimIconInUI(String newFactionId) {
+        try {
+            Faction faction = FactionRegistry.getFactionId(newFactionId);
+            ImageIcon updatedIcon = new ImageIcon(Objects.requireNonNull(
+                    getClass().getResource(faction.getEmblemImage())));
+
+            Image scaledImage = updatedIcon.getImage().getScaledInstance(180, 256, Image.SCALE_SMOOTH);
+            claimIconLabel.setIcon(new ImageIcon(scaledImage));
+
+            // Mise à jour des couleurs de bordure
+            JPanel buildingPanel = (JPanel) detailsPanel.getComponent(0);
+            buildingPanel.setBorder(createLineBorder(UIHelpers.getFactionColor(newFactionId), 5));
+
+            detailsPanel.revalidate();
+            detailsPanel.repaint();
+        } catch (Exception e) {
+            System.err.println("Erreur mise à jour UI claim: " + e.getMessage());
         }
     }
     private void closeDetailView() {
@@ -1351,7 +1327,191 @@ public class Mondes extends JFrame {
 
         imageLoader.execute();
     }
+    private void renderHexWithFow(Graphics2D g2d, AffineTransform orig,
+                                  double cx, double cy, double unitSize,
+                                  String hexKey, HexDetails data, int col, int row) {
+        String viewingFactionId = (isAdmin && currentViewFactionId != null)
+                ? currentViewFactionId
+                : MainMenu.getCurrentFactionId();
 
+        boolean isDiscovered = data.isDiscoveredBy(viewingFactionId);
+
+        g2d.setTransform(orig);
+        g2d.translate(cx, cy);
+        g2d.scale(unitSize, unitSize);
+
+        if (isAdmin && currentViewFactionId == null) {
+            renderNormalHex(g2d, data);
+        }
+        else if (isDiscovered) {
+            renderNormalHex(g2d, data);
+        }
+        else {
+            float alpha = calculateDistanceAlpha(col, row, viewingFactionId);
+            if (alpha < 1.0f) {
+                renderProgressiveHex(g2d, data, alpha);
+            } else {
+                renderObscuredHex(g2d);
+            }
+        }
+
+        // Restore and draw labels
+        g2d.setTransform(orig);
+        if (isAdmin && currentViewFactionId == null) {
+            drawHexLabelNormal(g2d, col, row, cx, cy, unitSize, data);
+        } else if (isDiscovered) {
+            drawHexLabelNormal(g2d, col, row, cx, cy, unitSize, data);
+        } else {
+            // Partially fogged: 0 < alpha < 1
+            float alpha = calculateDistanceAlpha(col, row, viewingFactionId);
+            if (alpha > 0f && alpha < 1f) {
+                drawHexLabelFogged(g2d, col, row, cx, cy, unitSize, alpha);
+            } else {
+                // Full fog
+                drawHexLabelObscured(g2d, col, row, cx, cy, unitSize);
+            }
+        }
+    }
+
+    private float calculateDistanceAlpha(int col, int row, String factionId) {
+        String key = col + "_" + row + "_" + factionId;
+        if (alphaCache.containsKey(key)) {
+            return alphaCache.get(key);
+        }
+        int minDistance = Integer.MAX_VALUE;
+        for (Map.Entry<String, HexDetails> entry : hexCache.entrySet()) {
+            if (entry.getValue().isDiscoveredBy(factionId)) {
+                java.lang.String[] coords = entry.getKey().split("_");
+                int hexCol = Integer.parseInt(coords[1]);
+                int hexRow = Integer.parseInt(coords[2]);
+                int distance = Math.abs(col - hexCol) + Math.abs(row - hexRow);
+                minDistance = Math.min(minDistance, distance);
+                if (minDistance == 0) break;
+            }
+        }
+        float alpha;
+        if (minDistance == 0)      alpha = 0.0f;
+        else if (minDistance == 1) alpha = 0.5f;
+        else if (minDistance == 2) alpha = 0.7f;
+        else                        alpha = 1.0f;
+        // Stockage en cache
+        alphaCache.put(key, alpha);
+        return alpha;
+    }
+    private void renderProgressiveHex(Graphics2D g2d, HexDetails data, float alpha) {
+        g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
+        g2d.setColor(Color.BLACK);
+        g2d.fill(unitHexagon);
+        // Restore composite for further drawing
+        g2d.setComposite(AlphaComposite.SrcOver);
+        // Draw the hex border in dark gray
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.draw(unitHexagon);
+    }
+        private void renderNormalHex(Graphics2D g2d, HexDetails data) {
+        // Remplissage semi-transparent (code existant)
+        Color colr = UIHelpers.getFactionColor(data.getFactionClaim());
+        if (!"Free".equals(data.getFactionClaim())) {
+            g2d.setColor(new Color(colr.getRed(), colr.getGreen(), colr.getBlue(), 64));
+            g2d.fill(unitHexagon);
+        }
+
+        // Bordure (code existant)
+        g2d.setColor(Color.BLACK);
+        g2d.draw(unitHexagon);
+    }
+    private void drawHexLabelNormal(Graphics2D g2d, int col, int row,
+                                    double cx, double cy, double unitSize, HexDetails data) {
+        // ✅ AJOUTÉ: Police originale
+        g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int)(14 * zoomFactor))));
+
+        String label = "(" + col + "," + row + ")";
+        hexLabels.put(new Point(col, row), label);
+
+        FontMetrics fm = g2d.getFontMetrics();
+        int textW = fm.stringWidth(label);
+        int textH = fm.getAscent();
+        int tx = (int)(cx - textW / 2.0);
+        int ty = (int)(cy + textH / 2.0);
+
+        String factionId = data.getFactionClaim();
+        Color color = FactionRegistry.getColorFor(factionId);
+        g2d.setColor(color);
+        g2d.drawString(label, tx, ty);
+
+        drawEmblemIfNotFree(g2d, data, cx, cy, unitSize, textW);
+    }
+    private void drawHexLabelFogged(Graphics2D g2d,
+                                    int col, int row, double cx, double cy, double unitSize, float alpha) {
+        String label = "(" + col + "," + row + ")";
+        hexLabels.put(new Point(col, row), label);
+        // gray color scaled by (1-alpha) so at 0.5 alpha it's mid‐gray
+        int grayLevel = (int)(255 * (1 - alpha));
+        grayLevel = Math.max(50, Math.min(grayLevel, 200));  // clamp to readable range
+        Color foggedColor = new Color(grayLevel, grayLevel, grayLevel);
+        g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int)(14 * zoomFactor))));
+        FontMetrics fm = g2d.getFontMetrics();
+        int textW = fm.stringWidth(label);
+        int textH = fm.getAscent();
+        int tx = (int)(cx - textW/2.0);
+        int ty = (int)(cy + textH/2.0);
+        g2d.setColor(foggedColor);
+        g2d.drawString(label, tx, ty);
+    }
+    private void renderObscuredHex(Graphics2D g2d) {
+        // Remplissage noir total
+        g2d.setColor(Color.BLACK);
+        g2d.fill(unitHexagon);
+
+        // Bordure grise foncée
+        g2d.setColor(Color.DARK_GRAY);
+        g2d.draw(unitHexagon);
+    }
+    private void drawHexLabelObscured(Graphics2D g2d, int col, int row,
+                                      double cx, double cy, double unitSize) {
+        g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int)(14 * zoomFactor))));
+
+        String label = "???";
+        hexLabels.put(new Point(col, row), label);
+
+        FontMetrics fm = g2d.getFontMetrics();
+        int textW = fm.stringWidth(label);
+        int textH = fm.getAscent();
+        int tx = (int)(cx - textW / 2.0);
+        int ty = (int)(cy + textH / 2.0);
+
+        // Texte blanc sur fond noir
+        g2d.setColor(Color.WHITE);
+        g2d.drawString(label, tx, ty);
+    }
+    private void drawEmblemIfNotFree(Graphics2D g2d, HexDetails data,
+                                     double cx, double cy, double unitSize, int textW) {
+        String factionId = data.getFactionClaim();
+        Faction faction = FactionRegistry.getFactionId(factionId);
+
+        if (!"Free".equals(faction.getId())) {
+            String emblemPath = faction.getEmblemImage();
+            Image raw = emblemCache.computeIfAbsent(emblemPath, p -> {
+                try {
+                    return ImageIO.read(getClass().getResource(p));
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            });
+
+            if (raw != null) {
+                // Scale and position emblem next to label
+                double hexW = 2 * unitSize;
+                int eW = (int)(hexW * 0.2);
+                double aspect = (double) raw.getHeight(null) / raw.getWidth(null);
+                int eH = (int)(eW * aspect);
+                int ex = (int)(cx + textW / 2.0 + 5);
+                int ey = (int)(cy - eH / 2.0);
+                g2d.drawImage(raw, ex, ey, eW, eH, null);
+            }
+        }
+    }
     private void loadMainIcons() {
         for (int i = 0; i <= hexMainCap; i++) {
             URL resourceUrl = getClass().getResource("/hexmain/main" + i + ".png");
@@ -1391,18 +1551,20 @@ public class Mondes extends JFrame {
         }
     }
     private void openFowManagementDialog(String hexKey) {
-        // Récupérer toutes les factions
-        Collection<Faction> all = FactionRegistry.all();
-        String[] factionIds = all.stream().map(Faction::getId).toArray(String[]::new);
+        Collection<Faction> allFactions = FactionRegistry.all();
+        String[] playerFactionIds = allFactions.stream()
+                .filter(Faction::getIsPlayer)
+                .map(Faction::getId)
+                .toArray(String[]::new);
 
-        // Récupérer état actuel
+
         HexDetails hex = repo.getHexDetails(hexKey);
-        Set<String> discovered = new HashSet<>(hex.getDiscoveredByFaction()); // nouvelle méthode a implémenter
+        Set<String> discovered = new HashSet<>(hex.getDiscoveredByFaction());
 
-        // Liste de checkboxes
         JPanel panel = new JPanel(new GridLayout(0, 2));
-        Map<String,JCheckBox> map = new HashMap<>();
-        for (String fid : factionIds) {
+        Map<String, JCheckBox> map = new HashMap<>();
+
+        for (String fid : playerFactionIds) {
             JCheckBox cb = new JCheckBox(fid, discovered.contains(fid));
             map.put(fid, cb);
             panel.add(cb);
@@ -1433,5 +1595,39 @@ public class Mondes extends JFrame {
                     JOptionPane.INFORMATION_MESSAGE
             );
         }
+    }
+    private void initializePlayerFactionList() {
+        Collection<Faction> allFactions = FactionRegistry.all();
+        playerFactionList = allFactions.stream()
+                .filter(Faction::getIsPlayer)
+                .map(Faction::getId)
+                .collect(Collectors.toList());
+
+        System.out.println("🎮 Factions disponibles pour la vue: " + playerFactionList);
+    }
+    private void toggleFactionView() {
+        if (playerFactionList.isEmpty()) {
+            return;
+        }
+
+        // Cycle : Normal -> Faction1 -> Faction2 -> Normal...
+        currentFactionViewIndex++;
+
+        if (currentFactionViewIndex >= playerFactionList.size()) {
+            // Retour à la vue normale
+            currentFactionViewIndex = -1;
+            currentViewFactionId = null;
+            factionViewToggle.setText("View: Normal");
+            System.out.println("🔄 [ADMIN] Vue basculée vers: Normal (vue admin)");
+        } else {
+            // Vue d'une faction spécifique
+            currentViewFactionId = playerFactionList.get(currentFactionViewIndex);
+            factionViewToggle.setText("View: " + currentViewFactionId);
+            System.out.println("🔄 [ADMIN] Vue basculée vers: " + currentViewFactionId);
+        }
+
+        // Rafraîchir la carte
+        MAPMONDE.repaint();
+        audio.playClick();
     }
 }

@@ -415,7 +415,7 @@ public class MainMenu extends JFrame implements ActionListener {
                         new Thread(() -> {
                             try {
                                 Thread.sleep(2000);
-                                audio.playTheme(currentUserFaction.getDisplayName());
+                                audio.playTheme(currentUserFaction.getId());
                             } catch (InterruptedException ex) {
                                 ex.printStackTrace();
                             }

@@ -10,7 +10,8 @@ public class FactionRegistry {
     private static final Map<String, Faction> FACTIONS = Map.of(
             "Anima", new Faction(
                     "Anima",
-                    "Anima",
+                    "Compagnons d'Anima",
+                    true,
                     "/RessourceGen/bg_faction_anima.jpg",
                     "/Emblems/Joueurs/comp_anima_emblem.png",
                     "/profile_anima.png",
@@ -21,12 +22,12 @@ public class FactionRegistry {
                     "/Music/IseriaOST/WAV/animatheme3.wav",
                     "/Music/IseriaOST/WAV/animatheme4.wav",
                     "/Music/IseriaOST/WAV/animatheme5.wav",
-                    "/Music/IseriaOST/WAV/animatheme6.wav"
-            ),
+                    "/Music/IseriaOST/WAV/animatheme6.wav"),
 
             "decimus", new Faction(
                     "decimus",
-                    "decimus",
+                    "Poing de Décimus",
+                    true,
                     "/RessourceGen/bg_faction_decimus.jpg",
                     "/Emblems/Joueurs/decimus_emblem.png",
                     "/profile_decimus.png",
@@ -37,52 +38,49 @@ public class FactionRegistry {
                     "/Music/IseriaOST/WAV/decimustheme3.wav",
                     "/Music/IseriaOST/WAV/decimustheme4.wav",
                     "/Music/IseriaOST/WAV/decimustheme5.wav",
-                    "/Music/IseriaOST/WAV/decimustheme6.wav"
-            ),
+                    "/Music/IseriaOST/WAV/decimustheme6.wav"),
 
             "DDL", new Faction(
                     "DDL",
                     "Donjon Du Loot",
+                    false,
                     "/bg_DDL.jpg",
                     "/Emblems/Neutral/DDL.png",
                     "/profile_DDL.png",
                     new Color(255, 222, 128, 250),
                     "Neutre DDL",
-                    "/Music/IseriaOST/WAV/DDLtheme1.wav"
-            ),
+                    "/Music/IseriaOST/WAV/DDLtheme1.wav"),
 
             "Free", new Faction(
                     "Free",
                     "Libre",
+                    false,
                     "/bg_faction_free.jpg",
                     "/Emblems/Neutral/free.png",
                     "/profile_free.png",
                     new Color(0, 0, 0, 250),
-                    "n/a"
-            ),
+                    "n/a"),
 
             "Admin", new Faction(
                     "Admin",
-                    "Administrateur",
+                    "Le Monde",
+                    false,
                     "/RessourceGen/bg_faction_admin.png",
                     "/Emblems/Neutral/admin.png",
                     "/profile_admin.png",
                     Color.GRAY,
-                    "n/a"
 
-            ),
+                    "n/a"),
             "MT01", new Faction(
                     "MT01",
                     "Murloc Tribe Frelelbleiawh",
+                    false,
                     "/Neutral/MT01.png",
                     "/Emblems/Neutral/MT01.png",
                     "/profile_MT01.png",
                     new Color(78, 255, 219,255),
                     "n/a",
-                    "/Music/IseriaOST/WAV/MTtheme1.wav"
-
-
-            )
+                    "/Music/IseriaOST/WAV/MTtheme1.wav")
     );
 
     // USER-TO-FACTION MAPPING
@@ -101,11 +99,10 @@ public class FactionRegistry {
     public static Collection<Faction> all() {
         return FACTIONS.values();
     }
-
+    public static Boolean getIsPlayer() {return getIsPlayer();}
     public static Set<String> getAllIds() {
         return FACTIONS.keySet();
     }
-
     public static Faction getFactionForUser(String username) {
         String factionId = USER_FACTION_MAP.getOrDefault(username, "Free");
         return getFactionId(factionId);

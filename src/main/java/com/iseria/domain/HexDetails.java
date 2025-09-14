@@ -240,9 +240,11 @@ public class HexDetails implements Serializable {
     }
 
     public boolean isDiscoveredBy(String factionId) {
-        return discoveredByFaction.contains(factionId);
-    }
-    public boolean canEstablishLivestock(DATABASE.LivestockData animalType, IHexRepository repo) {
+        if (factionId != null && factionId.equals(this.factionClaim)) {
+            return true;
+        }
+        return discoveredByFaction != null && discoveredByFaction.contains(factionId);
+    }    public boolean canEstablishLivestock(DATABASE.LivestockData animalType, IHexRepository repo) {
         return animalType.canEstablishIn(this, repo) && livestockFarm.getTotalAnimaux() < 10;
     }
     public double calculateFoodProductionForLivestock() {

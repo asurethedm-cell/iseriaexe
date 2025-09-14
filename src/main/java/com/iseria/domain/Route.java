@@ -1,6 +1,9 @@
 package com.iseria.domain;
+import java.io.Serializable;
 
-public class Route {
+public class Route implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     private final String fromHex;
     private final String toHex;
     private final int distance;

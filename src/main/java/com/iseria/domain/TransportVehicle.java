@@ -1,8 +1,10 @@
 package com.iseria.domain;
 
+import java.io.Serializable;
 import java.util.*;
 
-public class TransportVehicle {
+public class TransportVehicle  implements Serializable {
+    private static final long serialVersionUID = 1L;
     public enum VehicleType {
         NONE(0, Map.of()),
         CHARRETTE(1, Map.of(

@@ -13,8 +13,6 @@ import java.util.HashMap;
 import java.util.Objects;
 import java.util.Random;
 
-import static com.iseria.ui.Login.ListJavaFonts.printFonts;
-
 public class Login extends JFrame implements ActionListener {
 
     private final IDataProvider data;
@@ -22,7 +20,7 @@ public class Login extends JFrame implements ActionListener {
     private final IHexRepository repo;
     private BufferedImage backgroundImage;
 
-    JButton SUBMIT;
+    JButton LOGIN;
     JPanel panel;
     JLabel label1, label2;
     JTextField text1;
@@ -142,20 +140,20 @@ public class Login extends JFrame implements ActionListener {
         text2 = (JPasswordField) ((JPanel) text2Wrapper).getComponent(0);
 
         // Bouton (inchangé)
-        SUBMIT = new JButton("SUBMIT");
-        SUBMIT.setFont(new Font("Bahnschrift", Font.BOLD, 16));
-        SUBMIT.setOpaque(true);
-        SUBMIT.setBackground(new Color(70, 130, 180, 200));
-        SUBMIT.setForeground(Color.WHITE);
-        SUBMIT.setFocusPainted(false);
-        SUBMIT.setBorder(BorderFactory.createCompoundBorder(
+        LOGIN = new JButton("LOGIN");
+        LOGIN.setFont(new Font("Bahnschrift", Font.BOLD, 16));
+        LOGIN.setOpaque(true);
+        LOGIN.setBackground(new Color(70, 130, 180, 200));
+        LOGIN.setForeground(Color.WHITE);
+        LOGIN.setFocusPainted(false);
+        LOGIN.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(Color.WHITE, 2),
                 BorderFactory.createEmptyBorder(10, 20, 10, 20)
         ));
 
         // ✨ Actions (inchangées)
-        SUBMIT.addActionListener(this);
-        text2.addActionListener(e -> SUBMIT.doClick());
+        LOGIN.addActionListener(this);
+        text2.addActionListener(e -> LOGIN.doClick());
     }
     private void setupWindow() {
         setTitle("Iseria Logger");
@@ -221,7 +219,7 @@ public class Login extends JFrame implements ActionListener {
         gbc.gridwidth = 2;
         gbc.anchor = GridBagConstraints.CENTER;
         gbc.insets = new Insets(30, 20, 20, 20);
-        panel.add(SUBMIT, gbc);
+        panel.add(LOGIN, gbc);
     }
     private BufferedImage loadRandomBackgroundImage() {
         try {

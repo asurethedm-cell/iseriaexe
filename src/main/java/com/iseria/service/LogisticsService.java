@@ -172,6 +172,7 @@ public class LogisticsService {
 
         return finalTime;
     }
+
     private boolean isLandVehicle(TransportVehicle.VehicleType type) {
         return type == TransportVehicle.VehicleType.CHARRETTE ||
                 type == TransportVehicle.VehicleType.CHARIOT ||

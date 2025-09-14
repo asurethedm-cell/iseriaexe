@@ -6,6 +6,7 @@ import com.iseria.service.LogisticsService;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -425,48 +426,102 @@ public class LogisticsPanel extends JPanel {
         sb.append("=== TEMPS DE TRANSPORT ===\n");
         sb.append("Depuis: ").append(selectedHexKey).append("\n\n");
 
-        // 🆕 NOUVEAU: Règles de base affichées
-        sb.append("📋 Règles de base:\n");
-        sb.append("• 1 tuile = 1 jour de base\n");
-        sb.append("• Route: +100% vitesse\n");
-        sb.append("• Véhicule terrestre: +100% vitesse\n");
-        sb.append("• Bâtiment sur rivière: +150% vitesse\n");
-        sb.append("• Bâtiment sur mer: +300% vitesse\n\n");
+        // 🆕 Récupérer les ressources réellement produites
+        List<ProducedResource> producedResources = getProducedResources(selectedHexKey);
 
-        // Calculs vers entrepôts
-        Map<String, StorageWarehouse> warehouses = logisticsService.getWarehouses();
-        if (warehouses.isEmpty()) {
-            sb.append("⚠️ Aucun entrepôt configuré\n");
-        } else {
-            sb.append("🎯 Vers les entrepôts:\n");
+        if (producedResources.isEmpty()) {
+            sb.append("⚠️ Aucune ressource produite dans cet hexagone\n");
+            sb.append("Veuillez configurer la production dans l'onglet Production\n\n");
+
+            // Fallback vers ressources par défaut pour tests
+            sb.append("📋 Exemples avec ressources standard:\n");
             sb.append("─".repeat(40)).append("\n");
-
-            for (StorageWarehouse warehouse : warehouses.values()) {
-                String destination = warehouse.getHexKey();
-                if (!destination.equals(selectedHexKey)) {
-                    // Test avec différentes ressources/quantités
-                    String[] testResources = {"nourriture", "bois", "minerais"};
-                    double[] testQuantities = {10.0, 5.0, 20.0};
-
-                    for (int i = 0; i < testResources.length; i++) {
-                        int transportTime = logisticsService.calculateTransportTime(
-                                selectedHexKey, destination, testResources[i], testQuantities[i]);
-
-                        if (transportTime < Integer.MAX_VALUE) {
-                            sb.append(String.format("→ %s (%s, %.0f): %d jours\n",
-                                    destination, testResources[i], testQuantities[i], transportTime));
-                        } else {
-                            sb.append(String.format("→ %s: Inaccessible\n", destination));
-                        }
-                    }
-                    sb.append("\n");
-                }
+            calculateDefaultTransportTimes(sb);
+        } else {
+            sb.append("📦 Ressources produites localement:\n");
+            for (ProducedResource resource : producedResources) {
+                sb.append("• ").append(resource).append("\n");
             }
+            sb.append("\n");
+
+            // Calculer temps pour les vraies ressources
+            calculateRealTransportTimes(sb, producedResources);
         }
 
         transportTimesArea.setText(sb.toString());
     }
+    private void calculateRealTransportTimes(StringBuilder sb, List<ProducedResource> producedResources) {
+        Map<String, StorageWarehouse> warehouses = logisticsService.getWarehouses();
 
+        if (warehouses.isEmpty()) {
+            sb.append("⚠️ Aucun entrepôt configuré\n");
+            return;
+        }
+
+        sb.append("🎯 Temps de transport vers les entrepôts:\n");
+        sb.append("─".repeat(50)).append("\n");
+
+        for (StorageWarehouse warehouse : warehouses.values()) {
+            String destination = warehouse.getHexKey();
+            if (!destination.equals(selectedHexKey)) {
+                sb.append(String.format("📍 Vers %s:\n", destination));
+
+                for (ProducedResource resource : producedResources) {
+                    // Calculer pour une semaine de production
+                    double weeklyQuantity = resource.weeklyProduction;
+
+                    int transportTime = logisticsService.calculateTransportTime(
+                            selectedHexKey, destination, resource.resourceType, weeklyQuantity);
+                    int joursParTours = 7;
+                    if (transportTime < Integer.MAX_VALUE) {
+                        sb.append(String.format("  • %s (%.1f unités): %d tours\n" ,
+                                resource.resourceType, weeklyQuantity, transportTime/joursParTours));
+
+                        // Calculer rentabilité
+                        if (transportTime > 0) {
+                            double efficiency = (weeklyQuantity * 7.0) / transportTime;
+                            sb.append(String.format("    → Efficacité: %.1f unités/jour\n", efficiency));
+                        }
+                    } else {
+                        sb.append(String.format("  • %s: Route inaccessible\n", resource.resourceType));
+                    }
+                }
+                sb.append("\n");
+            }
+        }
+    }
+    private void calculateDefaultTransportTimes(StringBuilder sb) {
+        Map<String, StorageWarehouse> warehouses = logisticsService.getWarehouses();
+
+        if (warehouses.isEmpty()) {
+            sb.append("Aucun entrepôt configuré\n");
+            return;
+        }
+
+        // Ressources de test avec quantités réalistes
+        String[] testResources = {"no ressources produced"};
+        double[] testQuantities = {0.0}; // Production hebdomadaire typique
+
+        for (StorageWarehouse warehouse : warehouses.values()) {
+            String destination = warehouse.getHexKey();
+            if (!destination.equals(selectedHexKey)) {
+                sb.append(String.format("→ %s:\n", destination));
+
+                for (int i = 0; i < testResources.length; i++) {
+                    int transportTime = logisticsService.calculateTransportTime(
+                            selectedHexKey, destination, testResources[i], testQuantities[i]);
+                    int joursParTours = 7;
+                    if (transportTime < Integer.MAX_VALUE) {
+                        sb.append(String.format("  %s (%.0f): 0 tours\n",
+                                testResources[i], testQuantities[i]));
+                    } else {
+                        sb.append(String.format("  %s: Inaccessible\n", testResources[i]));
+                    }
+                }
+                sb.append("\n");
+            }
+        }
+    }
     private void showTransportNetwork() {
         // Afficher les informations du réseau de transport dans une nouvelle fenêtre
         JDialog networkDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
@@ -544,5 +599,65 @@ public class LogisticsPanel extends JPanel {
         hexCombo.setSelectedItem(hexKey);
         selectedHexKey = hexKey;
         updateLogisticsDisplay();
+    }
+    private List<ProducedResource> getProducedResources(String hexKey) {
+        List<ProducedResource> producedResources = new ArrayList<>();
+
+        try {
+            HexDetails hex = hexRepository.getHexDetails(hexKey);
+            if (hex == null) return producedResources;
+
+            // Vérifier production du bâtiment principal
+            String mainResourceType = hex.getSelectedResourceType("main");
+            double mainProduction = hex.getSelectedResourceProduction("main");
+            if (mainResourceType != null && mainProduction > 0) {
+                producedResources.add(new ProducedResource(
+                        mainResourceType, mainProduction, "Main Building"));
+            }
+
+            // Vérifier production du bâtiment auxiliaire
+            String auxResourceType = hex.getSelectedResourceType("aux");
+            double auxProduction = hex.getSelectedResourceProduction("aux");
+            if (auxResourceType != null && auxProduction > 0) {
+                producedResources.add(new ProducedResource(
+                        auxResourceType, auxProduction, "Auxiliary Building"));
+            }
+
+            // Vérifier production du bâtiment de fortification
+            String fortResourceType = hex.getSelectedResourceType("fort");
+            double fortProduction = hex.getSelectedResourceProduction("fort");
+            if (fortResourceType != null && fortProduction > 0) {
+                producedResources.add(new ProducedResource(
+                        fortResourceType, fortProduction, "Fort Building"));
+            }
+
+            // Vérifier production d'élevage si disponible
+            if (hex.getLivestockFarm() != null) {
+                // Ajouter logique pour récupérer production élevage
+                // selon votre implémentation
+            }
+
+        } catch (Exception e) {
+            System.err.println("❌ Erreur lors de la récupération des ressources produites: " + e.getMessage());
+        }
+
+        return producedResources;
+    }
+
+    private static class ProducedResource {
+        final String resourceType;
+        final double weeklyProduction;
+        final String source;
+
+        ProducedResource(String resourceType, double weeklyProduction, String source) {
+            this.resourceType = resourceType;
+            this.weeklyProduction = weeklyProduction;
+            this.source = source;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s (%.1f/sem, %s)", resourceType, weeklyProduction, source);
+        }
     }
 }

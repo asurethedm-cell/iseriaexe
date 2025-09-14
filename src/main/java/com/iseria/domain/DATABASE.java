@@ -286,6 +286,7 @@ public class DATABASE {
 
             MAIN_29_0("Main57","Pâturages"),
             MAIN_30_0("Main58", "Camp de chasseurs"),
+
             MAIN_1111("Main01", "Place-Forte");
 
 
@@ -1126,15 +1127,12 @@ public class DATABASE {
 
     }
 
-
-        public static final Map<String, Set<JobBuilding>> JOB_TO_BUILDINGS = new HashMap<>();
+    public static final Map<String, Set<JobBuilding>> JOB_TO_BUILDINGS = new HashMap<>();
     public static final Map<JobBuilding, BuildingProduction> BUILDING_PRODUCTION_DATA = DATABASE.buildProductionData();
 
     public static Map<JobBuilding, BuildingProduction> buildProductionData() {
-
         return null;
     }
-
 
     private static void initializeJobBuildingRelations() {
         addJobToBuildings("Compagnie de Mineur",
@@ -1225,7 +1223,6 @@ public class DATABASE {
         RESSOURCES.put("Artisanat", Arrays.asList(
                 "Meubles", "Bateaux","Engins de Siège","Bâtiments","Vêtements","Plats Cuisinés","Livres","Armes et Armures","Bijoux","Sortilèges","Objets Magiques","Outils","Parchemins"));
     }
-
 
 // ========== MÉTHODES D'INITIALISATION ==========
 

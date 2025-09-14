@@ -278,30 +278,6 @@ public class EconomicDataService {
         calculateInitialData();
     }
 
-    // MODIFICATION: Méthode obsolète remplacée par ProductionCalculationService
-    @Deprecated
-    private void calculateBuildingProduction(String hexKey, DATABASE.JobBuilding building,
-                                             int workers, String buildingType) {
-        if (workers <= 0) return;
-
-        // MODIFICATION: Utiliser la nouvelle méthode
-        List<DATABASE.ResourceType> availableResources = DATABASE.getResourcesForBuilding(building);
-
-        if (availableResources.isEmpty()) return;
-
-        // Production pour toutes les ressources disponibles
-        for (DATABASE.ResourceType resource : availableResources) {
-            double production = DATABASE.calculateActualProduction(building, resource, workers, 1.0);
-            String resourceName = resource.getName();
-            economicData.productionRessources.merge(resourceName, production, Double::sum);
-
-            // Si c'est de la nourriture, mettre à jour la production alimentaire
-            if (isFood(resourceName)) {
-                economicData.productionNourriture += production;
-            }
-        }
-    }
-
     private void updateJobCounts(HexDetails hex) {
         if (hex.getMainWorkerCount() > 0) {
             economicData.jobCounts.merge("Fermier", hex.getMainWorkerCount(), Integer::sum);

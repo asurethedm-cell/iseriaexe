@@ -2,6 +2,8 @@
 ../../out/
 !**/src/main/**/out/
 !**/src/test/**/out/
+hexgrid.dat
+
 # Gradle - ne pas versionner les fichiers générés
 .gradle/
 build/

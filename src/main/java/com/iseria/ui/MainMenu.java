@@ -404,7 +404,7 @@ public class MainMenu extends JFrame implements ActionListener {
                });
                 Menu2.addActionListener(e -> {
                     isFactionMenuOpen = true;
-
+                    logisticsService.ensureNetworkInitialized();
                     factionTheme.set(true);
                     audio.playClick();
                     cardLayout.show(cardPanel, "Menu2");

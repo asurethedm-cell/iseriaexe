@@ -24,6 +24,7 @@ public class HexDetails implements Serializable {
     private LivestockFarm livestockFarm;
     private List<TransportVehicle> assignedVehicles = new ArrayList<>();
     private LogisticsHexData logisticsData = new LogisticsHexData();
+    private Set<String> discoveredByFaction = new HashSet<>();
 
     public HexDetails(String hexKey) {
         this.hexKey = hexKey;
@@ -48,10 +49,16 @@ public class HexDetails implements Serializable {
         selectedResourceProductions.put("fort", 0.0);
         this.livestockFarm = new LivestockFarm(hexKey);
         this.assignedVehicles = new ArrayList<>();
+        this.discoveredByFaction = new HashSet<>();
     }
 
     public HexDetails(HexDetails other) {
         this.hexKey = other.hexKey;
+        //Tracker for the Mystery Null Hex insert bug
+        if (other.hexKey == null) {
+            System.err.println("❌ Constructeur de copie HexDetails avec other.hexKey == null !");
+            Thread.dumpStack();
+        }
         this.mainBuildingIndex = other.mainBuildingIndex;
         this.auxBuildingIndex  = other.auxBuildingIndex;
         this.fortBuildingIndex = other.fortBuildingIndex;
@@ -65,9 +72,12 @@ public class HexDetails implements Serializable {
         this.selectedResourceProductions = new HashMap<>(other.selectedResourceProductions);
         this.livestockFarm = new LivestockFarm(hexKey);
         this.assignedVehicles = new ArrayList<>(other.assignedVehicles);
+        this.discoveredByFaction = new HashSet<>(other.discoveredByFaction);
     }
 
-    // Getters & setters only for domain fields
+//===============================================GETTER SETTER========================================================\\
+
+
     public String getHexKey()                    { return hexKey; }
     public int    getMainBuildingIndex()         { return mainBuildingIndex; }
     public int    getAuxBuildingIndex()          { return auxBuildingIndex; }
@@ -125,19 +135,6 @@ public class HexDetails implements Serializable {
     public int getVehicleCount() {
         return assignedVehicles != null ? assignedVehicles.size() : 0;
     }
-    public boolean removeVehicle(TransportVehicle vehicle) {
-        if (assignedVehicles != null) {
-            return assignedVehicles.remove(vehicle);
-        }
-        return false;
-    }
-    public void clearVehicles() {
-        if (assignedVehicles == null) {
-            assignedVehicles = new ArrayList<>();
-        } else {
-            assignedVehicles.clear();
-        }
-    }
     public List<TransportVehicle> getAssignedVehicles() {
         return new ArrayList<>(assignedVehicles);
     }
@@ -174,9 +171,27 @@ public class HexDetails implements Serializable {
     }
 
 
+//====================================================================================================================\\
+
 
     public void lockSlot(String slot)                  { lockedSlots.put(slot, true); }
     public boolean isSlotLocked(String slot)           { return lockedSlots.getOrDefault(slot, false); }
+    public boolean removeVehicle(TransportVehicle vehicle) {
+        if (assignedVehicles != null) {
+            return assignedVehicles.remove(vehicle);
+        }
+        return false;
+    }
+    public void clearVehicles() {
+        if (assignedVehicles == null) {
+            assignedVehicles = new ArrayList<>();
+        } else {
+            assignedVehicles.clear();
+        }
+    }
+
+
+
 
     @Override public boolean equals(Object obj) {  if (this == obj) return true;
         if (!(obj instanceof HexDetails)) return false;
@@ -187,37 +202,40 @@ public class HexDetails implements Serializable {
     @Override public String  toString()       { /* human‐readable */ return super.toString(); }
 
 
-
-
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
-
+        if (hexKey == null) {
+            System.err.println("❌ HexDetails désérialisé avec hexKey == null !");
+            Thread.dumpStack();
+        }
         if (selectedResourceTypes == null) {
             selectedResourceTypes = new HashMap<>();
             selectedResourceTypes.put("main", null);
             selectedResourceTypes.put("aux", null);
             selectedResourceTypes.put("fort", null);
         }
-
         if (selectedResourceProductions == null) {
             selectedResourceProductions = new HashMap<>();
             selectedResourceProductions.put("main", 0.0);
             selectedResourceProductions.put("aux", 0.0);
             selectedResourceProductions.put("fort", 0.0);
         }
-
         if (livestockFarm == null) {
             livestockFarm = new LivestockFarm(hexKey);
         }
-
-        // AJOUTER CES LIGNES :
         if (assignedVehicles == null) {
             assignedVehicles = new ArrayList<>();
         }
-
         if (logisticsData == null) {
             logisticsData = new LogisticsHexData();
         }
+        if (discoveredByFaction == null) {
+            discoveredByFaction = new HashSet<>();
+        }
+    }
+
+    public boolean isDiscoveredBy(String factionId) {
+        return discoveredByFaction.contains(factionId);
     }
     public boolean canEstablishLivestock(DATABASE.LivestockData animalType, IHexRepository repo) {
         return animalType.canEstablishIn(this, repo) && livestockFarm.getTotalAnimaux() < 10;

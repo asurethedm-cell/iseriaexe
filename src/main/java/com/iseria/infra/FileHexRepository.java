@@ -21,23 +21,28 @@ public class FileHexRepository implements IHexRepository {
         hexGrid = loadHexGridFromFile();
     }
 
+    @SuppressWarnings("unchecked")
     private Map<String, HexDetails> loadHexGridFromFile() {
-        if (!file.exists()) {
-            return new HashMap<>();
-        }
+        if (!file.exists()) return new HashMap<>();
 
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
             Object obj = ois.readObject();
             if (obj instanceof Map) {
-                @SuppressWarnings("unchecked")
                 Map<String, HexDetails> loaded = (Map<String, HexDetails>) obj;
+
+                // 🔍 LOG & CLEANUP
+                loaded.keySet().forEach(key -> {
+                    if (key == null) {
+                        System.err.println("❌ Clé null chargée depuis hexgrid.dat");
+                        Thread.dumpStack();
+                    }
+                });
+                loaded.entrySet().removeIf(e -> e.getKey() == null);
                 return loaded;
             }
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();               // <— full stack trace
-            System.err.println("Error loading hex grid: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-
         return new HashMap<>();
     }
 
@@ -48,6 +53,7 @@ public class FileHexRepository implements IHexRepository {
 
     @Override
     public void save(HexDetails details) {
+
         hexGrid.put(details.getHexKey(), details);
         saveHexGridToFile();
     }
@@ -60,17 +66,25 @@ public class FileHexRepository implements IHexRepository {
         }
     }
     public void addHex(String hexName) {
+        if (hexName == null) {
+            System.err.println("❌ addHex(null) appelé !");
+            Thread.dumpStack();
+            return;
+        }
         if (!hexGrid.containsKey(hexName)) {
             hexGrid.put(hexName, new HexDetails(hexName));
-
         }
     }
+
     public void addAllHexes(int rows, int cols) {
         boolean hasNewHexes = false;
 
         for (int row = 0; row < rows; row++) {
             for (int col = 0; col < cols; col++) {
                 String hexName = "hex_" + col + "_" + row;
+                if (hexName == null) { // théoriquement impossible
+                    System.err.println("❌ hexName généré null dans addAllHexes");
+                }
                 if (!hexGrid.containsKey(hexName)) {
                     hexGrid.put(hexName, new HexDetails(hexName));
                     hasNewHexes = true;
@@ -105,6 +119,12 @@ public class FileHexRepository implements IHexRepository {
 
     @Override
     public void updateHexDetails(String hexKey, HexDetails details) {
+        String hexName = hexKey;
+        if (hexName == null) {
+            System.err.println("❌ Tentative de updateHexDetails(null, HexDetails)");
+            new Exception().printStackTrace(System.err);
+            return;
+        }
         synchronized (hexGrid) {
             hexGrid.put(hexKey, new HexDetails(details));
         }

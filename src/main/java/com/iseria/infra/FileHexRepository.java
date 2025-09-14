@@ -6,6 +6,11 @@ import com.iseria.domain.IHexRepository;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class FileHexRepository implements IHexRepository {
     private Map<String, HexDetails> hexGrid = new HashMap<>();
@@ -94,9 +99,34 @@ public class FileHexRepository implements IHexRepository {
         return details;
     }
 
-    public void updateHexDetails(String hexName, HexDetails details) {
-        hexGrid.put(hexName, new HexDetails(details));
-        saveHexGridToFile();
+    private final ScheduledExecutorService saveExecutor = Executors.newSingleThreadScheduledExecutor();
+    private final AtomicBoolean isDirty = new AtomicBoolean(false);
+    private ScheduledFuture<?> pendingSave;
+
+    @Override
+    public void updateHexDetails(String hexKey, HexDetails details) {
+        synchronized (hexGrid) {
+            hexGrid.put(hexKey, new HexDetails(details));
+        }
+        isDirty.set(true);
+        if (pendingSave != null) pendingSave.cancel(false);
+        pendingSave = saveExecutor.schedule(this::saveHexGridToFileAsync,
+                300, TimeUnit.MILLISECONDS);
+    }
+
+    private void saveHexGridToFileAsync() {
+        if (!isDirty.getAndSet(false)) return;
+        Map<String,HexDetails> snapshot;
+        synchronized(hexGrid) {
+            snapshot = new HashMap<>(hexGrid);
+        }
+        try (ObjectOutputStream oos = new ObjectOutputStream(
+                new BufferedOutputStream(new FileOutputStream(file)))) {
+            oos.writeObject(snapshot);
+            System.out.println("✅ Sauvegarde asynchrone terminée");
+        } catch (IOException e) {
+            System.err.println("❌ Erreur sauvegarde: " + e.getMessage());
+        }
     }
 
     public int[] getHexPosition(String hexName) {

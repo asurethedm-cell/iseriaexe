@@ -3,7 +3,9 @@ package com.iseria.service;
 import com.iseria.domain.*;
 import com.iseria.ui.MainMenu;
 
+import javax.swing.*;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public class LogisticsService {
     private final Map<String, List<Route>> transportNetwork = new HashMap<>();
@@ -12,8 +14,25 @@ public class LogisticsService {
 
     public LogisticsService(IHexRepository hexRepository) {
         this.hexRepository = hexRepository;
-        initializeNetwork();
     }
+    private volatile boolean isNetworkInitialized = false;
+    private final Object initLock = new Object();
+
+    private void ensureNetworkInitialized() {
+        if (!isNetworkInitialized) {
+            synchronized (initLock) {
+                if (!isNetworkInitialized) {
+                        CompletableFuture.runAsync(() -> {
+                        initializeNetwork(); // synchronisation interne
+                        isNetworkInitialized = true;
+                        });
+                }
+            }
+        }
+    }
+
+
+
     private void initializeNetwork() {
         Map<String, HexDetails> hexGrid = hexRepository.loadAll();
 
@@ -89,6 +108,7 @@ public class LogisticsService {
         System.out.println("- Entrepôts trouvés: " + warehouses.size());
     }
     private void initializeWarehouses(Map<String, HexDetails> playerHexes) {
+        ensureNetworkInitialized();
         for (Map.Entry<String, HexDetails> entry : playerHexes.entrySet()) {
             String hexKey = entry.getKey();
             HexDetails hex = entry.getValue();
@@ -106,6 +126,7 @@ public class LogisticsService {
     }
     public int calculateTransportTime(String fromHex, String toHex,
                                       String resourceType, double quantity) {
+        ensureNetworkInitialized();
         System.out.println("🚛 Calcul transport: " + fromHex + " → " + toHex +
                 " (" + quantity + " " + resourceType + ")");
 
@@ -174,11 +195,13 @@ public class LogisticsService {
     }
 
     private boolean isLandVehicle(TransportVehicle.VehicleType type) {
+        ensureNetworkInitialized();
         return type == TransportVehicle.VehicleType.CHARRETTE ||
                 type == TransportVehicle.VehicleType.CHARIOT ||
                 type == TransportVehicle.VehicleType.WAGON;
     }
     private double calculateBuildingBonus(String fromHex, String toHex) {
+        ensureNetworkInitialized();
         try {
             HexDetails fromDetails = hexRepository.getHexDetails(fromHex);
             HexDetails toDetails = hexRepository.getHexDetails(toHex);
@@ -210,11 +233,13 @@ public class LogisticsService {
         }
     }
     private boolean hasProducerBuilding(HexDetails hex) {
+        ensureNetworkInitialized();
         // À adapter selon votre logique de bâtiments producteurs
         return hex.getMainBuildingIndex() > 0 ||
                 hex.getAuxBuildingIndex() > 0;
     }
     public StorageWarehouse findNearestWarehouse(String hexKey) {
+        ensureNetworkInitialized();
         return warehouses.values().stream()
                 .min((w1, w2) -> Integer.compare(
                         calculateDistance(hexKey, w1.getHexKey()),
@@ -224,6 +249,7 @@ public class LogisticsService {
     }
 
     public boolean assignVehicle(String hexKey, TransportVehicle vehicle) {
+        ensureNetworkInitialized();
         HexDetails hex = hexRepository.getHexDetails(hexKey);
         if (hex != null) {
             hex.addVehicle(vehicle);
@@ -234,6 +260,7 @@ public class LogisticsService {
     }
 
     private TransportVehicle getBestVehicleForResource(String hexKey, String resourceType) {
+        ensureNetworkInitialized();
         HexDetails hex = hexRepository.getHexDetails(hexKey);
         if (hex == null) return TransportVehicle.DEFAULT;
 
@@ -251,6 +278,7 @@ public class LogisticsService {
     }
 
     private boolean isWarehouseBuilding(HexDetails hex) {
+        ensureNetworkInitialized();
         if (hex.getMainBuildingIndex() == 0) return false;
         try {
             DATABASE.MainBuilding building = DATABASE.MainBuilding.values()[hex.getMainBuildingIndex()];
@@ -261,6 +289,7 @@ public class LogisticsService {
     }
 
     private Route findRoute(String fromHex, String toHex) {
+        ensureNetworkInitialized();
         List<Route> routes = transportNetwork.get(fromHex);
         if (routes == null) return null;
 
@@ -272,6 +301,7 @@ public class LogisticsService {
 
     // 🔧 CORRECTION MAJEURE : Gérer le format (row,col) de vos hexagones
     private int calculateDistance(String fromHex, String toHex) {
+        ensureNetworkInitialized();
         if (fromHex == null || toHex == null) {
             System.err.println("❌ Hexagone null: from=" + fromHex + ", to=" + toHex);
             return Integer.MAX_VALUE;
@@ -296,6 +326,7 @@ public class LogisticsService {
 
     // 🆕 NOUVELLE MÉTHODE : Parser le format de vos hexagones
     private int[] parseHexKey(String hexKey) {
+        ensureNetworkInitialized();
         if (hexKey == null || hexKey.trim().isEmpty()) {
             return null;
         }
@@ -336,6 +367,7 @@ public class LogisticsService {
     }
 
     private int calculateHexDistance(int[] from, int[] to) {
+        ensureNetworkInitialized();
         // Distance Manhattan pour simplifier (vous pouvez améliorer plus tard)
         return Math.abs(from[0] - to[0]) + Math.abs(from[1] - to[1]);
     }
@@ -386,6 +418,8 @@ public class LogisticsService {
     }
 
     private void createRoute(String fromHex, String toHex) {
+        ensureNetworkInitialized();
+        ensureNetworkInitialized();
         if (fromHex == null || toHex == null) {
             System.err.println("❌ Tentative de création de route avec hex null");
             return;
@@ -410,6 +444,7 @@ public class LogisticsService {
 
     // Méthodes publiques pour debug
     public void printTransportNetwork() {
+        ensureNetworkInitialized();
         System.out.println("=== RÉSEAU DE TRANSPORT ===");
         System.out.println("Hexagones connectés: " + transportNetwork.size());
 

@@ -25,6 +25,8 @@ import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.iseria.ui.LoadingWindow.splash;
+
 
 public class MainMenu extends JFrame implements ActionListener {
 
@@ -397,8 +399,15 @@ public class MainMenu extends JFrame implements ActionListener {
                 Menu5.setVisible(true);
                 factionMenu1.setVisible(false);
                 audio.playClick();
-                audio.fadeOut();
                 LoadingWindow.showSplash(repo, audio, data);
+                        new Timer(100, evt -> {
+                            if (LoadingWindow.readyToClose) {
+                                splash.dispose();
+                                LoadingWindow.mondesWindow.toFront();
+                                LoadingWindow.mondesWindow.requestFocus();
+                                ((Timer)evt.getSource()).stop();
+                            }
+                        }).start();
                 Login.mondeOpen = true;
                     }
                });
@@ -551,17 +560,12 @@ public class MainMenu extends JFrame implements ActionListener {
                 File saveDir = new File(saveDirPath);
                 if (!saveDir.exists()) saveDir.mkdirs();
                 notesFile = new File(saveDir, notesFilename);
-
                 Map<String, JComboBox<DATABASE.MoralAction>> dropdownMap = result.dropdownMap;
-
                 loadNotes(myNoteArea);
                 setupAutoSave(myNoteArea);
-
                 setContentPane(layeredPane);
-                this.setVisible(true);
-
                 audio.playRandomMainThemeAuto();
-            }
+    }
 
     private ImageIcon resizeIcon(ImageIcon icon, int width, int height) {
         Image img = icon.getImage();

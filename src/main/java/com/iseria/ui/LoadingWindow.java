@@ -4,21 +4,27 @@ import com.iseria.domain.IAudioService;
 
 import com.iseria.domain.IDataProvider;
 import com.iseria.domain.IHexRepository;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import javax.swing.SwingWorker;
+import javax.swing.SwingUtilities;
 import java.awt.image.BufferedImage;
 import java.util.List;
 
 
 public class LoadingWindow extends JWindow {
+    private static final Logger log = LogManager.getLogger(LoadingWindow.class);
     private JLabel statusLabel;
     private final IHexRepository repo;
     private final IAudioService audio;
     private final IDataProvider data;
+    public static boolean readyToClose;
+    public static boolean audioOkStart;
+    public static Mondes mondesWindow;
 
     public LoadingWindow(BufferedImage fullImage, IHexRepository repo, IAudioService audio, IDataProvider data) {
         this.data = data;
@@ -55,64 +61,81 @@ public class LoadingWindow extends JWindow {
         // Start the background worker
         runLoader();
     }
-
     private void runLoader() {
-        SwingWorker<Void, String> loader = new SwingWorker<>() {
-            @Override
-            protected Void doInBackground() {
-                publish("Chargement des hexagones...");
-                repo.loadSafeAll(); // your actual loading logic
-                publish("Initialisation terminée");
-                return null;
-            }
-
-            @Override
-            protected void process(List<String> chunks) {
-                statusLabel.setText(chunks.get(chunks.size() - 1));
-            }
-
-            @Override
-            protected void done() {
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
-
-                SwingUtilities.invokeLater( () -> {
-                    Mondes mondesWindow = new Mondes(data, audio, repo);
-                    dispose(); // close splash
-                    mondesWindow.addWindowListener(new WindowAdapter() {
-                        @Override
-                        public void windowClosing(WindowEvent e) {
-                            audio.stop();
-                        }
-                        @Override
-                        public void windowClosed(WindowEvent e) {
-                            // Restore main menu volume fade-in
-                            /*MainMenu main =  obtain reference or call fadeInAudio() statically ;
-                            main.*/
-                            audio.fadeIn();
-                        }
-                    });
-                });
-            }
-
-        };
+        ExtendedLoadingWorker loader = new ExtendedLoadingWorker();
         loader.execute();
     }
-
-
+    public static LoadingWindow splash;
     public static void showSplash(IHexRepository repo, IAudioService audio, IDataProvider data) {
             try {
                 BufferedImage img = ImageIO.read(LoadingWindow.class.getResource("/RessourceGen/bg_loading.jpg"));
-                LoadingWindow splash = new LoadingWindow(img, repo, audio, data);
+                splash = new LoadingWindow(img, repo, audio, data);
                 splash.setVisible(true);
             } catch (Exception e) {
             e.printStackTrace(); e.getMessage();
             System.out.println();
             System.out.println("fallback: launch directly if image fails");
-            SwingUtilities.invokeLater(() -> new Mondes(data, audio, repo));
         }
+    }
+    class ExtendedLoadingWorker extends SwingWorker<Void, String> {
+
+
+        @Override
+        protected Void doInBackground() throws Exception {
+            publish("Chargement des données du repository...");
+            repo.loadSafeAll();
+
+            publish("Génération de la carte hexagonale...");
+            repo.addAllHexes(50, 100);
+
+            // Pré-créer Mondes avec constructeur minimal
+            SwingUtilities.invokeAndWait(() -> {
+                mondesWindow = new Mondes(data, audio, repo, false); // false = pas d'init lourde
+            });
+
+            publish("Initialisation des caches...");
+            mondesWindow.initializeCache();
+            mondesWindow.initializePlayerFactionList();
+            Thread.sleep(500);
+
+            publish("Préchargement des images...");
+            mondesWindow.preloadAllImages();
+            audio.fadeOut();
+            Thread.sleep(500);
+
+            publish("Chargement des icônes principales...");
+            mondesWindow.loadMainIcons();
+            Thread.sleep(500);
+
+            publish("Chargement des icônes auxiliaires...");
+            mondesWindow.loadAuxIcons();
+            Thread.sleep(500);
+
+            publish("Chargement des icônes de fortification...");
+            mondesWindow.loadFortIcons();
+            Thread.sleep(500);
+
+            publish("Initialisation terminée !");
+            audioOkStart = true;
+            return null;
+        }
+        @Override
+        protected void process(List<String> chunks) {
+            statusLabel.setText(chunks.get(chunks.size() - 1));
+        }
+        @Override
+        protected void done() {
+            SwingUtilities.invokeLater(() -> {
+                mondesWindow.finalizeUISetup();
+                mondesWindow.setVisible(true);
+                mondesWindow.toBack();
+                new javax.swing.Timer(500, e -> {
+                    ((javax.swing.Timer)e.getSource()).stop();
+                    readyToClose = true;
+                    audioOkStart = false;
+                }).start();
+            });
+        }
+
     }
 }

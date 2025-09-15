@@ -137,7 +137,6 @@ public class SafeHexRepository implements IHexRepository {
             isSaving = false;
         }
     }
-
     @Override
     public void addAllHexes(int rows, int cols) {
         if (isInitialized) {

@@ -59,6 +59,7 @@ public class Mondes extends JFrame {
     private final AtomicBoolean isSaving = new AtomicBoolean(false);
     private JButton quitButton = new JButton("Quit");
     private JButton repaintButton = new JButton("repaint");
+    private JButton resetButton = new JButton("resetClaims");
     private JButton MainLabel = new JButton();
     private JButton AuxLabel = new JButton();
     private JButton FortLabel = new JButton();
@@ -79,7 +80,7 @@ public class Mondes extends JFrame {
     public int currentIconMainIndex = 0;
     public int currentIconAuxIndex = 0;
     public int currentIconFortIndex = 0;
-    private final Path2D unitHexagon;
+    private final Path2D unitHexagon = new Path2D.Double();;
     private Map<Integer, ImageIcon> scaledIconsMain = new HashMap<>();
     private Map<Integer, ImageIcon> scaledIconsAux = new HashMap<>();
     private Map<Integer, ImageIcon> scaledIconsFort = new HashMap<>();
@@ -92,48 +93,23 @@ public class Mondes extends JFrame {
     private final ConcurrentHashMap<String, SafeHexDetails> hexCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Color> factionColorCache = new ConcurrentHashMap<>();
     private boolean cacheInitialized = false;
-    private boolean visClicked = false;
-    public  boolean isAdmin = "Admin".equals(Login.currentUser);
+    private boolean isNearButFar;
+    private boolean isDiscovered;
+    public boolean isAdmin = "Admin".equals(Login.currentUser);
     private Faction chosen;
     String emblemPath = FactionRegistry.getEmblemPathFor(getCurrentFactionId());
     private boolean detailViewOpen = false;
     private final ConcurrentHashMap<String, Float> alphaCache = new ConcurrentHashMap<>();
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
 
-    Mondes(IDataProvider data, IAudioService audio, IHexRepository repo) {
+    Mondes(IDataProvider data, IAudioService audio, IHexRepository repo, boolean performHeavyInit) {
         this.data = data;
         this.audio = audio;
         this.repo = repo;
-
-        SafeHexDetails details = repo.getHexDetails(hexKey);
-        unitHexagon = new Path2D.Double();
-        for (int i = 0; i < 6; i++) {
-            double angle = Math.toRadians(60 * i);
-            double xx = Math.cos(angle);
-            double yy = Math.sin(angle);
-            if (i == 0) {
-                unitHexagon.moveTo(xx, yy);
-            } else {
-                unitHexagon.lineTo(xx, yy);
-            }
-        }
-        unitHexagon.closePath();
-        Rectangle2D bounds = unitHexagon.getBounds2D();
-        System.out.println("Unit hexagon bounds: " + bounds);
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        int screenWidth = screenSize.width;
-        int screenHeight = screenSize.height;
-        int windowWidth = 1600;
-        int windowHeight = 900;
-        int x = (screenWidth - windowWidth) / 2;
-        int y = (screenHeight - windowHeight) / 2;
-
-        setTitle("Carte Du Jeu");
-        setSize(windowWidth, windowHeight);
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setResizable(false);
-        setLocation(x, y);
-
+        setupBasicComponents(); // Votre méthode existante pour unitHexagon
+        setupWindowProperties();
+        setupBasicPanels();
+        Mapmonddemouse();
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -141,7 +117,16 @@ public class Mondes extends JFrame {
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_ESCAPE -> {
                         if (detailViewOpen) closeDetailView();
-                        else { dispose(); Login.mondeOpen = false; }
+                        else {
+                            audio.fadeOut();
+                            dispose();
+                            Login.mondeOpen = false;
+                            audio.stop();
+                            new javax.swing.Timer(1000, t -> {
+                                ((javax.swing.Timer)t.getSource()).stop();
+                                if (!MainMenu.isFactionMenuOpen) audio.fadeIn();
+                            }).start();
+                        }
                     }
                     case KeyEvent.VK_C -> {
                         if ("Admin".equals(Login.currentUser)) {
@@ -157,170 +142,21 @@ public class Mondes extends JFrame {
                                 doClaimHex();
                             }
                         }
+                        else { doClaimHex();}
+
                     }
                     case KeyEvent.VK_M -> MoreDetailedView();
                     case KeyEvent.VK_S -> saveHexDetails();
                 }
             }
         });
-
-        setFocusable(true);
-        requestFocusInWindow();
-
-
-        layeredPane = new JLayeredPane();
-        layeredPane.setPreferredSize(new Dimension(windowWidth, windowHeight));
-        setContentPane(layeredPane);
-        layeredPane.setLayout(null);
-
-        try {
-            mapmonde = ImageIO.read(Objects.requireNonNull(getClass().getResource("/Iseria.png")));
-            imgWidth = mapmonde.getWidth();
-            imgHeight = mapmonde.getHeight();
-            BufferedImage MousePressed = ImageIO.read(getClass().getResource("/iconmousemap2.png"));
-            MapDragging = Toolkit.getDefaultToolkit().createCustomCursor(MousePressed, new Point(8, 8), "MapDragging");
-        } catch (IOException e) {
-            e.printStackTrace();
+        if (performHeavyInit) {
+            // Ancien comportement pour compatibilité
+            performAllInitialization();
         }
-
-        MAPMONDE = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponents(g);
-                Graphics2D g2d = (Graphics2D)g.create();
-
-                // High-quality rendering (existant)
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
-
-                // Draw background map (existant)
-                if (mapmonde != null) {
-                    int w = (int)(imgWidth * zoomFactor);
-                    int h = (int)(imgHeight * zoomFactor);
-                    g2d.drawImage(mapmonde, (int)imgX, (int)imgY, w, h, null);
-                }
-
-                // Compute sizes (existant)
-                double unitSize = HEX_SIZE * zoomFactor;
-                double horiz = 1.5 * unitSize;
-                double vert = Math.sqrt(3) * unitSize;
-
-                float stroke = 0.01f;
-                g2d.setStroke(new BasicStroke(stroke, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER));
-                AffineTransform orig = g2d.getTransform();
-
-                int ROWS = 50;
-                int COLS = 100;
-
-                // 🆕 MODIFIÉ: Rendu avec FoW
-                for (int row = 0; row < ROWS; row++) {
-                    for (int col = 0; col < COLS; col++) {
-                        double cx = imgX + col * horiz;
-                        double cy = imgY + row * vert + ((col & 1) == 1 ? vert * 0.5 : 0);
-
-                        String key = "hex_" + col + "_" + row;
-                        SafeHexDetails data = hexCache.get(key);
-                        if (data == null) continue;
-
-                        // 🆕 NOUVEAU: Rendu avec Fog of War
-                        renderHexWithFow(g2d, orig, cx, cy, unitSize, key, data, col, row);
-                    }
-                }
-
-                g2d.dispose();
-            }
-        };
-
-        double horizontalcenter = 6.809;
-        double verticalcenter = 1.9826;
-
-        panelWidth = layeredPane.getWidth();
-        imgX = (panelWidth - imgWidth) / horizontalcenter;
-        panelHeight = layeredPane.getHeight();
-        imgY = (panelHeight - imgHeight) / verticalcenter;
-
-        MAPMONDE.setBounds(0, 0, windowWidth, windowHeight);
-        MAPMONDE.setOpaque(false);
-        Mapmonddemouse();
-
-        moredetailsPanel.setLayout(new BorderLayout());
-        moredetailsPanel.setBounds(0, 75, 800, 900);
-        moredetailsPanel.setOpaque(false);
-        moredetailsPanel.setVisible(false);
-
-        detailsPanel.setLayout(new BorderLayout());
-        detailsPanel.setBounds(0, 75, 800, 900);
-        detailsPanel.setBackground(new Color(72, 108, 104, 255));
-        detailsPanel.setOpaque(true);
-        detailsPanel.setVisible(false);
-
-        quitButton.setBounds(1450, 800, 80, 30);
-        quitButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                quittingwithbutton(e);
-                Login.mondeOpen = false;
-            }
-
-        });
-        repaintButton.setBounds(1450, 750, 80, 30);
-        repaintButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                repaintwithbutton(e);
-            }
-
-        });
-        JButton resetButton = new JButton("resetClaims");
-        resetButton.setBounds(1450,700,80,30);
-        resetButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                repo.clearAllFactionClaims();
-            }
-        });
-        factionViewToggle.setText("View: Normal");
-        factionViewToggle.setBounds(1450, 650, 130, 30); // Au-dessus du reset
-        factionViewToggle.setFont(new Font("Arial", Font.BOLD, 10));
-        factionViewToggle.setVisible(false); // Caché par défaut
-        factionViewToggle.addActionListener(e -> toggleFactionView());
-        initializePlayerFactionList();
-
-        repo.addAllHexes(50, 100);
-        initializeCache();
-        cacheInitialized = true;
-        preloadAllImages();
-        loadMainIcons();
-
-
-        layeredPane.add(MAPMONDE, Integer.valueOf(1));
-        layeredPane.add(detailsPanel, Integer.valueOf(2));
-        layeredPane.add(moredetailsPanel, Integer.valueOf(2));
-        layeredPane.add(quitButton, Integer.valueOf(3));
-        layeredPane.add(repaintButton, Integer.valueOf(3));
-        layeredPane.add(resetButton, Integer.valueOf(3));
-        layeredPane.add(factionViewToggle, Integer.valueOf(3));
-        if (Login.currentUser.equals("Admin")) {
-            factionViewToggle.setVisible(true);
-        }
-        setVisible(true);
-        if (!MainMenu.isFactionMenuOpen && Login.mondeOpen) {
-            audio.playHexMusicMenu();
-        }
-
-
-        SwingUtilities.invokeLater(() -> {
-            panelWidth = layeredPane.getWidth();
-            panelHeight = layeredPane.getHeight();
-            repaint();
-            setInitialView();
-
-        });
-
-
     }
 
-    void Mapmonddemouse() {
+    void Mapmonddemouse()  {
         MAPMONDE.addMouseWheelListener(new MouseWheelListener() {
             @Override
             public void mouseWheelMoved(MouseWheelEvent e) {
@@ -390,27 +226,18 @@ public class Mondes extends JFrame {
                     lastMouseY = e.getY();
                     setCursor(MapDragging);
 
-                }
-
-                else if (((!detailsPanel.isVisible() || !moredetailsPanel.isVisible()
-                        || !detailsPanel.getBounds().contains(e.getPoint()))) && (e.getButton() == MouseEvent.BUTTON3)){
-
+                } else if (((!detailsPanel.isVisible() || !moredetailsPanel.isVisible()
+                        || !detailsPanel.getBounds().contains(e.getPoint()))) && (e.getButton() == MouseEvent.BUTTON3)) {
                     audio.playClick();
                     handleHexClick(e.getX(), e.getY());
                     String label = hexLabels.get(labelclick);
-                    if (label == null) {
-                        return;
-                    } else if (e.isControlDown()&&Login.currentUser.equals("Admin")) {
-                        visClicked = true;
+                    if (label == null) return;
+                    if (e.isControlDown() && Login.currentUser.equals("Admin")) {
                         setVisibilityForAllPlayerFactions(hexKey);
-                        MAPMONDE.repaint();
-
+                        return;
                     }
-
-                    visClicked = false;
+                    onHexClicked(hexKey);
                 }
-
-
             }
 
             @Override
@@ -421,6 +248,7 @@ public class Mondes extends JFrame {
 
         });
     }
+
     private void setVisibilityForAllPlayerFactions(String hexKey) {
         if (hexKey == null) {
             JOptionPane.showMessageDialog(this,
@@ -429,6 +257,7 @@ public class Mondes extends JFrame {
             return;
         }
 
+        // Récupérer toutes les factions de joueurs
         Collection<Faction> allFactions = FactionRegistry.all();
         Set<String> playerFactionIds = allFactions.stream()
                 .filter(Faction::getIsPlayer)
@@ -438,15 +267,21 @@ public class Mondes extends JFrame {
         // Appliquer la visibilité
         SafeHexDetails hex = repo.getHexDetails(hexKey);
         Set<String> currentDiscovered = new HashSet<>(hex.getDiscoveredByFaction());
+
+        // Ajouter toutes les factions de joueurs
         currentDiscovered.addAll(playerFactionIds);
         hex.setDiscoveredByFaction(currentDiscovered);
-        repo.updateHexDetails(hexKey, hex);
 
-        // Rafraîchir la carte
-        MAPMONDE.repaint();
+
+        repo.updateHexDetails(hexKey, hex.deepCopy());
+        cacheLock.writeLock().lock();
+        try { hexCache.put(hexKey, hex.deepCopy());} finally { cacheLock.writeLock().unlock(); }
+        alphaCache.clear();
+        SwingUtilities.invokeLater(() -> MAPMONDE.repaint());
         System.out.println("🔍 Visibilité automatique accordée sur " + hexKey + " pour: " + playerFactionIds);
     }
-        void DetailedView() {
+
+    void DetailedView() {
         if (detailViewOpen) {
             closeDetailView();
         }
@@ -460,11 +295,11 @@ public class Mondes extends JFrame {
             SaveButton.removeActionListener(al);
         }
 
-            //System.out.println(hexKey);
-            SafeHexDetails details = repo.getHexDetails(hexKey);
-            currentIconMainIndex = details.getMainBuildingIndex();
-            currentIconAuxIndex = details.getAuxBuildingIndex();
-            currentIconFortIndex = details.getFortBuildingIndex();
+        //System.out.println(hexKey);
+        SafeHexDetails details = repo.getHexDetails(hexKey);
+        currentIconMainIndex = details.getMainBuildingIndex();
+        currentIconAuxIndex = details.getAuxBuildingIndex();
+        currentIconFortIndex = details.getFortBuildingIndex();
 
         ImageIcon hexIcon = new ImageIcon(getClass().getResource("/hex4.png"));
 
@@ -478,7 +313,8 @@ public class Mondes extends JFrame {
         Faction faction = FactionRegistry.getFactionId(details.getFactionClaim());
         ImageIcon originalClaimIcon =
                 new ImageIcon(Objects.requireNonNull(getClass().getResource(faction.getEmblemImage()))
-        );        Image scaledClaimImage = originalClaimIcon.getImage().getScaledInstance(
+                );
+        Image scaledClaimImage = originalClaimIcon.getImage().getScaledInstance(
                 180,
                 256,
                 Image.SCALE_SMOOTH
@@ -605,9 +441,9 @@ public class Mondes extends JFrame {
         detailsPanel.setVisible(true);
         revalidate();
 
-      }
+    }
 
-    void MoreDetailedView(){
+    void MoreDetailedView() {
         detailsPanel.setVisible(false);
         moredetailsPanel.removeAll();
 
@@ -727,7 +563,9 @@ public class Mondes extends JFrame {
 
         moreBuildingPanel.add(LessDetail);
         moreBuildingPanel.add(adminFowSet);
-        if(Login.currentUser.equals("Admin")){adminFowSet.setVisible(true);}
+        if (Login.currentUser.equals("Admin")) {
+            adminFowSet.setVisible(true);
+        }
         moreBuildingPanel.add(LogisticsDetail);
         moreBuildingPanel.add(ProductionDetail);
 
@@ -736,6 +574,7 @@ public class Mondes extends JFrame {
         moredetailsPanel.add(moreBuildingPanel);
         moredetailsPanel.setVisible(true);
     }
+
     private void openLogisticsForHex(String hexKey) {
         audio.playClick();
 
@@ -761,6 +600,7 @@ public class Mondes extends JFrame {
         logisticsDialog.add(logisticsPanel);
         logisticsDialog.setVisible(true);
     }
+
     private void openProductionForHex(String hexKey) {
         audio.playClick();
 
@@ -903,9 +743,9 @@ public class Mondes extends JFrame {
 
     void resetIndexValue() {
         currentIconMainIndex = 0;
-        currentIconAuxIndex=0;
-        currentIconFortIndex=0;
-}
+        currentIconAuxIndex = 0;
+        currentIconFortIndex = 0;
+    }
 
     public void saveHexDetails() {
         if (!isSaving.compareAndSet(false, true)) {
@@ -1003,17 +843,30 @@ public class Mondes extends JFrame {
             isSaving.set(false);
         }
     }
-    void MainBuidindButtonMenu(ActionEvent e) {openIconMenu(MainLabel);}
 
-    void AuxilliaryButtonMenu(ActionEvent e){ openIconMenu(AuxLabel);}
+    void MainBuidindButtonMenu(ActionEvent e) {
+        openIconMenu(MainLabel);
+    }
 
-    void FortificationButtonMenu(ActionEvent e){ openIconMenu(FortLabel);}
-    void MoreDetaiButtonTrigger(ActionEvent e) {MoreDetailedView(); }
+    void AuxilliaryButtonMenu(ActionEvent e) {
+        openIconMenu(AuxLabel);
+    }
 
-    void saveButtonTrigger(ActionEvent e){System.out.println("Save button clicked, label: " + hexKey); saveHexDetails(); }
+    void FortificationButtonMenu(ActionEvent e) {
+        openIconMenu(FortLabel);
+    }
+
+    void MoreDetaiButtonTrigger(ActionEvent e) {
+        MoreDetailedView();
+    }
+
+    void saveButtonTrigger(ActionEvent e) {
+        System.out.println("Save button clicked, label: " + hexKey);
+        saveHexDetails();
+    }
 
     void confirmMainSelection(JButton targetButton) {
-        ImageIcon origIcon  = originalMainIcon.get(currentIconMainIndex);
+        ImageIcon origIcon = originalMainIcon.get(currentIconMainIndex);
         targetButton.setIcon(origIcon);
         targetButton.setSize(origIcon.getIconWidth(), origIcon.getIconHeight());
         targetButton.revalidate();
@@ -1049,22 +902,30 @@ public class Mondes extends JFrame {
 
     }
 
-    void cancelSelection(ActionEvent e) {iconMenu.dispose();}
+    void cancelSelection(ActionEvent e) {
+        iconMenu.dispose();
+    }
 
-    void quittingwithbutton(ActionEvent e){
+    void quittingwithbutton(ActionEvent e) {
         audio.playClick();
-        audio.stop(); dispose();}
+        audio.fadeOut();
+        dispose();
+        Login.mondeOpen = false;
+    }
 
-    void repaintwithbutton(ActionEvent e){MAPMONDE.repaint();}
+    void repaintwithbutton(ActionEvent e) {
+        alphaCache.clear();
+        MAPMONDE.repaint();
+    }
 
     void selectIcon(JLabel iconLabel, int index, String buildingType) {
-         for (Component comp : iconPanel.getComponents()) {
+        for (Component comp : iconPanel.getComponents()) {
             if (comp instanceof JLabel) {
                 JLabel label = (JLabel) comp;
                 label.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
             }
         }
-         System.out.println("Clicked on: " + buildingType + " icon with index: " + index);
+        System.out.println("Clicked on: " + buildingType + " icon with index: " + index);
 
         audio.playClick();
         iconLabel.setBorder(createLineBorder(Color.RED, 2));
@@ -1076,9 +937,9 @@ public class Mondes extends JFrame {
         } else {
             currentIconFortIndex = index;
         }
-         System.out.println("Updated indices -> Java.Main: " + currentIconMainIndex + ", Aux: " + currentIconAuxIndex + ", Fort: " + currentIconFortIndex);
+        System.out.println("Updated indices -> Java.Main: " + currentIconMainIndex + ", Aux: " + currentIconAuxIndex + ", Fort: " + currentIconFortIndex);
 
-     }
+    }
 
     JButton detailedViewButton(String text, ImageIcon icon, int x, int y, int w, int h) {
         JButton button = new JButton(text);
@@ -1089,9 +950,9 @@ public class Mondes extends JFrame {
         }
         button.setBounds(x, y, w, h);
         button.setOpaque(false);
-        button.setBackground(new Color(0,0,0,0));
+        button.setBackground(new Color(0, 0, 0, 0));
         button.setBorderPainted(false);
-        button.setForeground(new Color(0,0,0,0));
+        button.setForeground(new Color(0, 0, 0, 0));
         button.setContentAreaFilled(false);
         button.addActionListener(e -> {
             audio.playClick();
@@ -1139,28 +1000,12 @@ public class Mondes extends JFrame {
                     hexKey = "hex_" + labelclick.x + "_" + labelclick.y;
                     SafeHexDetails details = repo.getHexDetails(hexKey);
                     String currentFactionId = MainMenu.getCurrentFactionId();
-                    boolean isDiscovered = details.isDiscoveredBy(currentFactionId);
-                    boolean isNearButFar = isObscuredHex(col, row, currentFactionId);
+                    isNearButFar = isObscuredHex(col, row, currentFactionId);
                     System.out.println("hex cliqué : " + hexKey);
-                    System.out.println("Claim : "+details.getFactionClaim());
+                    System.out.println("Claim : " + details.getFactionClaim());
+                    System.out.println("Distance : " + isObscuredHex(col, row, currentFactionId));
                     System.out.println("===========================================");
-                    System.out.println("isNearButFar ? "+ isNearButFar);
-                    if ((isAdmin || isDiscovered)&&!visClicked) {
-                        if (detailViewOpen) closeDetailView();
-                        resetIndexValue();
-                        DetailedView();
-                        return;
-                    }
-                    if (isNearButFar) {
-                        JOptionPane.showMessageDialog(this,
-                                "🌫️ Exploration.Placeholder",
-                                "Zone inconnue", JOptionPane.INFORMATION_MESSAGE);
-                        return;
-                    } else {
-                        JOptionPane.showMessageDialog(this,
-                                "🌫️ Territoire inexploré\nVous devez d'abord explorer les zones précédentes.",
-                                "Zone inconnue", JOptionPane.INFORMATION_MESSAGE);
-                    }
+
                     return;
                 }
             }
@@ -1187,7 +1032,7 @@ public class Mondes extends JFrame {
         }
         double maxY = apothem - Math.sqrt(3) * (abs_relX - hexRadius / 2);
         return abs_relY <= maxY;
-}
+    }
 
     public static Rectangle getHexPixelBounds(String hexKey, IHexRepository repo) {
         int[] gridPos = repo.getHexPosition(hexKey);
@@ -1199,9 +1044,10 @@ public class Mondes extends JFrame {
         int size = HEX_SIZE;
         int w = (int) (size * zx);
         int h = (int) (size * zy);
-        return new Rectangle((int)(px - w/2.0), (int)(py - h/2.0), w, h);
+        return new Rectangle((int) (px - w / 2.0), (int) (py - h / 2.0), w, h);
     }
-    private void initializeCache() {
+
+    public void initializeCache() {
         cacheLock.writeLock().lock();
         try {
             System.out.println("🔄 Initializing hex cache...");
@@ -1276,7 +1122,8 @@ public class Mondes extends JFrame {
                     if (number > max) {
                         max = number;
                     }
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
             }
         }
         return max;
@@ -1312,20 +1159,19 @@ public class Mondes extends JFrame {
                 discovered = new HashSet<>();
             }
             discovered.add(newClaim);
-            repo.updateHexDetails(hexKey, details);
-            hexCache.put(hexKey, details);
+            repo.updateHexDetails(hexKey, details.deepCopy());
+            cacheLock.writeLock().lock();
+            try {
+                hexCache.put(hexKey, details.deepCopy());
+            } finally {
+                cacheLock.writeLock().unlock();
+            }
+            alphaCache.clear();
+            SwingUtilities.invokeLater(() -> MAPMONDE.repaint());
             // Mise à jour UI si DetailView ouverte
             if (detailViewOpen) {
                 updateClaimIconInUI(newClaim);
             }
-
-            // Rafraîchir la carte
-            alphaCache.clear();
-            MAPMONDE.repaint();
-
-            JOptionPane.showMessageDialog(this,
-                    "✅ Hex " + hexKey + " claimé par " + newClaim + "\n🔍 Hexagone automatiquement découvert !",
-                    "Claim réussi", JOptionPane.INFORMATION_MESSAGE);
         } else {
             JOptionPane.showMessageDialog(this,
                     "⚠️ Hexagone déjà claimé par " + newClaim,
@@ -1352,6 +1198,7 @@ public class Mondes extends JFrame {
             System.err.println("Erreur mise à jour UI claim: " + e.getMessage());
         }
     }
+
     private void closeDetailView() {
         if (detailViewOpen) {
             detailsPanel.setVisible(false);
@@ -1375,7 +1222,7 @@ public class Mondes extends JFrame {
         }
     }
 
-    private void preloadAllImages() {
+    public void preloadAllImages() {
         SwingWorker<Void, String> imageLoader = new SwingWorker<Void, String>() {
             @Override
             protected Void doInBackground() throws Exception {
@@ -1401,6 +1248,7 @@ public class Mondes extends JFrame {
 
         imageLoader.execute();
     }
+
     private void renderHexWithFow(Graphics2D g2d, AffineTransform orig,
                                   double cx, double cy, double unitSize,
                                   String hexKey, SafeHexDetails data, int col, int row) {
@@ -1416,13 +1264,13 @@ public class Mondes extends JFrame {
 
         if (isAdmin && currentViewFactionId == null) {
             renderNormalHex(g2d, data);
-        }
-        else if (isDiscovered) {
+        } else if (isDiscovered) {
             renderNormalHex(g2d, data);
-        }
-        else {
+        } else {
             float alpha = calculateDistanceAlpha(col, row, viewingFactionId);
-            if (Float.isNaN(alpha)) { renderHiddenHex(g2d); }
+            if (Float.isNaN(alpha)) {
+                renderHiddenHex(g2d);
+            }
             if (alpha < 0.9f) {
                 renderProgressiveHex(g2d, data, alpha);
             } else {
@@ -1466,11 +1314,11 @@ public class Mondes extends JFrame {
             }
         }
         float alpha;
-        if (minDistance == 0)       alpha = 0.0f;
-        else if (minDistance == 1)  alpha = 0.5f;
-        else if (minDistance == 2)  alpha = 0.7f;
-        else if (minDistance == 3)  alpha = 0.9f;
-        else                        alpha = Float.NaN; // trop loin
+        if (minDistance == 0) alpha = 0.0f;
+        else if (minDistance == 1) alpha = 0.5f;
+        else if (minDistance == 2) alpha = 0.7f;
+        else if (minDistance == 3) alpha = 0.9f;
+        else alpha = Float.NaN; // trop loin
         alphaCache.put(key, alpha);
         return alpha;
     }
@@ -1485,7 +1333,8 @@ public class Mondes extends JFrame {
         g2d.setColor(Color.DARK_GRAY);
         g2d.draw(unitHexagon);
     }
-        private void renderNormalHex(Graphics2D g2d, SafeHexDetails data) {
+
+    private void renderNormalHex(Graphics2D g2d, SafeHexDetails data) {
         // Remplissage semi-transparent (code existant)
         Color colr = UIHelpers.getFactionColor(data.getFactionClaim());
         if (!"Free".equals(data.getFactionClaim())) {
@@ -1497,10 +1346,11 @@ public class Mondes extends JFrame {
         g2d.setColor(Color.BLACK);
         g2d.draw(unitHexagon);
     }
+
     private void drawHexLabelNormal(Graphics2D g2d, int col, int row,
                                     double cx, double cy, double unitSize, SafeHexDetails data) {
         // ✅ AJOUTÉ: Police originale
-        g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int)(14 * zoomFactor))));
+        g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int) (14 * zoomFactor))));
 
         String label = "(" + col + "," + row + ")";
         hexLabels.put(new Point(col, row), label);
@@ -1508,8 +1358,8 @@ public class Mondes extends JFrame {
         FontMetrics fm = g2d.getFontMetrics();
         int textW = fm.stringWidth(label);
         int textH = fm.getAscent();
-        int tx = (int)(cx - textW / 2.0);
-        int ty = (int)(cy + textH / 2.0);
+        int tx = (int) (cx - textW / 2.0);
+        int ty = (int) (cy + textH / 2.0);
 
         String factionId = data.getFactionClaim();
         Color color = FactionRegistry.getColorFor(factionId);
@@ -1518,23 +1368,25 @@ public class Mondes extends JFrame {
 
         drawEmblemIfNotFree(g2d, data, cx, cy, unitSize, textW);
     }
+
     private void drawHexLabelFogged(Graphics2D g2d,
                                     int col, int row, double cx, double cy, double unitSize, float alpha) {
         String label = "(" + col + "," + row + ")";
         hexLabels.put(new Point(col, row), label);
         // gray color scaled by (1-alpha) so at 0.5 alpha it's mid‐gray
-        int grayLevel = (int)(255 * (1 - alpha));
+        int grayLevel = (int) (255 * (1 - alpha));
         grayLevel = Math.max(50, Math.min(grayLevel, 200));  // clamp to readable range
         Color foggedColor = new Color(grayLevel, grayLevel, grayLevel);
-        g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int)(14 * zoomFactor))));
+        g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int) (14 * zoomFactor))));
         FontMetrics fm = g2d.getFontMetrics();
         int textW = fm.stringWidth(label);
         int textH = fm.getAscent();
-        int tx = (int)(cx - textW/2.0);
-        int ty = (int)(cy + textH/2.0);
+        int tx = (int) (cx - textW / 2.0);
+        int ty = (int) (cy + textH / 2.0);
         g2d.setColor(foggedColor);
         g2d.drawString(label, tx, ty);
     }
+
     private void renderObscuredHex(Graphics2D g2d) {
         // Remplissage noir total
         g2d.setColor(Color.BLACK);
@@ -1547,7 +1399,7 @@ public class Mondes extends JFrame {
 
     private void drawHexLabelObscured(Graphics2D g2d, int col, int row,
                                       double cx, double cy, double unitSize) {
-        g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int)(14 * zoomFactor))));
+        g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int) (14 * zoomFactor))));
 
         String label = "???";
         hexLabels.put(new Point(col, row), label);
@@ -1555,19 +1407,21 @@ public class Mondes extends JFrame {
         FontMetrics fm = g2d.getFontMetrics();
         int textW = fm.stringWidth(label);
         int textH = fm.getAscent();
-        int tx = (int)(cx - textW / 2.0);
-        int ty = (int)(cy + textH / 2.0);
+        int tx = (int) (cx - textW / 2.0);
+        int ty = (int) (cy + textH / 2.0);
 
         // Texte blanc sur fond noir
         g2d.setColor(Color.WHITE);
         g2d.drawString(label, tx, ty);
     }
+
     private void renderHiddenHex(Graphics2D g2d) {
         g2d.setColor(Color.BLACK);
         g2d.fill(unitHexagon);
         g2d.setColor(Color.BLACK);
         g2d.draw(unitHexagon);
     }
+
     private void drawEmblemIfNotFree(Graphics2D g2d, SafeHexDetails data,
                                      double cx, double cy, double unitSize, int textW) {
         String factionId = data.getFactionClaim();
@@ -1587,33 +1441,34 @@ public class Mondes extends JFrame {
             if (raw != null) {
                 // Scale and position emblem next to label
                 double hexW = 2 * unitSize;
-                int eW = (int)(hexW * 0.2);
+                int eW = (int) (hexW * 0.2);
                 double aspect = (double) raw.getHeight(null) / raw.getWidth(null);
-                int eH = (int)(eW * aspect);
-                int ex = (int)(cx + textW / 2.0 + 5);
-                int ey = (int)(cy - eH / 2.0);
+                int eH = (int) (eW * aspect);
+                int ex = (int) (cx + textW / 2.0 + 5);
+                int ey = (int) (cy - eH / 2.0);
                 g2d.drawImage(raw, ex, ey, eW, eH, null);
             }
         }
     }
-    private void loadMainIcons() {
+
+    public void loadMainIcons() {
         for (int i = 0; i <= hexMainCap; i++) {
             URL resourceUrl = getClass().getResource("/hexmain/main" + i + ".png");
             if (resourceUrl != null) {
                 ImageIcon originalIcon = new ImageIcon(resourceUrl);
-                originalMainIcon.put(i,originalIcon);
+                originalMainIcon.put(i, originalIcon);
 
                 Image scaled100 = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
                 scaledIconsMain.put(i, new ImageIcon(scaled100));
             }
         }
     }
-    private void loadAuxIcons() {
+    public void loadAuxIcons() {
         for (int i = 0; i <= hexAuxCap; i++) {
             URL resourceUrl = getClass().getResource("/hexaux/Aux" + i + ".png");
             if (resourceUrl != null) {
                 ImageIcon originalIcon = new ImageIcon(resourceUrl);
-                originalAuxIcon.put(i,originalIcon);
+                originalAuxIcon.put(i, originalIcon);
 
                 // Pre-scale commonly used sizes
                 Image scaled100 = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
@@ -1621,12 +1476,12 @@ public class Mondes extends JFrame {
             }
         }
     }
-    private void loadFortIcons() {
+    public void loadFortIcons() {
         for (int i = 0; i <= hexFortCap; i++) {
             URL resourceUrl = getClass().getResource("/hexfort/fort" + i + ".png");
             if (resourceUrl != null) {
                 ImageIcon originalIcon = new ImageIcon(resourceUrl);
-                originalFortIcon.put(i,originalIcon);
+                originalFortIcon.put(i, originalIcon);
 
                 // Pre-scale commonly used sizes
                 Image scaled100 = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
@@ -1634,6 +1489,7 @@ public class Mondes extends JFrame {
             }
         }
     }
+
     private void openFowManagementDialog(String hexKey) {
         Collection<Faction> allFactions = FactionRegistry.all();
         String[] playerFactionIds = allFactions.stream()
@@ -1663,7 +1519,7 @@ public class Mondes extends JFrame {
         if (res == JOptionPane.OK_OPTION) {
             // Appliquer les choix
             discovered.clear();
-            for (Map.Entry<String,JCheckBox> entry : map.entrySet()) {
+            for (Map.Entry<String, JCheckBox> entry : map.entrySet()) {
                 if (entry.getValue().isSelected()) {
                     discovered.add(entry.getKey());
                 }
@@ -1680,7 +1536,8 @@ public class Mondes extends JFrame {
             );
         }
     }
-    private void initializePlayerFactionList() {
+
+    public void initializePlayerFactionList() {
         Collection<Faction> allFactions = FactionRegistry.all();
         playerFactionList = allFactions.stream()
                 .filter(Faction::getIsPlayer)
@@ -1689,16 +1546,14 @@ public class Mondes extends JFrame {
 
         System.out.println("🎮 Factions disponibles pour la vue: " + playerFactionList);
     }
+
     private void toggleFactionView() {
         if (playerFactionList.isEmpty()) {
             return;
         }
-
-        // Cycle : Normal -> Faction1 -> Faction2 -> Normal...
         currentFactionViewIndex++;
 
         if (currentFactionViewIndex >= playerFactionList.size()) {
-            // Retour à la vue normale
             currentFactionViewIndex = -1;
             currentViewFactionId = null;
             factionViewToggle.setText("View: Normal");
@@ -1709,14 +1564,266 @@ public class Mondes extends JFrame {
             factionViewToggle.setText("View: " + currentViewFactionId);
             System.out.println("🔄 [ADMIN] Vue basculée vers: " + currentViewFactionId);
         }
-
-        // Rafraîchir la carte
-        MAPMONDE.repaint();
         audio.playClick();
+        alphaCache.clear();
+        MAPMONDE.repaint();
+
     }
+
     private boolean isObscuredHex(int col, int row, String factionId) {
         float alpha = calculateDistanceAlpha(col, row, factionId);
         // alpha NaN signifie “trop loin => pas de bordure, pas d’étiquette”
-        return alpha >= 0.9f && alpha <=1.0f;
+        return alpha >= 0.9f && alpha <= 1.0f;
+    }
+
+    private void onHexClicked(String hexKey) {
+        SafeHexDetails details = repo.getHexDetails(hexKey);
+        String[] parts = hexKey.split("_");
+        if (parts.length == 3) {
+            int col = Integer.parseInt(parts[1]);
+            int row = Integer.parseInt(parts[2]);
+            boolean isDiscovered = details.isDiscoveredBy(MainMenu.getCurrentFactionId());
+            boolean isNearButFar = isObscuredHex(col, row, MainMenu.getCurrentFactionId());
+            if (isAdmin || isDiscovered) {
+                if (detailViewOpen) closeDetailView();
+                resetIndexValue();
+                DetailedView();
+                return;
+            }
+            if (!isNearButFar) {
+                JOptionPane.showMessageDialog(MAPMONDE,
+                        "🌫️ Exploration.Placeholder",
+                        "Zone inconnue", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            } else {
+                JOptionPane.showMessageDialog(MAPMONDE,
+                        "🌫️ Territoire inexploré\nVous devez d'abord explorer les zones précédentes.",
+                        "Zone inconnue", JOptionPane.INFORMATION_MESSAGE);
+            }
+        }
+    }
+
+    private void setupBasicComponents() {
+        // Création de unitHexagon
+        for (int i = 0; i < 6; i++) {
+            double angle = Math.toRadians(60 * i);
+            double xx = Math.cos(angle);
+            double yy = Math.sin(angle);
+            if (i == 0) {
+                unitHexagon.moveTo(xx, yy);
+            } else {
+                unitHexagon.lineTo(xx, yy);
+            }
+        }
+        unitHexagon.closePath();
+
+        // Configuration fenêtre
+        setupWindowProperties();
+
+        // Création des panels de base (sans contenu lourd)
+        setupBasicPanels();
+    }
+    private void  setupWindowProperties(){
+        // Récupération des dimensions écran pour centrage
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int screenWidth = screenSize.width;
+        int screenHeight = screenSize.height;
+        int windowWidth = 1600;
+        int windowHeight = 900;
+        int x = (screenWidth - windowWidth) / 2;
+        int y = (screenHeight - windowHeight) / 2;
+
+        // Configuration fenêtre
+        setTitle("Carte Du Jeu");
+        setSize(windowWidth, windowHeight);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setResizable(false);
+        setLocation(x, y);
+
+        // Configuration focus et clavier
+        setFocusable(true);
+        requestFocusInWindow();
+
+        // Icône de la fenêtre (si nécessaire)
+        try {
+            ImageIcon Icon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/Icon.png")));
+            setIconImage(Icon.getImage());
+        } catch (Exception e) {
+            System.err.println("Impossible de charger l'icône de fenêtre");
+        }
+    }
+    private void setupBasicPanels(){layeredPane = new JLayeredPane();
+        layeredPane.setPreferredSize(new Dimension(getWidth(), getHeight()));
+        setContentPane(layeredPane);
+        layeredPane.setLayout(null);
+
+        // Chargement des ressources d'images de base
+        try {
+            mapmonde = ImageIO.read(Objects.requireNonNull(getClass().getResource("/Iseria.png")));
+            imgWidth = mapmonde.getWidth();
+            imgHeight = mapmonde.getHeight();
+
+            BufferedImage MousePressed = ImageIO.read(Objects.requireNonNull(getClass().getResource("/iconmousemap2.png")));
+            MapDragging = Toolkit.getDefaultToolkit().createCustomCursor(MousePressed, new Point(8, 8), "MapDragging");
+        } catch (IOException e) {
+            System.err.println("Erreur chargement ressources images: " + e.getMessage());
+        }
+
+        // Calcul des positions initiales
+        double horizontalcenter = 6.809;
+        double verticalcenter = 1.9826;
+        panelWidth = layeredPane.getWidth();
+        imgX = (panelWidth - imgWidth) / horizontalcenter;
+        panelHeight = layeredPane.getHeight();
+        imgY = (panelHeight - imgHeight) / verticalcenter;
+
+        // Création du panel MAPMONDE (sans le contenu de rendu lourd)
+        MAPMONDE = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g); // Corrigé: paintComponent au lieu de paintComponents
+
+                // Le rendu complet sera fait après le chargement
+                if (cacheInitialized) {
+                    renderFullMap(g);
+                } else {
+                    // Affichage basique pendant le chargement
+                    g.setColor(Color.BLACK);
+                    g.fillRect(0, 0, getWidth(), getHeight());
+                    g.setColor(Color.WHITE);
+                    g.drawString("Chargement en cours...", getWidth()/2 - 50, getHeight()/2);
+                }
+            }
+        };
+
+        MAPMONDE.setBounds(0, 0, getWidth(), getHeight());
+        MAPMONDE.setOpaque(false);
+
+        // Configuration des panels de détails (structure de base seulement)
+        moredetailsPanel.setLayout(new BorderLayout());
+        moredetailsPanel.setBounds(0, 75, 800, 900);
+        moredetailsPanel.setOpaque(false);
+        moredetailsPanel.setVisible(false);
+
+        detailsPanel.setLayout(new BorderLayout());
+        detailsPanel.setBounds(0, 75, 800, 900);
+        detailsPanel.setBackground(new Color(72, 108, 104, 255));
+        detailsPanel.setOpaque(true);
+        detailsPanel.setVisible(false);
+
+        // Création des boutons de base
+        setupBasicButtons();
+    }
+    private void setupBasicButtons() {
+        // Bouton Quit
+        quitButton.setBounds(1450, 800, 80, 30);
+        quitButton.addActionListener(e -> {
+            quittingwithbutton(e);
+            Login.mondeOpen = false;
+        });
+
+        // Bouton Repaint
+        repaintButton.setBounds(1450, 750, 80, 30);
+        repaintButton.addActionListener(this::repaintwithbutton);
+
+        // Bouton Reset (Admin)
+
+        resetButton.setBounds(1450, 700, 80, 30);
+        resetButton.addActionListener(e -> repo.clearAllFactionClaims());
+
+        // Bouton de basculement vue faction
+        factionViewToggle.setText("View: Normal");
+
+        factionViewToggle.setBounds(1450, 650, 130, 30);
+        factionViewToggle.setFont(new Font("Arial", Font.BOLD, 10));
+        factionViewToggle.setVisible(false);
+        factionViewToggle.addActionListener(e -> toggleFactionView());
+    }
+    private void renderFullMap(Graphics g) {
+        Graphics2D g2d = (Graphics2D) g.create();
+
+        // High-quality rendering
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+
+        // Draw background map
+        if (mapmonde != null) {
+            int w = (int) (imgWidth * zoomFactor);
+            int h = (int) (imgHeight * zoomFactor);
+            g2d.drawImage(mapmonde, (int) imgX, (int) imgY, w, h, null);
+        }
+
+        // Le reste du rendu hexagonal...
+        renderHexagons(g2d);
+
+        g2d.dispose();
+    }
+    private void renderHexagons(Graphics2D g2d){
+
+
+        double unitSize = HEX_SIZE * zoomFactor;
+        double horiz = 1.5 * unitSize;
+        double vert = Math.sqrt(3) * unitSize;
+
+        float stroke = 0.01f;
+        g2d.setStroke(new BasicStroke(stroke, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER));
+        AffineTransform orig = g2d.getTransform();
+
+        int ROWS = 50;
+        int COLS = 100;
+
+        // 🆕 MODIFIÉ: Rendu avec FoW
+        for (int row = 0; row < ROWS; row++) {
+            for (int col = 0; col < COLS; col++) {
+                double cx = imgX + col * horiz;
+                double cy = imgY + row * vert + ((col & 1) == 1 ? vert * 0.5 : 0);
+
+                String key = "hex_" + col + "_" + row;
+                SafeHexDetails data = hexCache.get(key);
+                if (data == null) continue;
+
+                // 🆕 NOUVEAU: Rendu avec Fog of War
+                renderHexWithFow(g2d, orig, cx, cy, unitSize, key, data, col, row);
+            }
+        }
+
+        g2d.dispose();
+    }
+    private void performAllInitialization() {
+        // Tout le code d'initialisation lourde actuellement dans le constructeur
+        initializePlayerFactionList();
+        repo.addAllHexes(50, 100);
+        initializeCache();
+        cacheInitialized = true;
+        preloadAllImages();
+        loadMainIcons();
+
+        finalizeUISetup();
+    }
+    public void finalizeUISetup() {
+        // Ajout des composants au layeredPane
+        layeredPane.add(MAPMONDE, Integer.valueOf(1));
+        layeredPane.add(detailsPanel, Integer.valueOf(2));
+        layeredPane.add(moredetailsPanel, Integer.valueOf(2));
+        layeredPane.add(quitButton, Integer.valueOf(3));
+        layeredPane.add(repaintButton, Integer.valueOf(3));
+        layeredPane.add(resetButton, Integer.valueOf(3));
+        layeredPane.add(factionViewToggle, Integer.valueOf(3));
+
+        if (Login.currentUser.equals("Admin")) {
+            factionViewToggle.setVisible(true);
+        }
+
+        if (!MainMenu.isFactionMenuOpen && Login.mondeOpen && LoadingWindow.audioOkStart) {
+            audio.playHexMusicMenu();
+        }
+
+        SwingUtilities.invokeLater(() -> {
+            panelWidth = layeredPane.getWidth();
+            panelHeight = layeredPane.getHeight();
+            repaint();
+            setInitialView();
+        });
     }
 }
+

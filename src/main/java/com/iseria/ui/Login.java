@@ -52,7 +52,7 @@ public class Login extends JFrame implements ActionListener {
 
         backgroundImage = loadRandomBackgroundImage();
 
-        users.put("Admin", "admin");
+        users.put("Admin", "");
         users.put("Bladjorn", "orange");
         users.put("Klowh", "poing");
         users.put("t", "t");
@@ -70,8 +70,9 @@ public class Login extends JFrame implements ActionListener {
 
         setupTransparentComponents();
         setupWindow();
-        //ListJavaFonts.printFonts(); //Prints for Logo Police Choice
         layoutComponents();
+        Login.this.toFront();
+        this.requestFocus();
     }
     private JComponent createTransparentTextField(int columns) {
         // Panel wrapper avec fond semi-transparent
@@ -153,12 +154,20 @@ public class Login extends JFrame implements ActionListener {
 
         // ✨ Actions (inchangées)
         LOGIN.addActionListener(this);
+        text1.addActionListener(e -> LOGIN.doClick());
         text2.addActionListener(e -> LOGIN.doClick());
     }
     private void setupWindow() {
         setTitle("Iseria Logger");
         setSize(1600, 900);
-        setLocationRelativeTo(null);
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        int screenWidth = screenSize.width;
+        int screenHeight = screenSize.height;
+        int windowWidth = 1600;
+        int windowHeight = 900;
+        int x = (screenWidth - windowWidth) / 2;
+        int y = (screenHeight - windowHeight) / 2;
+        this.setLocation(x, y);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
 
@@ -259,7 +268,10 @@ public class Login extends JFrame implements ActionListener {
             currentUser = username;
             MainMenu mainMenu = new MainMenu(data, audio, repo);
             mainMenu.setVisible(true);
-            this.dispose();
+            mainMenu.toBack();
+            new javax.swing.Timer(500, t1 -> {((javax.swing.Timer)t1.getSource()).stop(); mainMenu.toFront();;}).start();
+            new javax.swing.Timer(500, t2 -> {((javax.swing.Timer)t2.getSource()).stop(); this.dispose();}).start();
+
         } else {
             JOptionPane optionPane = new JOptionPane(
                     "Incorrect login or password",

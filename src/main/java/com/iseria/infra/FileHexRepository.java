@@ -33,7 +33,7 @@ public class FileHexRepository implements IHexRepository {
                 // 🔍 LOG & CLEANUP
                 loaded.keySet().forEach(key -> {
                     if (key == null) {
-                        System.err.println("❌ Clé null chargée depuis hexgrid.dat");
+                        //System.err.println("❌ Clé null chargée depuis hexgrid.dat");
                         Thread.dumpStack();
                     }
                 });

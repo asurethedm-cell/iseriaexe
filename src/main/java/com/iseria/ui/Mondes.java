@@ -126,7 +126,7 @@ public class Mondes extends JFrame {
         setTitle("Carte Du Jeu");
         setSize(windowWidth, windowHeight);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setResizable(false);
+        setResizable(true);
         setLocation(x, y);
 
         addKeyListener(new KeyAdapter() {
@@ -281,7 +281,7 @@ public class Mondes extends JFrame {
         factionViewToggle.addActionListener(e -> toggleFactionView());
         initializePlayerFactionList();
 
-        repo.addAllHexes(100, 50);
+        repo.addAllHexes(50, 100);
         initializeCache();
         cacheInitialized = true;
         preloadAllImages();
@@ -397,13 +397,9 @@ public class Mondes extends JFrame {
                     }
                     if (e.isControlDown()&&Login.currentUser.equals("Admin")) {
                         setVisibilityForAllPlayerFactions(hexKey);
-                        return; // Ne pas ouvrir DetailedView
+                        repaint();
                     }
-                    if (detailViewOpen) {
-                        closeDetailView();
-                    }
-                    resetIndexValue();
-                    DetailedView();
+
                 }
 
             }
@@ -1095,44 +1091,32 @@ public class Mondes extends JFrame {
                 int row = baseRow + dRow;
 
                 if (col < 0 || col >= 100 || row < 0 || row >= 50) continue;
-
                 if (isPointInHexagon(col, row, x, y)) {
                     labelclick = new Point(col, row);
                     System.out.println("===========================================");
                     hexKey = "hex_" + labelclick.x + "_" + labelclick.y;
-                    System.out.println("hex cliqué : " + hexKey);
                     HexDetails details = repo.getHexDetails(hexKey);
-                    System.out.println("Claim : "+details.getFactionClaim());
-                    System.out.println("===========================================");
-                    System.out.println(" ");
-                    System.out.println("===========================================");
-
-                    return;
-                }
-                if (isPointInHexagon(col, row, x, y)) {
-                    labelclick = new Point(col, row);
-                    hexKey = "hex_" + labelclick.x + "_" + labelclick.y;
-                    HexDetails details = repo.getHexDetails(hexKey);
-
                     String currentFactionId = MainMenu.getCurrentFactionId();
                     boolean isDiscovered = details.isDiscoveredBy(currentFactionId);
-                    boolean isOwned = currentFactionId.equals(details.getFactionClaim());
-
+                    boolean isNearButFar = isObscuredHex(col, row, currentFactionId);
+                    System.out.println("hex cliqué : " + hexKey);
+                    System.out.println("Claim : "+details.getFactionClaim());
+                    System.out.println("===========================================");
+                    System.out.println("isNearButFar ? "+ isNearButFar);
                     if (isAdmin || isDiscovered) {
-                        // Comportement normal - ouvrir DetailedView
                         if (detailViewOpen) closeDetailView();
                         resetIndexValue();
                         DetailedView();
-                        alphaCache.clear();
-
-                    } else if (isOwned) {
-                        // Hex fantôme - proposer exploration
-                        openFowManagementDialog(hexKey);
-
-                    } else {
-                        // Hex obscurci - message d'information
+                        return;
+                    }
+                    if (isNearButFar) {
                         JOptionPane.showMessageDialog(this,
-                                "🌫️ Territoire inexploré\nVous devez d'abord explorer cette zone.",
+                                "🌫️ Exploration.Placeholder",
+                                "Zone inconnue", JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                "🌫️ Territoire inexploré\nVous devez d'abord explorer les zones précédentes.",
                                 "Zone inconnue", JOptionPane.INFORMATION_MESSAGE);
                     }
                     return;
@@ -1246,6 +1230,7 @@ public class Mondes extends JFrame {
             }
 
             // Rafraîchir la carte
+            alphaCache.clear();
             MAPMONDE.repaint();
 
             JOptionPane.showMessageDialog(this,
@@ -1297,7 +1282,6 @@ public class Mondes extends JFrame {
             }
 
             detailViewOpen = false;
-            System.out.println("Detail view closed");
         }
     }
 
@@ -1348,7 +1332,8 @@ public class Mondes extends JFrame {
         }
         else {
             float alpha = calculateDistanceAlpha(col, row, viewingFactionId);
-            if (alpha < 1.0f) {
+            if (Float.isNaN(alpha)) { renderHiddenHex(g2d); }
+            if (alpha < 0.9f) {
                 renderProgressiveHex(g2d, data, alpha);
             } else {
                 renderObscuredHex(g2d);
@@ -1364,11 +1349,12 @@ public class Mondes extends JFrame {
         } else {
             // Partially fogged: 0 < alpha < 1
             float alpha = calculateDistanceAlpha(col, row, viewingFactionId);
-            if (alpha > 0f && alpha < 1f) {
-                drawHexLabelFogged(g2d, col, row, cx, cy, unitSize, alpha);
-            } else {
-                // Full fog
-                drawHexLabelObscured(g2d, col, row, cx, cy, unitSize);
+            if (!Float.isNaN(alpha)) {
+                if (alpha > 0f && alpha < 0.9f) {
+                    drawHexLabelFogged(g2d, col, row, cx, cy, unitSize, alpha);
+                } else {
+                    drawHexLabelObscured(g2d, col, row, cx, cy, unitSize);
+                }
             }
         }
     }
@@ -1381,7 +1367,7 @@ public class Mondes extends JFrame {
         int minDistance = Integer.MAX_VALUE;
         for (Map.Entry<String, HexDetails> entry : hexCache.entrySet()) {
             if (entry.getValue().isDiscoveredBy(factionId)) {
-                java.lang.String[] coords = entry.getKey().split("_");
+                String[] coords = entry.getKey().split("_");
                 int hexCol = Integer.parseInt(coords[1]);
                 int hexRow = Integer.parseInt(coords[2]);
                 int distance = Math.abs(col - hexCol) + Math.abs(row - hexRow);
@@ -1390,14 +1376,15 @@ public class Mondes extends JFrame {
             }
         }
         float alpha;
-        if (minDistance == 0)      alpha = 0.0f;
-        else if (minDistance == 1) alpha = 0.5f;
-        else if (minDistance == 2) alpha = 0.7f;
-        else                        alpha = 1.0f;
-        // Stockage en cache
+        if (minDistance == 0)       alpha = 0.0f;
+        else if (minDistance == 1)  alpha = 0.5f;
+        else if (minDistance == 2)  alpha = 0.7f;
+        else if (minDistance == 3)  alpha = 0.9f;
+        else                        alpha = Float.NaN; // trop loin
         alphaCache.put(key, alpha);
         return alpha;
     }
+
     private void renderProgressiveHex(Graphics2D g2d, HexDetails data, float alpha) {
         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
         g2d.setColor(Color.BLACK);
@@ -1467,6 +1454,7 @@ public class Mondes extends JFrame {
         g2d.setColor(Color.DARK_GRAY);
         g2d.draw(unitHexagon);
     }
+
     private void drawHexLabelObscured(Graphics2D g2d, int col, int row,
                                       double cx, double cy, double unitSize) {
         g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int)(14 * zoomFactor))));
@@ -1483,6 +1471,12 @@ public class Mondes extends JFrame {
         // Texte blanc sur fond noir
         g2d.setColor(Color.WHITE);
         g2d.drawString(label, tx, ty);
+    }
+    private void renderHiddenHex(Graphics2D g2d) {
+        g2d.setColor(Color.BLACK);
+        g2d.fill(unitHexagon);
+        g2d.setColor(Color.BLACK);
+        g2d.draw(unitHexagon);
     }
     private void drawEmblemIfNotFree(Graphics2D g2d, HexDetails data,
                                      double cx, double cy, double unitSize, int textW) {
@@ -1629,5 +1623,10 @@ public class Mondes extends JFrame {
         // Rafraîchir la carte
         MAPMONDE.repaint();
         audio.playClick();
+    }
+    private boolean isObscuredHex(int col, int row, String factionId) {
+        float alpha = calculateDistanceAlpha(col, row, factionId);
+        // alpha NaN signifie “trop loin => pas de bordure, pas d’étiquette”
+        return alpha >= 0.9f && alpha <=1.0f;
     }
 }

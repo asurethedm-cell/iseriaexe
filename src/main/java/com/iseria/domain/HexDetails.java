@@ -5,8 +5,8 @@ import com.iseria.service.LogisticsService;
 import java.io.*;
 import java.util.*;
 
-/** Pure domain model for a map hex. No UI, no I/O. */
 public class HexDetails implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private String hexKey;
@@ -70,7 +70,7 @@ public class HexDetails implements Serializable {
         this.fortWorkerCount = other.fortWorkerCount;
         this.selectedResourceTypes = new HashMap<>(other.selectedResourceTypes);
         this.selectedResourceProductions = new HashMap<>(other.selectedResourceProductions);
-        this.livestockFarm = new LivestockFarm(hexKey);
+        this.livestockFarm = new LivestockFarm(other.hexKey);
         this.assignedVehicles = new ArrayList<>(other.assignedVehicles);
         this.discoveredByFaction = new HashSet<>(other.discoveredByFaction);
     }
@@ -210,7 +210,7 @@ public class HexDetails implements Serializable {
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (hexKey == null) {
-            System.err.println("❌ HexDetails désérialisé avec hexKey == null !");
+            //System.err.println("❌ HexDetails désérialisé avec hexKey == null !");
             Thread.dumpStack();
         }
         if (selectedResourceTypes == null) {

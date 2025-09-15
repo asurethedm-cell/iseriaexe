@@ -10,7 +10,8 @@ import java.io.File;
 
 public interface IHexRepository {
     Map<String,HexDetails> loadAll();
-     void save(HexDetails details);
+    Map<String,SafeHexDetails> loadSafeAll();
+    void save(HexDetails details);
     HexDetails getHexDetails(String hexKey);
     void updateHexDetails(String hexKey, HexDetails details);
     int[] getHexPosition(String hexName);

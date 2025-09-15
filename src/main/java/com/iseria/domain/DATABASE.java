@@ -1225,7 +1225,7 @@ public class DATABASE {
     }
 
 // ========== MÉTHODES D'INITIALISATION ==========
-
+//=================PRODUCTION DATA==========================\\
     private static void initializeMainBuildingResources() {
         // Mines - MAIN_12_X
         MAIN_BUILDING_RESOURCES.put(MAIN_12_0, Arrays.asList(FER, OR, ARGENT, EMERAUDE, PETIT_DIAMANT, PETIT_RUBIS, SAPPHIRE, EMERAUDE_VERTE_BRILLANTE, GRAND_DIAMANT,  GRAND_RUBIS, RUBIS_ÉTOILÉ, SAPPHIRE_ÉTOILÉ, AIGUE_MARINE, OPALE, PERLE_NOIRE, TOPAZE));

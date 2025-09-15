@@ -1,11 +1,13 @@
 package com.iseria.domain;
 
+import java.io.Serial;
 import java.util.*;
 import java.io.Serializable;
 
 public class StorageWarehouse implements Serializable {
 
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 2L;
     private final String hexKey;
     private final DATABASE.MainBuilding buildingType;
     private final int tier;

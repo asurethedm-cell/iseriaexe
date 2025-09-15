@@ -23,10 +23,10 @@ public class SafeHexDetails implements Serializable {
     private volatile int fortWorkerCount = 0;
     
     // ✅ COLLECTIONS - Thread-safe
-    private final Map<String, String> selectedResourceTypes = new ConcurrentHashMap<>();
-    private final Map<String, Double> selectedResourceProductions = new ConcurrentHashMap<>();
-    private final Set<String> discoveredByFaction = ConcurrentHashMap.newKeySet();
-    private final List<TransportVehicle> assignedVehicles = Collections.synchronizedList(new ArrayList<>());
+    private Map<String,String> selectedResourceTypes = new ConcurrentHashMap<>();
+    private Map<String,Double>   selectedResourceProductions = new ConcurrentHashMap<>();
+    private Set<String>          discoveredByFaction = ConcurrentHashMap.newKeySet();
+    private List<TransportVehicle> assignedVehicles = Collections.synchronizedList(new ArrayList<>());
     private Map<String,List<String>> buildingWorkers = new ConcurrentHashMap<>();
     private Map<String,Boolean> lockedSlots = new ConcurrentHashMap<>();
 
@@ -46,9 +46,7 @@ public class SafeHexDetails implements Serializable {
     
     private void initializeDefaults() {
         // Initialisation thread-safe des collections
-        selectedResourceTypes.put("main", null);
-        selectedResourceTypes.put("aux", null);
-        selectedResourceTypes.put("fort", null);
+
         lockedSlots.put("main", false);
         lockedSlots.put("aux",  false);
         lockedSlots.put("fort", false);
@@ -143,7 +141,18 @@ public class SafeHexDetails implements Serializable {
         if (!VALIDATION_KEY.equals(validationKey)) {
             throw new InvalidObjectException("Invalid validation key: " + validationKey);
         }
-        
+        if (selectedResourceTypes == null) {
+            selectedResourceTypes = new ConcurrentHashMap<>();
+        }
+        if (selectedResourceProductions == null) {
+            selectedResourceProductions = new ConcurrentHashMap<>();
+        }
+        if (discoveredByFaction == null) {
+            discoveredByFaction = ConcurrentHashMap.newKeySet();
+        }
+        if (assignedVehicles == null) {
+            assignedVehicles = Collections.synchronizedList(new ArrayList<>());
+        }
         hexKey = in.readUTF();
         factionClaim = in.readUTF();
         mainBuildingIndex = in.readInt();

@@ -23,7 +23,7 @@ public class Main {
 
             diagnoseCurrentState(hexRepository);
             var hexes = hexRepository.loadSafeAll();
-            System.out.println("Loaded " + hexes.size() + " hexes");
+           // System.out.println("Loaded " + hexes.size() + " hexes");
             new Login(dataProvider, audioService, hexRepository).setVisible(true);
         });
 

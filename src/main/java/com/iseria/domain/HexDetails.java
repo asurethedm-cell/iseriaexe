@@ -4,7 +4,7 @@ import com.iseria.service.LogisticsService;
 
 import java.io.*;
 import java.util.*;
-
+@Deprecated
 public class HexDetails implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;

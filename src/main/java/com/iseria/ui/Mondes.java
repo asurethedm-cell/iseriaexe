@@ -92,6 +92,7 @@ public class Mondes extends JFrame {
     private final ConcurrentHashMap<String, SafeHexDetails> hexCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Color> factionColorCache = new ConcurrentHashMap<>();
     private boolean cacheInitialized = false;
+    private boolean visClicked = false;
     public  boolean isAdmin = "Admin".equals(Login.currentUser);
     private Faction chosen;
     String emblemPath = FactionRegistry.getEmblemPathFor(getCurrentFactionId());
@@ -130,7 +131,7 @@ public class Mondes extends JFrame {
         setTitle("Carte Du Jeu");
         setSize(windowWidth, windowHeight);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setResizable(true);
+        setResizable(false);
         setLocation(x, y);
 
         addKeyListener(new KeyAdapter() {
@@ -389,22 +390,26 @@ public class Mondes extends JFrame {
                     lastMouseY = e.getY();
                     setCursor(MapDragging);
 
-                } else if (((!detailsPanel.isVisible() || !moredetailsPanel.isVisible() || !detailsPanel.getBounds().contains(e.getPoint()))
-                ) && (e.getButton() == MouseEvent.BUTTON3)) {
+                }
+
+                else if (((!detailsPanel.isVisible() || !moredetailsPanel.isVisible()
+                        || !detailsPanel.getBounds().contains(e.getPoint()))) && (e.getButton() == MouseEvent.BUTTON3)){
 
                     audio.playClick();
                     handleHexClick(e.getX(), e.getY());
                     String label = hexLabels.get(labelclick);
                     if (label == null) {
-                        // clicked empty hex—ignore
                         return;
-                    }
-                    if (e.isControlDown()&&Login.currentUser.equals("Admin")) {
+                    } else if (e.isControlDown()&&Login.currentUser.equals("Admin")) {
+                        visClicked = true;
                         setVisibilityForAllPlayerFactions(hexKey);
-                        repaint();
+                        MAPMONDE.repaint();
+
                     }
 
+                    visClicked = false;
                 }
+
 
             }
 
@@ -424,7 +429,6 @@ public class Mondes extends JFrame {
             return;
         }
 
-        // Récupérer toutes les factions de joueurs
         Collection<Faction> allFactions = FactionRegistry.all();
         Set<String> playerFactionIds = allFactions.stream()
                 .filter(Faction::getIsPlayer)
@@ -434,11 +438,7 @@ public class Mondes extends JFrame {
         // Appliquer la visibilité
         SafeHexDetails hex = repo.getHexDetails(hexKey);
         Set<String> currentDiscovered = new HashSet<>(hex.getDiscoveredByFaction());
-
-        // Ajouter toutes les factions de joueurs
         currentDiscovered.addAll(playerFactionIds);
-
-        // Mettre à jour
         hex.setDiscoveredByFaction(currentDiscovered);
         repo.updateHexDetails(hexKey, hex);
 
@@ -1145,7 +1145,7 @@ public class Mondes extends JFrame {
                     System.out.println("Claim : "+details.getFactionClaim());
                     System.out.println("===========================================");
                     System.out.println("isNearButFar ? "+ isNearButFar);
-                    if (isAdmin || isDiscovered) {
+                    if ((isAdmin || isDiscovered)&&!visClicked) {
                         if (detailViewOpen) closeDetailView();
                         resetIndexValue();
                         DetailedView();

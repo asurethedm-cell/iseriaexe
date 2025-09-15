@@ -1,10 +1,12 @@
 package com.iseria.domain;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.util.*;
 
 public class LivestockFarm implements Serializable {
-    private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 2L;
 
     private Map<DATABASE.LivestockData, LivestockHerd> herds = new HashMap<>();
     private String hexKey;

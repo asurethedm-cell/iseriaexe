@@ -202,92 +202,90 @@ public class DATABASE {
             MAIN_1_0("Main1", "Donjon"),
 
 
-            MAIN_2_0("Main2","Abbaye"),
-            MAIN_2_1("Main3", "Abbaye Tier 1", 30,0,20,15,0,0,1),
+            MAIN_2_0("Main2","Abbaye",0,0,0,0,0,0,0,"Permet la récolte de Ressources de Luxes en plus grande quantité. Accueille 20-100 Moines."),
+            MAIN_2_1("Main3", "Abbaye Tier 1", 30,0,20,15,0,0,1,""),
 
-            MAIN_3_0("Main4","Carrière - Argile"),
-            MAIN_3_1("Main5", "Carrière - Argile Tier 1", 45,0,5,10, 0,0,1),
+            MAIN_3_0("Main4","Carrière - Argile",0,0,0,0,0,0,0," Permet de récolter de l'Argile"),
+            MAIN_3_1("Main5", "Carrière - Argile Tier 1", 45,0,5,10, 0,0,1," Permet de récolter de l'Argile"),
 
-            MAIN_4_0("Main6","Carrière - Pierre"),
-            MAIN_4_1("Main7", "Carrière - Pierre Tier 1", 45,0,5,10,0,0,1),
-            MAIN_4_2("Main8","Carrière - Pierre Tier 2", 10,0,100,50,25,0,2),
+            MAIN_4_0("Main6","Carrière - Pierre",0,0,0,0,00,0,0," Permet de récolter de la Pierre"),
+            MAIN_4_1("Main7", "Carrière - Pierre Tier 1", 45,0,5,10,0,0,1, " Permet de récolter de la Pierre"),
+            MAIN_4_2("Main8","Carrière - Pierre Tier 2", 10,0,100,50,25,0,2, " Permet de récolter de la Pierre"),
 
-            MAIN_5_0("Main9","Commanderie"),
-            MAIN_5_1("Main10", "Commanderie Tier 1", 25,0,25,10,0,0,1  ),
+            MAIN_5_0("Main9","Commanderie",0,0,0,0,0,0,0,"Donne un bonus de +1 Moral d’Armée à toute armée Allié ou plus passant par la case."),
+            MAIN_5_1("Main10", "Commanderie Tier 1", 25,0,25,10,0,0,1, "Donne un bonus de +1 Moral d’Armée à toute armée Allié ou plus passant par la case."),
 
-            MAIN_6_0("Main11","Avant-Poste", 10,0,10,0,0,500,1),
+            MAIN_6_0("Main11","Avant-Poste", 10,0,10,0,0,500,1, "Récole  5 Bois | 100 Ors | 10 Pierres au choix à sa construction, redirige les attaques des tuiles adjacentes."),
 
-            MAIN_7_0("Main12", "Couvent"),
-            MAIN_7_1("Main13", "Couvent Tier 1", 25,0,15,10,0,0,1),
+            MAIN_7_0("Main12", "Couvent",0,0,0,0,0,0,0," Permet la récolte de Ressources de Luxes en moins grandes quantités, mais donne un bonus de recherche égale à 50% de la valeur de la Ressource de Luxe"),
+            MAIN_7_1("Main13", "Couvent Tier 1", 25,0,15,10,0,0,1, " Permet la récolte de Ressources de Luxes en moins grandes quantités, mais donne un bonus de recherche égale à 60% de la valeur de la Ressource de Luxe"),
 
-            MAIN_8_0("Main14", "Scierie"),
-            MAIN_8_1("Main15","Scierie Tier 1", 45,0,5,10,0,0,1),
+            MAIN_8_0("Main14", "Scierie",0,0,0,0,0,0,0,"Permet de transformer le Bois en Planche."),
+            MAIN_8_1("Main15","Scierie Tier 1", 45,0,5,10,0,0,1, "Permet de transformer le Bois en Planche."),
 
-            MAIN_9_0("Main16", "Tenturerie"),
-            MAIN_9_1("Main17", "Tenturerie Tier 1",15,0,35,10,0,0,1),
+            MAIN_9_0("Main16", "Tenturerie",0,0,0,0,0,0,0,"Permet l’élaboration de colorant"),
+            MAIN_9_1("Main17", "Tenturerie Tier 1",15,0,35,10,0,0,1,"Permet l’élaboration de colorant"),
 
-            MAIN_10_0("Main18", "Entrepôt",40,0,40,0,0,0,0),
-            MAIN_10_1("Main19", "Entrepôt Tier 1",60,0,60,0,0,0,1),
-            MAIN_10_2("Main20", "Entrepôt Tier 2",100,0,100,0,0,0,2),
+            MAIN_10_0("Main18", "Entrepôt",40,0,40,0,0,0,0, "Permet stocker et d’accéder aux Ressources."),
+            MAIN_10_1("Main19", "Entrepôt Tier 1",60,0,60,0,0,0,1,"Permet stocker et d’accéder aux Ressources."),
+            MAIN_10_2("Main20", "Entrepôt Tier 2",100,0,100,0,0,0,2,"Permet stocker et d’accéder aux Ressources."),
 
-            MAIN_11_0("Main21","Ferme de Légume"),
-            MAIN_11_1("Main22", "Ferme de Légume Tier 1", 45,0,5,10,0,0,1),
-            MAIN_11_2("Main23", "Ferme de Légume Tier 2",10,0,100,50,25,0,2),
+            MAIN_11_0("Main21","Ferme de Légume",0,0,0,0,0,0,0,"Permet de récolter de la nourriture sous forme de Légumes"),
+            MAIN_11_1("Main22", "Ferme de Légume Tier 1", 45,0,5,10,0,0,1,"Permet de récolter de la nourriture sous forme de Légumes"),
+            MAIN_11_2("Main23", "Ferme de Légume Tier 2",10,0,100,50,25,0,2,"Permet de récolter de la nourriture sous forme de Légumes"),
 
-            MAIN_12_0("Main24","Mine"),
-            MAIN_12_1("Main25","Mine Tier 1", 45,5,0,10,0,0,1),
-            MAIN_12_2("Main26","Mine Tier 2", 25,15,50,50,25,0,2),
+            MAIN_12_0("Main24","Mine",0,0,0,0,0,0,0,"Permet de récolter du Minerais ou des Pierres Précieuse"),
+            MAIN_12_1("Main25","Mine Tier 1", 45,5,0,10,0,0,1,"Permet de récolter du Minerais ou des Pierres Précieuse"),
+            MAIN_12_2("Main26","Mine Tier 2", 25,15,50,50,25,0,2,"Permet de récolter du Minerais ou des Pierres Précieuse"),
 
-            MAIN_13_0("Main27","Oratoire",0,0,0,0,0,0,0),
-            MAIN_13_1("Main28","Oratoire Tier 1",25,0,0,25,0,0,1, EnumSet.of(SpecialResource.REG_ARTWORK)),
+            MAIN_13_0("Main27","Oratoire",0,0,0,0,0,0,0,"Permet de recevoir des faveurs envers le clergé du dieu auquel le bâtiment est dédié."),
+            MAIN_13_1("Main28","Oratoire Tier 1",25,0,0,25,0,0,1, EnumSet.of(SpecialResource.REG_ARTWORK), "Permet de recevoir des faveurs envers le clergé du dieu auquel le bâtiment est dédié"),
 
-            Main_14_0("Main29", "Thermes"),
-            MAIN_14_1("Main30","Thermes Tier 1", 20,0,10,5,0,0,1),
+            Main_14_0("Main29", "Thermes",0,0,0,0,0,0,0,"Permet d'obtenir de l'eau purifiée à destination des alchimistes ou de le transformer en lieu touristique générant des pièces d'or. Permet d'augmenter la limite de personnel et troupes maximales."),
+            MAIN_14_1("Main30","Thermes Tier 1", 20,0,10,5,0,0,1, "Permet d'obtenir de l'eau purifiée à destination des alchimistes ou de le transformer en lieu touristique générant des pièces d'or. Permet d'augmenter la limite de personnel et troupes maximales."),
 
-            MAIN_15_0("Main31", "Atelier de Marbrier"),
-            MAIN_15_1("Main32", "Atelier de Marbrier Tier 1",10,0,40,10,0,0,1 ),
+            MAIN_15_0("Main31", "Atelier de Marbrier",0,0,0,0,0,0,0," Permet le travail du marbre, donne des bonus d’Artisanat aux Sculpteurs, bonus à la constructions des Merveilles."),
+            MAIN_15_1("Main32", "Atelier de Marbrier Tier 1",10,0,40,10,0,0,1," Permet le travail du marbre, donne des bonus d’Artisanat aux Sculpteurs, bonus à la constructions des Merveilles." ),
 
-            MAIN_16_0("Main33", "Observatoire"),
-            MAIN_16_1("Main34", "Observatoire Tier 1",30,0,5,10,0,0,1),
+            MAIN_16_0("Main33", "Observatoire",0,0,0,0,0,0,0,"Permet des Bonus sur les recherches, bonus sur les jets d’astrologies. 5%/10%/20%"),
+            MAIN_16_1("Main34", "Observatoire Tier 1",30,0,5,10,0,0,1,"Permet des Bonus sur les recherches, bonus sur les jets d’astrologies. 5%/10%/20%"),
 
-            MAIN_17_0("Main35", "Saliculture"),
-            MAIN_17_1("Main36", "Saliculture Tier 1", 20,0,15,5,0,0,1),
+            MAIN_17_0("Main35", "Saliculture",0,0,0,0,0,0,0,"Permet la récolte de Sel Marin."),
+            MAIN_17_1("Main36", "Saliculture Tier 1", 20,0,15,5,0,0,1, "Permet la récolte de Sel Marin."),
 
-            MAIN_18_0("Main37", "Corderie"),
-            MAIN_18_1("Main38", "Corderie Tier 1", 15,0,35,10,0,0,1),
+            MAIN_18_0("Main37", "Corderie",0,0,0,0,0,0,0,"Permet l’élaboration de cordages plus poussés ou en plus grande quantité."),
+            MAIN_18_1("Main38", "Corderie Tier 1", 15,0,35,10,0,0,1,"Permet l’élaboration de cordages plus poussés ou en plus grande quantité."),
 
-            MAIN_19_0("Main39", "Atelier de Soufflage de Verre"),
-            MAIN_19_1("Main40", "Atelier de Soufflage de Verre Tier 1", 15,0,35,10,0,0,1),
+            MAIN_19_0("Main39", "Atelier de Soufflage de Verre",0,0,0,0,0,0,0," Permet la manufacture d’objets en verre."),
+            MAIN_19_1("Main40", "Atelier de Soufflage de Verre Tier 1", 15,0,35,10,0,0,1," Permet la manufacture d’objets en verre."),
 
-            MAIN_20_0("Main41", "Torréfacteur"),
-            MAIN_20_1("Main42", "Torréfacteur Tier 1", 15,0,35,10,0,0,1),
+            MAIN_20_0("Main41", "Torréfacteur",0,0,0,0,0,0,0,"Permet l’élaboration de Malt Torréfié, Café, Maïs, Cacao."),
+            MAIN_20_1("Main42", "Torréfacteur Tier 1", 15,0,35,10,0,0,1,"Permet l’élaboration de Malt Torréfié, Café, Maïs, Cacao."),
 
-            MAIN_21_0("Main43", "Four à Goudron"),
-            MAIN_21_1("Main44","Four à Goudron Tier 1", 40,0,5,5,0,0,1),
+            MAIN_21_0("Main43", "Four à Goudron",0,0,0,0,0,0,0,"Permet de transformer du Bois en Charbon de Bois et en Goudron, nécessaire à l’entretien des Bâtiments Navals."),
+            MAIN_21_1("Main44","Four à Goudron Tier 1", 40,0,5,5,0,0,1,"Permet de transformer du Bois en Charbon de Bois et en Goudron, nécessaire à l’entretien des Bâtiments Navals."),
 
-            MAIN_22_0("Main45", "Tréfilerie"),
-            MAIN_22_1("Main46", "Tréfilerie Tier 1", 15,0,35,10,0,0,1),
+            MAIN_22_0("Main45", "Tréfilerie",0,0,0,0,0,0,0," Permet d’élaborer des Fils de métal."),
+            MAIN_22_1("Main46", "Tréfilerie Tier 1", 15,0,35,10,0,0,1," Permet d’élaborer des Fils de métal."),
 
-            MAIN_23_0("Main47", "Pépinière"),
+            MAIN_23_0("Main47", "Pépinière",0,0,0,0,0,0,0,"Réduit les Malus de Production d’Hiver des Fermes de 50%"),
             MAIN_23_1("Main48", "Pépinière Tier 1", 15,15,0,15,0,0,0,20),
 
-            MAIN_24_0("Main49", "Vergers"),
-            MAIN_24_1("Main50", "Vergers Tier 1", 20,0,10,20,0,0,1),
+            MAIN_24_0("Main49", "Vergers",0,0,00,0,0,0,0,"Permet la production de Fruits."),
+            MAIN_24_1("Main50", "Vergers Tier 1", 20,0,10,20,0,0,1,"Permet la production de Fruits."),
 
             MAIN_25_0("Main51", "Place-Forte"),
 
-            MAIN_26_0("Main52", "Camp de Bûcheron"),
+            MAIN_26_0("Main52", "Camp de Bûcheron",0,0,0,0,0,0,0,"Permet de récolter du Bois"),
 
-            MAIN_27_0("Main53", "Camp de Pêcheurs"),
+            MAIN_27_0("Main53", "Camp de Pêcheurs",0,0,0,0,0,0,0,"Permet de récolter du Poisson"),
 
-            MAIN_28_0("Main54", "Ferme de Céréale"),
-            MAIN_28_1("Main55", "Ferme de Céréale Tier 1", 45,0,5,10,0,0,1),
-            MAIN_28_2("Main56", "Ferme de Céréale Tier 2",10,0,100,50,25,0,2),
+            MAIN_28_0("Main54", "Ferme de Céréale",0,0,0,0,0,0,0,"Permet de récolter de la nourriture sous forme de Céréales"),
+            MAIN_28_1("Main55", "Ferme de Céréale Tier 1", 45,0,5,10,0,0,1,"Permet de récolter de la nourriture sous forme de Céréales"),
+            MAIN_28_2("Main56", "Ferme de Céréale Tier 2",10,0,100,50,25,0,2,"Permet de récolter de la nourriture sous forme de Céréales"),
 
-            MAIN_29_0("Main57","Pâturages"),
-            MAIN_30_0("Main58", "Camp de chasseurs"),
-
-            MAIN_1111("Main01", "Place-Forte");
+            MAIN_29_0("Main57","Pâturages", 0,0,0,0,0,0,0,""),
+            MAIN_30_0("Main58", "Camp de chasseurs",0,0,0,0,0,0,0,"Récolte de la Peau ou de la Nourriture");
 
 
             @Override
@@ -310,11 +308,12 @@ public class DATABASE {
             private final int costGold;
             private final int tier;
             private int costGlass;
+            private String description;
             private EnumSet<SpecialResource> specialResources;
 
 
             MainBuilding(String tag, String name, int costPierre, int costFer,  int costBois, int costPop,int costGemWeekly,
-                         int costGold, int tier){
+                         int costGold, int tier, String description){
                 this.tag = tag;
                 this.name = name;
                 this.costPierre = costPierre;
@@ -323,10 +322,11 @@ public class DATABASE {
                 this.costPop= costPop;
                 this.costGemWeekly = costGemWeekly;
                 this.costGold = costGold;
-                this.tier = tier;}
+                this.tier = tier;
+                this.description = description;}
 
             MainBuilding(String tag, String name, int costPierre, int costFer, int costBois, int costPop, int costGemWeekly,
-                         int costGold, int tier, EnumSet<SpecialResource> specialResources) {
+                         int costGold, int tier, EnumSet<SpecialResource> specialResources, String description) {
                 this.tag = tag;
                 this.name = name;
                 this.costPierre = costPierre;
@@ -337,6 +337,7 @@ public class DATABASE {
                 this.costGold = costGold;
                 this.tier = tier;
                 this.specialResources = specialResources;
+                this.description = description;
             }
 
             MainBuilding(String tag, String name, int costPierre, int costFer, int costBois, int costPop, int costGemWeekly,
@@ -354,7 +355,7 @@ public class DATABASE {
             }
 
             MainBuilding(String tag, String name) {
-                this(tag, name, 0, 0, 0, 0, 0, 0, 0);
+                this(tag, name, 0, 0, 0, 0, 0, 0, 0,"");
             }
 
 
@@ -509,6 +510,12 @@ public class DATABASE {
         }
 
     public enum ResourceType {
+
+        // BASE
+
+        ARGILE("Base", "","Argile", 3,false,0),
+        PIERRE("Base", "","Pierre - Brute", 10.5,false,0),
+        BOIS("Base", "","Bois - Tronc", 7.9,false,0),
 
 
         //ANIMAUX
@@ -719,6 +726,8 @@ public class DATABASE {
 
         //PRODUITS TRANSFORMES
 
+
+        GOUDRON("Transformé", "🔧", "Goudron", 0,true,15),
         PIERRE_TAILLÉE("Transformé", "🔧", "pierre_taillée", 0,true,0),
         CORDAGE("Transformé", "🔧", "cordage", 0,true,0),
         CUIR("Transformé", "🔧", "cuir", 0,true,0),
@@ -827,31 +836,31 @@ public class DATABASE {
         QUARTERMASTER("Bureau d'Intendance",   "Contre-maître",0.7,1,Set.of(MainBuilding.MAIN_1_0)),
         MERCHANTDDL("Bureau d'Intendance",   "Marchand des Cours du Donjon",5,1,Set.of(MainBuilding.MAIN_1_0)),
 
-        AMBASSADOR("Diplomatie","Ambassadeur",6,1,Set.of(MainBuilding.MAIN_1111)),
-        HERALD("Diplomatie","Herault",8.8,1,Set.of(MainBuilding.MAIN_1111)),
-        INTERPRET("Diplomatie","Interprête",2,1,Set.of(MainBuilding.MAIN_1111)),
-        MESSAGER("Diplomatie","Messager",3,1,Set.of(MainBuilding.MAIN_1111)),
+        AMBASSADOR("Diplomatie","Ambassadeur",6,1,Set.of(MAIN_25_0)),
+        HERALD("Diplomatie","Herault",8.8,1,Set.of(MainBuilding.MAIN_25_0)),
+        INTERPRET("Diplomatie","Interprête",2,1,Set.of(MainBuilding.MAIN_25_0)),
+        MESSAGER("Diplomatie","Messager",3,1,Set.of(MainBuilding.MAIN_25_0)),
 
 
-        APPRENTIS("Etude",  "Apprentis",1.5,1,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_1111)),
-        COPISTES("Etude",   "Professeur",5,1,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_1111)),
-        MAGE("Etude", "Mage", 0,2,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_1111)),
-        PRIEST("Etude", "Prêtre", 0,2,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_1111)),
-        SCRIBE("Etude",   "Scribe",2,1,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_1111)),
-        // WTF IDK //SCULPTEUR("Etude",   "Sculpteur",4,1,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_1111)),
+        APPRENTIS("Etude",  "Apprentis",1.5,1,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
+        COPISTES("Etude",   "Professeur",5,1,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
+        MAGE("Etude", "Mage", 0,2,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
+        PRIEST("Etude", "Prêtre", 0,2,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
+        SCRIBE("Etude",   "Scribe",2,1,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
+        // WTF IDK //SCULPTEUR("Etude",   "Sculpteur",4,1,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
 
-        ASSASSIN    ("Infomation", "Assassin",0,2,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_1111)),
-        ESPION("Infomation", "Espion",	0,2,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_1111)),
+        ASSASSIN    ("Infomation", "Assassin",0,2,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
+        ESPION("Infomation", "Espion",	0,2,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
         MENDIANT("Infomation", "Mendiant",0.01,0.01,Set.of(MainBuilding.MAIN_1_0)),
         MENESTREL("Infomation", "Ménestrel",	1,1,Set.of(MainBuilding.MAIN_1_0)),
 
         SCAV("Special", "Récupérateur",12,1,Set.of(), true, "hci"),
         STRATEGE("Special", "Stratège",5,1,Set.of(), true, "decimus"),
 
-        HOTELIER("Place-Forte","Hotelier",1,1,Set.of(MainBuilding.MAIN_1111)),
-        SQUIRE("Place-Forte" ,"Palefrenier",0.02,0.1,Set.of(MainBuilding.MAIN_1111)),
-        PORTIER("Place-Forte","Portier", 0.5,0.5,Set.of(MainBuilding.MAIN_1111)),
-        TEACHER("Place-Forte", "Professeur", 5,1,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_1111)),
+        HOTELIER("Place-Forte","Hotelier",1,1,Set.of(MainBuilding.MAIN_25_0)),
+        SQUIRE("Place-Forte" ,"Palefrenier",0.02,0.1,Set.of(MainBuilding.MAIN_25_0)),
+        PORTIER("Place-Forte","Portier", 0.5,0.5,Set.of(MainBuilding.MAIN_25_0)),
+        TEACHER("Place-Forte", "Professeur", 5,1,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
 
         ARROWMAKERS("Production", "Flêcheur", 0.5,0.5,Set.of(AuxBuilding.AUX_17_0)),
         BOATMAKER("Production", "Charpentier (bateaux)", 0.4, 0.5,Set.of(AuxBuilding.AUX_17_0)),
@@ -1243,11 +1252,11 @@ public class DATABASE {
         MAIN_BUILDING_RESOURCES.put(MAIN_28_2, Arrays.asList(BLÉ, ORGE, AVOINE, SEIGLE, RIZ));
 
         // Carrières - MAIN_3_X et MAIN_4_X
-        MAIN_BUILDING_RESOURCES.put(MAIN_3_0, Arrays.asList()); // Argile - TODO: ajouter ResourceType pour argile
-        MAIN_BUILDING_RESOURCES.put(MAIN_3_1, Arrays.asList()); // Argile Tier 1
-        MAIN_BUILDING_RESOURCES.put(MAIN_4_0, Arrays.asList()); // Pierre - TODO: ajouter ResourceType pour pierre
-        MAIN_BUILDING_RESOURCES.put(MAIN_4_1, Arrays.asList()); // Pierre Tier 1
-        MAIN_BUILDING_RESOURCES.put(MAIN_4_2, Arrays.asList()); // Pierre Tier 2
+        MAIN_BUILDING_RESOURCES.put(MAIN_3_0, Arrays.asList(ARGILE));
+        MAIN_BUILDING_RESOURCES.put(MAIN_3_1, Arrays.asList(ARGILE));
+        MAIN_BUILDING_RESOURCES.put(MAIN_4_0, Arrays.asList(PIERRE));
+        MAIN_BUILDING_RESOURCES.put(MAIN_4_1, Arrays.asList(PIERRE));
+        MAIN_BUILDING_RESOURCES.put(MAIN_4_2, Arrays.asList(PIERRE));
 
         // Scieries - MAIN_8_X
         MAIN_BUILDING_RESOURCES.put(MAIN_8_0, Arrays.asList(PLANCHES_DE_BOIS));
@@ -1294,8 +1303,8 @@ public class DATABASE {
         MAIN_BUILDING_RESOURCES.put(MAIN_20_1, Arrays.asList(CAFÉ));
 
         // Four à Goudron - MAIN_21_X
-        MAIN_BUILDING_RESOURCES.put(MAIN_21_0, Arrays.asList()); // Goudron - TODO: ajouter ResourceType
-        MAIN_BUILDING_RESOURCES.put(MAIN_21_1, Arrays.asList());
+        MAIN_BUILDING_RESOURCES.put(MAIN_21_0, Arrays.asList(GOUDRON));
+        MAIN_BUILDING_RESOURCES.put(MAIN_21_1, Arrays.asList(GOUDRON));
 
         // Tréfilerie - MAIN_22_X
         MAIN_BUILDING_RESOURCES.put(MAIN_22_0, Arrays.asList(OUTILS));
@@ -1331,7 +1340,7 @@ public class DATABASE {
         MAIN_BUILDING_RESOURCES.put(MAIN_5_1, Arrays.asList());
 
         // Avant-Poste - MAIN_6_0
-        MAIN_BUILDING_RESOURCES.put(MAIN_6_0, Arrays.asList());
+        MAIN_BUILDING_RESOURCES.put(MAIN_6_0, Arrays.asList(OR,BOIS,PIERRE));
 
         // Couvent - MAIN_7_X
         MAIN_BUILDING_RESOURCES.put(MAIN_7_0, Arrays.asList());

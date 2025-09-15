@@ -34,7 +34,7 @@ public class LogisticsService {
 
 
     private void initializeNetwork() {
-        Map<String, HexDetails> hexGrid = hexRepository.loadAll();
+        Map<String, SafeHexDetails> hexGrid = hexRepository.loadSafeAll();
 
         // 🔧 DEBUG: Vérifier le contenu du hexGrid
         System.out.println("🔍 Initialisation réseau logistique...");
@@ -48,12 +48,12 @@ public class LogisticsService {
         }
 
         // ✅ NOUVEAU: Filtrer seulement les hexagones de la faction du joueur
-        Map<String, HexDetails> playerHexes = new HashMap<>();
+        Map<String, SafeHexDetails> playerHexes = new HashMap<>();
         int nullKeyCount = 0;
 
-        for (Map.Entry<String, HexDetails> entry : hexGrid.entrySet()) {
+        for (Map.Entry<String, SafeHexDetails> entry : hexGrid.entrySet()) {
             String hexKey = entry.getKey();
-            HexDetails details = entry.getValue();
+            SafeHexDetails details = entry.getValue();
 
             if (hexKey == null) {
                 nullKeyCount++;
@@ -107,10 +107,10 @@ public class LogisticsService {
         System.out.println("- Routes créées: " + transportNetwork.size());
         System.out.println("- Entrepôts trouvés: " + warehouses.size());
     }
-    private void initializeWarehouses(Map<String, HexDetails> playerHexes) {
-        for (Map.Entry<String, HexDetails> entry : playerHexes.entrySet()) {
+    private void initializeWarehouses(Map<String, SafeHexDetails> playerHexes) {
+        for (Map.Entry<String, SafeHexDetails> entry : playerHexes.entrySet()) {
             String hexKey = entry.getKey();
-            HexDetails hex = entry.getValue();
+            SafeHexDetails hex = entry.getValue();
 
             if (hexKey != null && hex != null && isWarehouseBuilding(hex)) {
                 try {
@@ -199,8 +199,8 @@ public class LogisticsService {
     }
     private double calculateBuildingBonus(String fromHex, String toHex) {
         try {
-            HexDetails fromDetails = hexRepository.getHexDetails(fromHex);
-            HexDetails toDetails = hexRepository.getHexDetails(toHex);
+            SafeHexDetails fromDetails = hexRepository.getHexDetails(fromHex);
+            SafeHexDetails toDetails = hexRepository.getHexDetails(toHex);
 
             double bonus = 0.0;
 
@@ -228,7 +228,7 @@ public class LogisticsService {
             return 0.0;
         }
     }
-    private boolean hasProducerBuilding(HexDetails hex) {
+    private boolean hasProducerBuilding(SafeHexDetails hex) {
         // À adapter selon votre logique de bâtiments producteurs
         return hex.getMainBuildingIndex() > 0 ||
                 hex.getAuxBuildingIndex() > 0;
@@ -243,7 +243,7 @@ public class LogisticsService {
     }
 
     public boolean assignVehicle(String hexKey, TransportVehicle vehicle) {
-        HexDetails hex = hexRepository.getHexDetails(hexKey);
+        SafeHexDetails hex = hexRepository.getHexDetails(hexKey);
         if (hex != null) {
             hex.addVehicle(vehicle);
             hexRepository.updateHexDetails(hexKey, hex);
@@ -253,7 +253,7 @@ public class LogisticsService {
     }
 
     private TransportVehicle getBestVehicleForResource(String hexKey, String resourceType) {
-        HexDetails hex = hexRepository.getHexDetails(hexKey);
+        SafeHexDetails hex = hexRepository.getHexDetails(hexKey);
         if (hex == null) return TransportVehicle.DEFAULT;
 
         List<TransportVehicle> vehicles = hex.getAssignedVehicles();
@@ -269,7 +269,7 @@ public class LogisticsService {
                 .orElse(TransportVehicle.DEFAULT);
     }
 
-    private boolean isWarehouseBuilding(HexDetails hex) {
+    private boolean isWarehouseBuilding(SafeHexDetails hex) {
 
         if (hex.getMainBuildingIndex() == 0) return false;
         try {
@@ -418,8 +418,8 @@ public class LogisticsService {
             return;
         }
 
-        HexDetails fromHexDetails = hexRepository.getHexDetails(fromHex);
-        HexDetails toHexDetails = hexRepository.getHexDetails(toHex);
+        SafeHexDetails fromHexDetails = hexRepository.getHexDetails(fromHex);
+        SafeHexDetails toHexDetails = hexRepository.getHexDetails(toHex);
 
         boolean hasRoad = (fromHexDetails != null && fromHexDetails.getLogisticsData().hasRoad()) ||
                 (toHexDetails != null && toHexDetails.getLogisticsData().hasRoad());
@@ -460,10 +460,10 @@ public class LogisticsService {
         if (currentFactionId == null) return new HashMap<>();
 
         Map<String, List<TransportVehicle>> result = new HashMap<>();
-        Map<String, HexDetails> allHexes = hexRepository.loadAll();
+        Map<String, SafeHexDetails> allHexes = hexRepository.loadSafeAll();
 
-        for (Map.Entry<String, HexDetails> entry : allHexes.entrySet()) {
-            HexDetails hex = entry.getValue();
+        for (Map.Entry<String, SafeHexDetails> entry : allHexes.entrySet()) {
+            SafeHexDetails hex = entry.getValue();
             if (hex != null && currentFactionId.equals(hex.getFactionClaim())) {
                 List<TransportVehicle> vehicles = hex.getAssignedVehicles();
                 if (!vehicles.isEmpty()) {
@@ -474,7 +474,7 @@ public class LogisticsService {
         return result;
     }
     public boolean removeVehicleFromHex(String hexKey, String vehicleInfo) {
-        HexDetails hex = hexRepository.getHexDetails(hexKey);
+        SafeHexDetails hex = hexRepository.getHexDetails(hexKey);
         if (hex != null) {
             List<TransportVehicle> vehicles = hex.getAssignedVehicles();
             boolean removed = vehicles.removeIf(vehicle -> {

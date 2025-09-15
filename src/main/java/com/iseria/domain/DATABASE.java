@@ -1011,7 +1011,7 @@ public class DATABASE {
             return prixUnite * 10.0; // Le reproducteur coûte 10x le prix d'une bête
         }
 
-        public boolean canEstablishIn(HexDetails hex, IHexRepository repo) {
+        public boolean canEstablishIn(SafeHexDetails hex, IHexRepository repo) {
             // Parse les conditions multiples (ex: "FB/Biome montagne")
             String[] conditions = condition.split("/");
 
@@ -1022,7 +1022,7 @@ public class DATABASE {
             }
             return false;
         }
-        private boolean checkSingleCondition(String condition, HexDetails hex, IHexRepository repo) {
+        private boolean checkSingleCondition(String condition, SafeHexDetails hex, IHexRepository repo) {
             switch (condition.toLowerCase()) {
                 case "ferme blé":
                 case "fb":
@@ -1052,7 +1052,7 @@ public class DATABASE {
         }
 
         // Méthodes de vérification spécifiques
-        private boolean hasWheatFarm(HexDetails hex) {
+        private boolean hasWheatFarm(SafeHexDetails hex) {
             // Vérifier si l'hex a une ferme de céréales (blé/riz)
             DATABASE.JobBuilding mainBuilding = UIHelpers.getBuildingFromHex(hex, "main");
 
@@ -1064,7 +1064,7 @@ public class DATABASE {
             }
             return false;
         }
-        private boolean hasVegetableFarm(HexDetails hex) {
+        private boolean hasVegetableFarm(SafeHexDetails hex) {
             // Vérifier si l'hex a une ferme de légumes
             DATABASE.JobBuilding mainBuilding = UIHelpers.getBuildingFromHex(hex, "main");
 
@@ -1075,7 +1075,7 @@ public class DATABASE {
             }
             return false;
         }
-        private boolean hasWaterAccess(HexDetails hex, IHexRepository repo) {
+        private boolean hasWaterAccess(SafeHexDetails hex, IHexRepository repo) {
             // Option 1: Vérifier par la clé de l'hex si c'est près d'eau
             String hexKey = hex.getHexKey();
 
@@ -1092,7 +1092,7 @@ public class DATABASE {
             // Option 3: Logique basée sur les coordonnées de l'hex
             return isNearWater(hexKey, repo);
         }
-        private boolean isMountainBiome(HexDetails hex) {
+        private boolean isMountainBiome(SafeHexDetails hex) {
             // Logique pour détecter si l'hex est en montagne
             // Vous pourriez utiliser une Map de biomes ou analyser la clé de l'hex
             String hexKey = hex.getHexKey();
@@ -1105,7 +1105,7 @@ public class DATABASE {
             // Ou utiliser une méthode dans votre système de monde
             return checkBiomeType(hexKey, "mountain");
         }
-        private boolean isPlainBiome(HexDetails hex) {
+        private boolean isPlainBiome(SafeHexDetails hex) {
             // Logique similaire pour les plaines
             String hexKey = hex.getHexKey();
 
@@ -1441,7 +1441,7 @@ public class DATABASE {
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toSet());
     }
-    public static JobBuilding getActiveBuildingForJob(String jobName, HexDetails hexDetails) {
+    public static JobBuilding getActiveBuildingForJob(String jobName, SafeHexDetails hexDetails) {
         Set<JobBuilding> possibleBuildings = getBuildingsForJob(jobName);
 
         // Récupérer les bâtiments actuellement construits dans l'hex

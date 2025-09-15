@@ -9,11 +9,10 @@ import javax.swing.*;
 import java.io.File;
 
 public interface IHexRepository {
-    Map<String,HexDetails> loadAll();
+    //Map<String,HexDetails> loadAll();
     Map<String,SafeHexDetails> loadSafeAll();
-    void save(HexDetails details);
-    HexDetails getHexDetails(String hexKey);
-    void updateHexDetails(String hexKey, HexDetails details);
+    SafeHexDetails getHexDetails(String hexKey);
+    void updateHexDetails(String hexKey, SafeHexDetails details);
     int[] getHexPosition(String hexName);
     void addAllHexes(int rows, int cols);
     void clearAllFactionClaims();

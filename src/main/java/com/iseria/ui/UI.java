@@ -4,7 +4,6 @@ import com.iseria.domain.*;
 import com.iseria.domain.DATABASE;
 import com.iseria.infra.MoralCalculator;
 import com.iseria.service.*;
-import com.iseria.service.LogisticsService;
 
 
 import javax.imageio.ImageIO;
@@ -13,7 +12,6 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.event.*;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -711,12 +709,12 @@ public class UI {
             resourcePanel.removeAll();
             String factionName = economicService.getFactionName();
 
-            Map<String, HexDetails> hexGrid = hexRepository.loadAll();
+            Map<String, SafeHexDetails> hexGrid = hexRepository.loadSafeAll();
             Map<String, Double> totalProduction = new HashMap<>();
             Map<String, Set<String>> resourceSources = new HashMap<>(); // Pour tracking des sources
-            for (Map.Entry<String, HexDetails> entry : hexGrid.entrySet()) {
+            for (Map.Entry<String, SafeHexDetails> entry : hexGrid.entrySet()) {
                 String hexKey = entry.getKey();
-                HexDetails hex = entry.getValue();
+                SafeHexDetails hex = entry.getValue();
                 if (!factionName.equals(hex.getFactionClaim())) continue;
 
                 for (String buildingType : Arrays.asList("main", "aux", "fort")) {
@@ -848,14 +846,14 @@ public class UI {
     public static class EnhancedProductionPanel extends JScrollPane
             implements EconomicDataService.EconomicDataObserver {
         private JPanel contentPanel;
-        private Map<String, HexDetails> hexGrid;
+        private Map<String, SafeHexDetails> hexGrid;
         private String factionName;
         private IHexRepository repository;
         private EconomicDataService economicService;
         private WorkDetailsPopup workDetailsPopup;
         private Map<String, JPanel> hexPanels = new HashMap<>();
         private boolean showHexPreview = true;
-        public EnhancedProductionPanel(Map<String, HexDetails> hexGrid, String factionName,
+        public EnhancedProductionPanel(Map<String, SafeHexDetails> hexGrid, String factionName,
                                        IHexRepository repo, EconomicDataService economicService) {
             super();
             this.hexGrid = hexGrid;
@@ -910,8 +908,8 @@ public class UI {
             JPanel controlPanel = createControlPanel();
             contentPanel.add(controlPanel);
 
-            for (Map.Entry<String, HexDetails> entry : hexGrid.entrySet()) {
-                HexDetails hex = entry.getValue();
+            for (Map.Entry<String, SafeHexDetails> entry : hexGrid.entrySet()) {
+                SafeHexDetails hex = entry.getValue();
 
                 if (factionName.equals(hex.getFactionClaim())) {
 
@@ -940,7 +938,7 @@ public class UI {
 
             return panel;
         }
-        private JPanel createEnhancedHexPanel(String hexKey, HexDetails hex, IHexRepository repo) {
+        private JPanel createEnhancedHexPanel(String hexKey, SafeHexDetails hex, IHexRepository repo) {
             JPanel panel = new JPanel(new GridBagLayout());
             panel.setBorder(BorderFactory.createTitledBorder(hexKey));
             panel.setOpaque(false);
@@ -971,7 +969,7 @@ public class UI {
 
             return panel;
         }
-        private JPanel createHexPreview(String hexKey, HexDetails hex, IHexRepository repo) {
+        private JPanel createHexPreview(String hexKey, SafeHexDetails hex, IHexRepository repo) {
 
             JLabel hexImageLabel = hexImageLabels.computeIfAbsent(hexKey, key -> {
                 BufferedImage hexSnapshot = UI.HexSnapshotCache.getHexSnapshot(key, repo);
@@ -1000,7 +998,7 @@ public class UI {
 
             return preview;
         }
-        private JPanel createBuildingProductionPanel(String hexKey, HexDetails hex,
+        private JPanel createBuildingProductionPanel(String hexKey, SafeHexDetails hex,
                                                      String buildingType, String label) {
             JPanel panel = new JPanel(new GridBagLayout());
             panel.setBorder(BorderFactory.createTitledBorder(label));
@@ -1076,7 +1074,7 @@ public class UI {
 
             return panel;
         }
-        private void pullWorkers(String hexKey, HexDetails hex, String buildingType) {
+        private void pullWorkers(String hexKey, SafeHexDetails hex, String buildingType) {
             int currentCount = hex.getWorkerCountByType(buildingType);
             if (currentCount > 0) {
                 hex.setWorkerCountByType(buildingType, currentCount - 1);
@@ -1085,7 +1083,7 @@ public class UI {
                 refreshContent();
             }
         }
-        private void addWorkers(String hexKey, HexDetails hex, String buildingType) {
+        private void addWorkers(String hexKey, SafeHexDetails hex, String buildingType) {
             int currentCount = hex.getWorkerCountByType(buildingType);
             hex.setWorkerCountByType(buildingType, currentCount + 1);
             repository.updateHexDetails(hexKey, hex);
@@ -1110,7 +1108,7 @@ public class UI {
                 default -> new DATABASE.ResourceType[0];
             };
         }
-        private String getDetailedResourceInfo(String hexKey, HexDetails hex, String buildingType) {
+        private String getDetailedResourceInfo(String hexKey, SafeHexDetails hex, String buildingType) {
             StringBuilder details = new StringBuilder();
             details.append("<html><body>");
             details.append("<h3>").append(hexKey).append(" - ").append(buildingType.toUpperCase()).append("</h3>");
@@ -1129,7 +1127,7 @@ public class UI {
 
             return details.toString();
         }
-        private void openProductionDialog(String hexKey, HexDetails hex, String buildingType, String buildingLabel) {
+        private void openProductionDialog(String hexKey, SafeHexDetails hex, String buildingType, String buildingLabel) {
             DATABASE.JobBuilding building = UIHelpers.getBuildingFromHex(hex, buildingType);
 
             if (building == null || building.getBuildName().contains("Free Slot")) {
@@ -1166,7 +1164,7 @@ public class UI {
                 refreshContent();
             }
         }
-        private void openLivestockDialog(String hexKey, HexDetails hex) {
+        private void openLivestockDialog(String hexKey, SafeHexDetails hex) {
             JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(this);
             LivestockDialog dialog = new LivestockDialog(parentFrame, hex);
             dialog.setVisible(true);

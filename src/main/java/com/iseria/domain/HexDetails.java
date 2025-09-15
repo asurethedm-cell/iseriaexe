@@ -244,9 +244,8 @@ public class HexDetails implements Serializable {
             return true;
         }
         return discoveredByFaction != null && discoveredByFaction.contains(factionId);
-    }    public boolean canEstablishLivestock(DATABASE.LivestockData animalType, IHexRepository repo) {
-        return animalType.canEstablishIn(this, repo) && livestockFarm.getTotalAnimaux() < 10;
     }
+
     public double calculateFoodProductionForLivestock() {
         return getSelectedResourceProduction("main") +
                 getSelectedResourceProduction("aux");

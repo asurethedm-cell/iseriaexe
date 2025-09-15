@@ -61,7 +61,7 @@ public class LoadingWindow extends JWindow {
             @Override
             protected Void doInBackground() {
                 publish("Chargement des hexagones...");
-                repo.loadAll(); // your actual loading logic
+                repo.loadSafeAll(); // your actual loading logic
                 publish("Initialisation terminée");
                 return null;
             }

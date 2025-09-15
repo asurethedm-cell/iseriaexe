@@ -1,6 +1,7 @@
 package com.iseria.ui;
 
 import com.iseria.domain.HexDetails;
+import com.iseria.domain.SafeHexDetails;
 import com.iseria.service.EconomicDataService;
 import com.iseria.domain.DATABASE;
 
@@ -29,12 +30,12 @@ public class ProductionDialog extends JDialog {
     private DATABASE.ResourceType selectedResourceType = null;
     private double selectedResourceProduction = 0.0;
     private DATABASE.JobBuilding building;
-    private HexDetails hex;
+    private SafeHexDetails hex;
 
     public ProductionDialog(JFrame parent, String hexKey, String buildingType,
                             String buildingName, int currentWorkers,
                             EconomicDataService economicService,
-                            HexDetails hex) {
+                            SafeHexDetails hex) {
 
         super(parent, "Configuration Production - " + buildingName , true);
         this.hex = hex;

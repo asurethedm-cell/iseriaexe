@@ -1,9 +1,6 @@
 package com.iseria.ui;
 
-import com.iseria.domain.DATABASE;
-import com.iseria.domain.HexDetails;
-import com.iseria.domain.IDataProvider;
-import com.iseria.domain.IHexRepository;
+import com.iseria.domain.*;
 import com.iseria.infra.FactionRegistry;
 import com.iseria.infra.MoralCalculator;
 import com.iseria.service.EconomicDataService;
@@ -11,14 +8,12 @@ import com.iseria.service.EconomicDataService;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
 import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
-import java.io.*;
 import java.io.IOException;
 import java.util.*;
 import java.util.Arrays;
@@ -34,7 +29,7 @@ public class UIHelpers  extends JScrollPane{
     public static double  moralSum;
     public static <T extends DATABASE.JobBuilding> int addBuildingSection(
             String hexKeyLocal, String label, int buildingIndex, T[] buildingEnum,
-            JPanel panel, GridBagConstraints gbc, int row, HexDetails hd, IHexRepository repo) {
+            JPanel panel, GridBagConstraints gbc, int row, SafeHexDetails hd, IHexRepository repo) {
 
         T selectedBuilding = buildingEnum[buildingIndex];
         String buildingName = DATABASE.getBuildNameFromJobBuilding(selectedBuilding);
@@ -190,7 +185,7 @@ public class UIHelpers  extends JScrollPane{
                         }
                     }
 
-                    HexDetails details = repo.getHexDetails(hexKeyLocal);
+                    SafeHexDetails details = repo.getHexDetails(hexKeyLocal);
                     String hexKey = details.getHexKey();
 
                     java.util.List<String> workerSelected = selected.isEmpty() ? visibleItems : selected;
@@ -379,14 +374,14 @@ public class UIHelpers  extends JScrollPane{
         gbc.anchor = GridBagConstraints.WEST;
 
         // Calcul des totaux
-        Map<String, HexDetails> hexGrid = repo.loadAll();
+        Map<String, SafeHexDetails> hexGrid = repo.loadSafeAll();
         int totalMainWorkers = 0;
         int totalAuxWorkers = 0;
         int totalFortWorkers = 0;
         int totalHexes = 0;
 
-        for (Map.Entry<String, HexDetails> entry : hexGrid.entrySet()) {
-            HexDetails hd = entry.getValue();
+        for (Map.Entry<String, SafeHexDetails> entry : hexGrid.entrySet()) {
+            SafeHexDetails hd = entry.getValue();
             if (factionName.equals(hd.getFactionClaim())) {
                 totalHexes++;
                 totalMainWorkers += hd.getMainWorkerCount();
@@ -519,9 +514,9 @@ public class UIHelpers  extends JScrollPane{
                                                      JLabel anchorLabel) {
         StringBuilder sb = new StringBuilder("<html><body style='font-family:Arial;padding:5px;'>");
         sb.append("<b>Détail par hexagone :</b><ul>");
-        Map<String, HexDetails> hexGrid = repo.loadAll();
-        for (Map.Entry<String, HexDetails> e : hexGrid.entrySet()) {
-            HexDetails hd = e.getValue();
+        Map<String, SafeHexDetails> hexGrid = repo.loadSafeAll();
+        for (Map.Entry<String, SafeHexDetails> e : hexGrid.entrySet()) {
+            SafeHexDetails hd = e.getValue();
             if (!factionName.equals(hd.getFactionClaim())) continue;
             sb.append("<li><b>").append(e.getKey()).append("</b>: total ")
                     .append(hd.getTotalWorkers()).append(" (M:")
@@ -591,7 +586,7 @@ public class UIHelpers  extends JScrollPane{
             }
         });
     }
-    public static UI.EnhancedProductionPanel createEnhancedProductionPanel(Map<String, HexDetails> hexGrid,
+    public static UI.EnhancedProductionPanel createEnhancedProductionPanel(Map<String, SafeHexDetails> hexGrid,
                                                                            String factionName, IHexRepository repo, EconomicDataService economicService) {
         return new UI.EnhancedProductionPanel(hexGrid, factionName, repo, economicService);
     }
@@ -669,7 +664,7 @@ public class UIHelpers  extends JScrollPane{
         // Last resort: return the immediate parent
         return component.getParent();
     }
-    public static DATABASE.JobBuilding getBuildingFromHex(HexDetails hex, String buildingType) {
+    public static DATABASE.JobBuilding getBuildingFromHex(SafeHexDetails hex, String buildingType) {
         try {
             return switch (buildingType.toLowerCase()) {
                 case "main" -> {
@@ -716,7 +711,7 @@ public class UIHelpers  extends JScrollPane{
         double efficiency = getBuildingEfficiency(building);
         return baseProduction * workers * efficiency;
     }
-    public static boolean isFarmBuilding(HexDetails hex, String buildingType) {
+    public static boolean isFarmBuilding(SafeHexDetails hex, String buildingType) {
         DATABASE.JobBuilding building = getBuildingFromHex(hex, buildingType);
         if (building == null) return false;
 

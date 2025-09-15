@@ -11,7 +11,8 @@ public class HexRepositoryFactory {
         } catch (Exception e) {
             System.err.println("⚠️ Cannot instantiate SafeHexRepository, falling back to FileHexRepository");
             e.printStackTrace();
-            return new FileHexRepository();
+            SafeHexRepository safeRepo = new SafeHexRepository();
+            return safeRepo;
         }
     }
 }

@@ -22,7 +22,7 @@ public class Main {
 
 
             diagnoseCurrentState(hexRepository);
-            var hexes = hexRepository.loadAll();
+            var hexes = hexRepository.loadSafeAll();
             System.out.println("Loaded " + hexes.size() + " hexes");
             new Login(dataProvider, audioService, hexRepository).setVisible(true);
         });
@@ -32,16 +32,16 @@ public class Main {
         public static void diagnoseCurrentState(IHexRepository repo) {
             System.out.println("🔍 DIAGNOSTIC SERIALIZATION ISSUES");
 
-            Map<String, HexDetails> allHexes = repo.loadAll();
+            Map<String, SafeHexDetails> allHexes = repo.loadSafeAll();
             int totalHexes = allHexes.size();
             int validHexes = 0;
             int nullKeys = 0;
             int nullValues = 0;
             int keyMismatches = 0;
 
-            for (Map.Entry<String, HexDetails> entry : allHexes.entrySet()) {
+            for (Map.Entry<String, SafeHexDetails> entry : allHexes.entrySet()) {
                 String key = entry.getKey();
-                HexDetails hex = entry.getValue();
+                SafeHexDetails hex = entry.getValue();
 
                 if (key == null) {
                     nullKeys++;
@@ -81,7 +81,7 @@ public class Main {
             testBasicSerialization(allHexes);
         }
 
-        private static void testBasicSerialization(Map<String, HexDetails> hexes) {
+        private static void testBasicSerialization(Map<String, SafeHexDetails> hexes) {
             System.out.println("🧪 Testing basic serialization...");
 
             try {

@@ -88,12 +88,7 @@ public class SafeHexRepository implements IHexRepository {
         }
     }
 
-    @Override
-    public void save(SafeHexDetails details) {
 
-        hexGrid.put(details.getHexKey(), details);
-        saveHexGridToFile();
-    }
     public void saveHexGridToFile() {
         if (isSaving) {
             return; // Éviter les sauvegardes concurrentes
@@ -142,6 +137,7 @@ public class SafeHexRepository implements IHexRepository {
             isSaving = false;
         }
     }
+
     @Override
     public void addAllHexes(int rows, int cols) {
         if (isInitialized) {
@@ -190,7 +186,7 @@ public class SafeHexRepository implements IHexRepository {
         }
     }
     @Override
-    public SafeHexDetails getSafeHexDetails(String hexKey) {
+    public SafeHexDetails getHexDetails(String hexKey) {
         if (hexKey == null || hexKey.trim().isEmpty()) {
             return null;
         }
@@ -204,7 +200,7 @@ public class SafeHexRepository implements IHexRepository {
         }
     }
     @Override
-    public void updateSafeHexDetails(String hexKey, SafeHexDetails details) {
+    public void updateHexDetails(String hexKey, SafeHexDetails details) {
         if (hexKey == null || hexKey.trim().isEmpty() || details == null) {
             throw new IllegalArgumentException("Hex key and details cannot be null");
         }

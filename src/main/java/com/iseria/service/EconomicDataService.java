@@ -5,7 +5,7 @@ import com.iseria.ui.Login;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Collectors;
-import com.iseria.service.LogisticsService;
+
 public class EconomicDataService {
 
     public static class EconomicData {
@@ -115,7 +115,7 @@ public class EconomicDataService {
         return Login.currentUser;
     }
     public void calculateInitialData() {
-        Map<String, HexDetails> hexGrid = hexRepository.loadAll();
+        Map<String, SafeHexDetails> hexGrid = hexRepository.loadSafeAll();
         economicData.populationTotale = 0;
         economicData.agressivite = 0;
         economicData.jobCounts.clear();
@@ -124,8 +124,8 @@ public class EconomicDataService {
             economicData.productionRessources.put(resource, 0.0);
         }
 
-        for (Map.Entry<String, HexDetails> entry : hexGrid.entrySet()) {
-            HexDetails hex = entry.getValue();
+        for (Map.Entry<String, SafeHexDetails> entry : hexGrid.entrySet()) {
+            SafeHexDetails hex = entry.getValue();
             if (factionName.equals(hex.getFactionClaim())) {
                 economicData.populationTotale += hex.getTotalWorkers();
                 if (hex.getMainBuildingIndex() > 0) {
@@ -142,7 +142,7 @@ public class EconomicDataService {
         notifyObservers();
     }
 
-    private void calculateHexProduction(String hexKey, HexDetails hex) {
+    private void calculateHexProduction(String hexKey, SafeHexDetails hex) {
         ProductionCalculationService productionService = new ProductionCalculationService();
         Map<String, Double> hexProduction = new HashMap<>();
         for (String buildingType : Arrays.asList("main", "aux", "fort")) {
@@ -167,7 +167,7 @@ public class EconomicDataService {
         }
         calculateLivestockProduction(hexKey, hex);
     }
-    private void calculateProductionWithLogistics(String hexKey, HexDetails hex) {
+    private void calculateProductionWithLogistics(String hexKey, SafeHexDetails hex) {
         // Production locale immédiate (comme avant)
         Map<String, Double> localProduction = calculateLocalProduction(hex);
 
@@ -203,7 +203,7 @@ public class EconomicDataService {
             System.out.println("⚠️ Entrepôt saturé - livraison impossible!");
         }
     }
-    private Map<String, Double> calculateLocalProduction(HexDetails hex) {
+    private Map<String, Double> calculateLocalProduction(SafeHexDetails hex) {
         Map<String, Double> production = new HashMap<>();
 
         // Utiliser votre ProductionCalculationService existant
@@ -214,7 +214,7 @@ public class EconomicDataService {
         DATABASE.ResourceType resource = DATABASE.ResourceType.lookupByName(resourceName);
         return resource != null && "Nourriture".equals(resource.getCategory());
     }
-    private void calculateLivestockProduction(String hexKey, HexDetails hex) {
+    private void calculateLivestockProduction(String hexKey, SafeHexDetails hex) {
         LivestockFarm farm = hex.getLivestockFarm();
         if (farm == null) return;
 
@@ -265,9 +265,9 @@ public class EconomicDataService {
         }
     }
     public void progressLivestockWeek() {
-        Map<String, HexDetails> hexGrid = hexRepository.loadAll();
+        Map<String, SafeHexDetails> hexGrid = hexRepository.loadSafeAll();
 
-        for (HexDetails hex : hexGrid.values()) {
+        for (SafeHexDetails hex : hexGrid.values()) {
             if (factionName.equals(hex.getFactionClaim()) && hex.getLivestockFarm() != null) {
                 hex.getLivestockFarm().progresserSemaine();
                 hexRepository.updateHexDetails(hex.getHexKey(), hex);
@@ -278,7 +278,7 @@ public class EconomicDataService {
         calculateInitialData();
     }
 
-    private void updateJobCounts(HexDetails hex) {
+    private void updateJobCounts(SafeHexDetails hex) {
         if (hex.getMainWorkerCount() > 0) {
             economicData.jobCounts.merge("Fermier", hex.getMainWorkerCount(), Integer::sum);
         }
@@ -430,7 +430,7 @@ public class EconomicDataService {
     }
     public class ProductionCalculationService {
 
-        public Map<String, Double> calculateHexProduction(HexDetails hex) {
+        public Map<String, Double> calculateHexProduction(SafeHexDetails hex) {
             Map<String, Double> production = new HashMap<>();
 
             // Production du bâtiment principal

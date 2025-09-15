@@ -23,11 +23,13 @@ public class SafeHexDetails implements Serializable {
     private volatile int fortWorkerCount = 0;
     
     // ✅ COLLECTIONS - Thread-safe
-    private final Map<String, Object> selectedResourceTypes = new ConcurrentHashMap<>();
+    private final Map<String, String> selectedResourceTypes = new ConcurrentHashMap<>();
     private final Map<String, Double> selectedResourceProductions = new ConcurrentHashMap<>();
     private final Set<String> discoveredByFaction = ConcurrentHashMap.newKeySet();
     private final List<TransportVehicle> assignedVehicles = Collections.synchronizedList(new ArrayList<>());
-    
+    private Map<String,List<String>> buildingWorkers = new ConcurrentHashMap<>();
+    private Map<String,Boolean> lockedSlots = new ConcurrentHashMap<>();
+
     // ✅ LOGISTICS DATA
     private volatile LogisticsHexData logisticsData;
     private volatile LivestockFarm livestockFarm;
@@ -47,11 +49,16 @@ public class SafeHexDetails implements Serializable {
         selectedResourceTypes.put("main", null);
         selectedResourceTypes.put("aux", null);
         selectedResourceTypes.put("fort", null);
-        
+        lockedSlots.put("main", false);
+        lockedSlots.put("aux",  false);
+        lockedSlots.put("fort", false);
         selectedResourceProductions.put("main", 0.0);
         selectedResourceProductions.put("aux", 0.0);
         selectedResourceProductions.put("fort", 0.0);
-        
+        buildingWorkers.put("main", new ArrayList<>());
+        buildingWorkers.put("aux",  new ArrayList<>());
+        buildingWorkers.put("fort", new ArrayList<>());
+
         this.logisticsData = new LogisticsHexData();
         this.livestockFarm = new LivestockFarm(hexKey);
     }
@@ -146,7 +153,7 @@ public class SafeHexDetails implements Serializable {
         auxWorkerCount = in.readInt();
         fortWorkerCount = in.readInt();
         
-        Map<String, Object> tempResourceTypes = (Map<String, Object>) in.readObject();
+        Map<String, String> tempResourceTypes = (Map<String, String>) in.readObject();
         Map<String, Double> tempResourceProductions = (Map<String, Double>) in.readObject();
         Set<String> tempDiscovered = (Set<String>) in.readObject();
         List<TransportVehicle> tempVehicles = (List<TransportVehicle>) in.readObject();
@@ -216,23 +223,20 @@ public class SafeHexDetails implements Serializable {
         }
     }
     
-    // ✅ FACTION DISCOVERY - THREAD-SAFE
+    //FACTION DISCOVERY - THREAD-SAFE
     public boolean isDiscoveredBy(String factionId) {
         return factionId != null && discoveredByFaction.contains(factionId);
     }
-    
+    public Set<String> getDiscoveredByFaction() {
+        return new HashSet<>(discoveredByFaction);
+    }
     public void setDiscoveredByFaction(Set<String> factions) {
         discoveredByFaction.clear();
         if (factions != null) {
             discoveredByFaction.addAll(factions);
         }
     }
-    
-    public Set<String> getDiscoveredByFaction() {
-        return new HashSet<>(discoveredByFaction);
-    }
-    
-    // ✅ GETTERS/SETTERS STANDARDS avec validation
+    //GETTERS/SETTERS STANDARDS avec validation
     public String getHexKey() { return hexKey; }
     
     public String getFactionClaim() { return factionClaim; }
@@ -281,7 +285,34 @@ public class SafeHexDetails implements Serializable {
     public int getTotalWorkers() {
         return mainWorkerCount + auxWorkerCount + fortWorkerCount;
     }
-    
+    public int getWorkerCountByType(String buildingType) {
+        return switch (buildingType.toLowerCase()) {
+            case "main", "main building" -> mainWorkerCount;
+            case "aux", "auxiliary building" -> auxWorkerCount;
+            case "fort", "fort building" -> fortWorkerCount;
+            default -> 0;
+        };
+    }
+    public void setWorkerCountByType(String buildingType, int count) {
+        switch (buildingType.toLowerCase()) {
+            case "main", "main building" -> setMainWorkerCount(count);
+            case "aux", "auxiliary building" -> setAuxWorkerCount(count);
+            case "fort", "fort building" -> setFortWorkerCount(count);
+        }
+    }
+    public List<String> getWorkers(String type) {
+        List<String> list = buildingWorkers.get(type);
+        if (list == null || list.isEmpty()) {
+            return Collections.singletonList(" ");
+        }
+        return new ArrayList<>(list);
+    }
+    public void setWorkers(String type, List<String> workers) {
+        buildingWorkers.put(type, new ArrayList<>(workers));
+    }
+    public void lockSlot(String slot)                  { lockedSlots.put(slot, true); }
+    public boolean isSlotLocked(String slot)           { return lockedSlots.getOrDefault(slot, false); }
+
     // Logistics data
     public LogisticsHexData getLogisticsData() { 
         return logisticsData != null ? logisticsData : new LogisticsHexData();
@@ -291,14 +322,41 @@ public class SafeHexDetails implements Serializable {
     }
     
     // Resource management thread-safe
-    public Map<String, Object> getSelectedResourceTypes() {
-        return new HashMap<>(selectedResourceTypes);
+    public String getSelectedResourceType(String buildingType) {
+        return selectedResourceTypes.get(buildingType.toLowerCase());
     }
-    
-    public Map<String, Double> getSelectedResourceProductions() {
-        return new HashMap<>(selectedResourceProductions);
+    public void setSelectedResourceType(String buildingType, String resourceTypeName) {
+        selectedResourceTypes.put(buildingType.toLowerCase(), resourceTypeName);
     }
-    
+    public Double getSelectedResourceProduction(String buildingType) {
+        return selectedResourceProductions.getOrDefault(buildingType.toLowerCase(), 0.0);
+    }
+    public void setSelectedResourceProduction(String buildingType, double production) {
+        selectedResourceProductions.put(buildingType.toLowerCase(), production);
+    }
+
+    public Map<String, List<String>> getBuildingWorkers() {
+        return new HashMap<>(buildingWorkers);
+    }
+    public void setBuildingWorkers(Map<String, List<String>> workers) {
+        buildingWorkers.clear();
+        buildingWorkers.putAll(workers);
+    }
+
+    public Map<String, Boolean> getLockedSlots() {
+        return new HashMap<>(lockedSlots);}
+    public void setLockedSlots(Map<String, Boolean> slots) {
+        lockedSlots.clear();
+        lockedSlots.putAll(slots);
+    }
+
+    public LivestockFarm getLivestockFarm() { return livestockFarm; }
+    public void setLivestockFarm(LivestockFarm farm) {
+        this.livestockFarm = farm != null ? farm : new LivestockFarm(hexKey);
+    }
+
+
+
     @Override
     public String toString() {
         return String.format("HexDetails{key='%s', faction='%s', main=%d, aux=%d, fort=%d, workers=%d}", 

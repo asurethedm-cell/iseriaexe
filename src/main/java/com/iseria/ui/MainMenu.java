@@ -245,7 +245,7 @@ public class MainMenu extends JFrame implements ActionListener {
 
 //=============================================== Production Panel====================================================\\
 
-        Map<String, HexDetails> hexProdGrid = repo.loadAll();
+        Map<String, SafeHexDetails> hexProdGrid = repo.loadSafeAll();
         enhancedProductionPanelInstance = UIHelpers.createEnhancedProductionPanel(
                 hexProdGrid, currentUserFaction.getDisplayName(), repo, economicService);
 

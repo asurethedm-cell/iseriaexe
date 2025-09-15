@@ -19,11 +19,14 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.*;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.awt.geom.Path2D;
 import java.awt.geom.AffineTransform;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 
@@ -53,7 +56,7 @@ public class Mondes extends JFrame {
     private List<String> playerFactionList = new ArrayList<>();
     private int currentFactionViewIndex = -1; // -1 = vue normale
     private JButton factionViewToggle = new JButton();
-    boolean isSaving = false;
+    private final AtomicBoolean isSaving = new AtomicBoolean(false);
     private JButton quitButton = new JButton("Quit");
     private JButton repaintButton = new JButton("repaint");
     private JButton MainLabel = new JButton();
@@ -86,21 +89,22 @@ public class Mondes extends JFrame {
     IAudioService audio;
     IHexRepository repo;
     Point labelclick;
-    private Map<String, HexDetails> hexCache = new HashMap<>();
-    private Map<String, Color> factionColorCache = new HashMap<>();
+    private final ConcurrentHashMap<String, SafeHexDetails> hexCache = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Color> factionColorCache = new ConcurrentHashMap<>();
     private boolean cacheInitialized = false;
     public  boolean isAdmin = "Admin".equals(Login.currentUser);
     private Faction chosen;
     String emblemPath = FactionRegistry.getEmblemPathFor(getCurrentFactionId());
     private boolean detailViewOpen = false;
-    private final Map<String, Float> alphaCache = new HashMap<>();
+    private final ConcurrentHashMap<String, Float> alphaCache = new ConcurrentHashMap<>();
+    private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
 
     Mondes(IDataProvider data, IAudioService audio, IHexRepository repo) {
         this.data = data;
         this.audio = audio;
         this.repo = repo;
 
-        HexDetails details = repo.getHexDetails(hexKey);
+        SafeHexDetails details = repo.getHexDetails(hexKey);
         unitHexagon = new Path2D.Double();
         for (int i = 0; i < 6; i++) {
             double angle = Math.toRadians(60 * i);
@@ -214,7 +218,7 @@ public class Mondes extends JFrame {
                         double cy = imgY + row * vert + ((col & 1) == 1 ? vert * 0.5 : 0);
 
                         String key = "hex_" + col + "_" + row;
-                        HexDetails data = hexCache.get(key);
+                        SafeHexDetails data = hexCache.get(key);
                         if (data == null) continue;
 
                         // 🆕 NOUVEAU: Rendu avec Fog of War
@@ -428,7 +432,7 @@ public class Mondes extends JFrame {
                 .collect(Collectors.toSet());
 
         // Appliquer la visibilité
-        HexDetails hex = repo.getHexDetails(hexKey);
+        SafeHexDetails hex = repo.getHexDetails(hexKey);
         Set<String> currentDiscovered = new HashSet<>(hex.getDiscoveredByFaction());
 
         // Ajouter toutes les factions de joueurs
@@ -457,7 +461,7 @@ public class Mondes extends JFrame {
         }
 
             //System.out.println(hexKey);
-            HexDetails details = repo.getHexDetails(hexKey);
+            SafeHexDetails details = repo.getHexDetails(hexKey);
             currentIconMainIndex = details.getMainBuildingIndex();
             currentIconAuxIndex = details.getAuxBuildingIndex();
             currentIconFortIndex = details.getFortBuildingIndex();
@@ -687,7 +691,7 @@ public class Mondes extends JFrame {
         title2.setBounds(270, 0, 500, 50);
         moreBuildingPanel.add(title2);
 
-        HexDetails details = repo.getHexDetails(hexKey);
+        SafeHexDetails details = repo.getHexDetails(hexKey);
         moredetailsPanel.setBorder(createLineBorder(UIHelpers.getFactionColor(details.getFactionClaim()), 5));
 
         // Informations de l'hexagone
@@ -765,7 +769,7 @@ public class Mondes extends JFrame {
         productionDialog.setSize(800, 500);
         productionDialog.setLocationRelativeTo(this);
 
-        HexDetails details = repo.getHexDetails(hexKey);
+        SafeHexDetails details = repo.getHexDetails(hexKey);
         EconomicDataService economicService = MainMenu.getEconomicService();
 
         // Panel d'informations de production
@@ -904,63 +908,101 @@ public class Mondes extends JFrame {
 }
 
     public void saveHexDetails() {
-
-        if (isSaving) return;
-        isSaving = true;
-
-        HexDetails details = repo.getHexDetails(hexKey);
-        System.out.println("===========================================");
-        System.out.println("Saving details for " +hexKey );
-        System.out.println("===========================================");
-        if (details == null) {
-            System.out.println("Creating new Java.HexDetails for " + hexKey);
-            details = new HexDetails(hexKey);
-        } else {
-            System.out.println("Updating existing Java.HexDetails for " + hexKey + " : ");
+        if (!isSaving.compareAndSet(false, true)) {
+            System.out.println("⏳ Save already in progress, skipping...");
+            return;
         }
 
+        if (hexKey == null || hexKey.trim().isEmpty()) {
+            System.err.println("❌ Cannot save - no hex selected");
+            isSaving.set(false);
+            return;
+        }
 
-        boolean MainChanged = details.getMainBuildingIndex() != currentIconMainIndex;
-        boolean AuxChanged = details.getAuxBuildingIndex() != currentIconAuxIndex;
-        boolean FortChanged = details.getFortBuildingIndex() != currentIconFortIndex;
-        String currentClaim = details.getFactionClaim();
-        boolean ClaimChanged = !Objects.equals(currentClaim, currentUserFaction.getDisplayName());
-        System.out.println("======================MainChanged = " + MainChanged+ " =====================");
-        System.out.println("======================AuxChanged = " + AuxChanged+ " =====================");
-        System.out.println("======================currentClaim = " + currentClaim+ " =====================");
-        System.out.println("======================ClaimChanged = " + ClaimChanged+ " =====================");
+        try {
+            System.out.println("💾 Saving details for " + hexKey);
 
+            // Récupérer les données actuelles depuis le cache
+            SafeHexDetails details;
+            cacheLock.readLock().lock();
+            try {
+                details = hexCache.get(hexKey);
+                if (details == null) {
+                    System.err.println("❌ Hex not found in cache: " + hexKey);
+                    return;
+                }
+                // Créer une copie pour éviter les modifications concurrentes
+                details = details.deepCopy();
+            } finally {
+                cacheLock.readLock().unlock();
+            }
 
-        boolean changed = MainChanged || AuxChanged || FortChanged || ClaimChanged;
+            // Vérifier s'il y a des changements
+            boolean mainChanged = details.getMainBuildingIndex() != currentIconMainIndex;
+            boolean auxChanged = details.getAuxBuildingIndex() != currentIconAuxIndex;
+            boolean fortChanged = details.getFortBuildingIndex() != currentIconFortIndex;
 
-        if (changed) {
-            if (MainChanged) {
+            String newFactionClaim = isAdmin && chosen != null ? chosen.getId() : MainMenu.getCurrentFactionId();
+            boolean claimChanged = !Objects.equals(details.getFactionClaim(), newFactionClaim);
+
+            if (!(mainChanged || auxChanged || fortChanged || claimChanged)) {
+                System.out.println("📋 No changes detected, skipping save");
+                return;
+            }
+
+            // Appliquer les changements
+            if (mainChanged) {
                 details.setMainBuildingIndex(currentIconMainIndex);
-                System.out.println("Main changed: " + currentIconMainIndex);
+                System.out.println("🔧 Main building changed: " + currentIconMainIndex);
             }
-            if (AuxChanged) {
+
+            if (auxChanged) {
                 details.setAuxBuildingIndex(currentIconAuxIndex);
-                System.out.println("Aux changed: " + currentIconAuxIndex);
+                System.out.println("🔧 Aux building changed: " + currentIconAuxIndex);
             }
-            if (FortChanged) {
+
+            if (fortChanged) {
                 details.setFortBuildingIndex(currentIconFortIndex);
-                System.out.println("Fort changed: " + currentIconFortIndex);
-            }
-            if (ClaimChanged) {
-                String userFactionId = MainMenu.getCurrentFactionId();
-                if(!isAdmin){details.setFactionClaim(userFactionId); System.out.println("Claim changed: " + userFactionId);}
-                else{details.setFactionClaim(chosen.getId()); System.out.println("Claim changed: " + chosen.getId());}
+                System.out.println("🔧 Fort building changed: " + currentIconFortIndex);
             }
 
-            System.out.println("Saved: " + details);
+            if (claimChanged) {
+                details.setFactionClaim(newFactionClaim);
+                System.out.println("🏴 Faction claim changed: " + newFactionClaim);
+
+                // Auto-découverte
+                Set<String> discovered = details.getDiscoveredByFaction();
+                discovered.add(newFactionClaim);
+                details.setDiscoveredByFaction(discovered);
+            }
+
+            // Sauvegarder dans le repository
             repo.updateHexDetails(hexKey, details);
-        } else {
-            System.out.println("No changes detected, skipping save.");
-        }
-        repaint();
-        isSaving = false;
-    }
 
+            // Mettre à jour le cache
+            cacheLock.writeLock().lock();
+            try {
+                hexCache.put(hexKey, details.deepCopy());
+                // Invalidation du cache alpha pour ce changement
+                alphaCache.entrySet().removeIf(entry -> entry.getKey().contains(hexKey.split("_")[1]) ||
+                        entry.getKey().contains(hexKey.split("_")[2]));
+            } finally {
+                cacheLock.writeLock().unlock();
+            }
+
+            System.out.println("✅ Saved successfully: " + details);
+
+            // Rafraîchir l'affichage
+            SwingUtilities.invokeLater(() -> MAPMONDE.repaint());
+
+        } catch (Exception e) {
+            System.err.println("❌ Error saving hex details: " + e.getMessage());
+            e.printStackTrace();
+
+        } finally {
+            isSaving.set(false);
+        }
+    }
     void MainBuidindButtonMenu(ActionEvent e) {openIconMenu(MainLabel);}
 
     void AuxilliaryButtonMenu(ActionEvent e){ openIconMenu(AuxLabel);}
@@ -1095,7 +1137,7 @@ public class Mondes extends JFrame {
                     labelclick = new Point(col, row);
                     System.out.println("===========================================");
                     hexKey = "hex_" + labelclick.x + "_" + labelclick.y;
-                    HexDetails details = repo.getHexDetails(hexKey);
+                    SafeHexDetails details = repo.getHexDetails(hexKey);
                     String currentFactionId = MainMenu.getCurrentFactionId();
                     boolean isDiscovered = details.isDiscoveredBy(currentFactionId);
                     boolean isNearButFar = isObscuredHex(col, row, currentFactionId);
@@ -1160,18 +1202,66 @@ public class Mondes extends JFrame {
         return new Rectangle((int)(px - w/2.0), (int)(py - h/2.0), w, h);
     }
     private void initializeCache() {
-        // Load all hex data once
-        Map<String, HexDetails> allHexes = repo.loadAll();
-        hexCache.clear();
+        cacheLock.writeLock().lock();
+        try {
+            System.out.println("🔄 Initializing hex cache...");
 
-        // Pre-calculate faction colors
-        for (HexDetails details : allHexes.values()) {
-            String faction = details.getFactionClaim();
-            if (!factionColorCache.containsKey(faction)) {
-                factionColorCache.put(faction, UIHelpers.getFactionColor(faction));
+            // Charger toutes les données depuis le repository
+            Map<String, SafeHexDetails> allHexes = repo.loadSafeAll();
+
+            hexCache.clear();
+            factionColorCache.clear();
+
+            // Validation et copie sécurisée
+            int validHexes = 0;
+            int invalidHexes = 0;
+
+            for (Map.Entry<String, SafeHexDetails> entry : allHexes.entrySet()) {
+                String key = entry.getKey();
+                SafeHexDetails details = entry.getValue();
+
+                // Validation stricte
+                if (key == null || key.trim().isEmpty()) {
+                    System.err.println("⚠️ Null/empty key detected, skipping");
+                    invalidHexes++;
+                    continue;
+                }
+
+                if (details == null) {
+                    System.err.println("⚠️ Null HexDetails for key: " + key);
+                    invalidHexes++;
+                    continue;
+                }
+
+                if (!key.equals(details.getHexKey())) {
+                    System.err.println("⚠️ Key mismatch: " + key + " != " + details.getHexKey());
+                    invalidHexes++;
+                    continue;
+                }
+
+                // Copie profonde pour éviter les modifications externes
+                hexCache.put(key, details.deepCopy());
+
+                // Pre-calcul des couleurs de faction
+                String faction = details.getFactionClaim();
+                if (!factionColorCache.containsKey(faction)) {
+                    factionColorCache.put(faction, UIHelpers.getFactionColor(faction));
+                }
+
+                validHexes++;
             }
+
+            System.out.println("✅ Cache initialized - Valid: " + validHexes + ", Invalid: " + invalidHexes);
+            cacheInitialized = true;
+
+        } catch (Exception e) {
+            System.err.println("❌ Cache initialization failed: " + e.getMessage());
+            e.printStackTrace();
+            cacheInitialized = false;
+
+        } finally {
+            cacheLock.writeLock().unlock();
         }
-        hexCache.putAll(allHexes);
     }
 
     private final Map<String, Image> emblemCache = new HashMap<>();
@@ -1200,7 +1290,7 @@ public class Mondes extends JFrame {
             return;
         }
 
-        HexDetails details = repo.getHexDetails(hexKey);
+        SafeHexDetails details = repo.getHexDetails(hexKey);
         String newClaim;
 
         if (isAdmin && chosen != null) {
@@ -1313,7 +1403,7 @@ public class Mondes extends JFrame {
     }
     private void renderHexWithFow(Graphics2D g2d, AffineTransform orig,
                                   double cx, double cy, double unitSize,
-                                  String hexKey, HexDetails data, int col, int row) {
+                                  String hexKey, SafeHexDetails data, int col, int row) {
         String viewingFactionId = (isAdmin && currentViewFactionId != null)
                 ? currentViewFactionId
                 : MainMenu.getCurrentFactionId();
@@ -1365,7 +1455,7 @@ public class Mondes extends JFrame {
             return alphaCache.get(key);
         }
         int minDistance = Integer.MAX_VALUE;
-        for (Map.Entry<String, HexDetails> entry : hexCache.entrySet()) {
+        for (Map.Entry<String, SafeHexDetails> entry : hexCache.entrySet()) {
             if (entry.getValue().isDiscoveredBy(factionId)) {
                 String[] coords = entry.getKey().split("_");
                 int hexCol = Integer.parseInt(coords[1]);
@@ -1385,7 +1475,7 @@ public class Mondes extends JFrame {
         return alpha;
     }
 
-    private void renderProgressiveHex(Graphics2D g2d, HexDetails data, float alpha) {
+    private void renderProgressiveHex(Graphics2D g2d, SafeHexDetails data, float alpha) {
         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
         g2d.setColor(Color.BLACK);
         g2d.fill(unitHexagon);
@@ -1395,7 +1485,7 @@ public class Mondes extends JFrame {
         g2d.setColor(Color.DARK_GRAY);
         g2d.draw(unitHexagon);
     }
-        private void renderNormalHex(Graphics2D g2d, HexDetails data) {
+        private void renderNormalHex(Graphics2D g2d, SafeHexDetails data) {
         // Remplissage semi-transparent (code existant)
         Color colr = UIHelpers.getFactionColor(data.getFactionClaim());
         if (!"Free".equals(data.getFactionClaim())) {
@@ -1408,7 +1498,7 @@ public class Mondes extends JFrame {
         g2d.draw(unitHexagon);
     }
     private void drawHexLabelNormal(Graphics2D g2d, int col, int row,
-                                    double cx, double cy, double unitSize, HexDetails data) {
+                                    double cx, double cy, double unitSize, SafeHexDetails data) {
         // ✅ AJOUTÉ: Police originale
         g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int)(14 * zoomFactor))));
 
@@ -1478,7 +1568,7 @@ public class Mondes extends JFrame {
         g2d.setColor(Color.BLACK);
         g2d.draw(unitHexagon);
     }
-    private void drawEmblemIfNotFree(Graphics2D g2d, HexDetails data,
+    private void drawEmblemIfNotFree(Graphics2D g2d, SafeHexDetails data,
                                      double cx, double cy, double unitSize, int textW) {
         String factionId = data.getFactionClaim();
         Faction faction = FactionRegistry.getFactionId(factionId);
@@ -1552,7 +1642,7 @@ public class Mondes extends JFrame {
                 .toArray(String[]::new);
 
 
-        HexDetails hex = repo.getHexDetails(hexKey);
+        SafeHexDetails hex = repo.getHexDetails(hexKey);
         Set<String> discovered = new HashSet<>(hex.getDiscoveredByFaction());
 
         JPanel panel = new JPanel(new GridLayout(0, 2));

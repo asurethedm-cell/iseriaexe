@@ -2,6 +2,7 @@ package com.iseria.infra;
 
 import com.iseria.domain.HexDetails;
 import com.iseria.domain.IHexRepository;
+import com.iseria.domain.SafeHexDetails;
 
 import java.io.*;
 import java.util.HashMap;
@@ -12,8 +13,8 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class FileHexRepository implements IHexRepository {
-    private Map<String, HexDetails> hexGrid = new HashMap<>();
+public class FileHexRepository {
+    /*private Map<String, HexDetails> hexGrid = new HashMap<>();
     private static final String SAVE_FILE = "hexgrid.dat";
     private final File file = new File(SAVE_FILE);
 
@@ -46,16 +47,9 @@ public class FileHexRepository implements IHexRepository {
         return new HashMap<>();
     }
 
-    @Override
+
     public Map<String, HexDetails> loadAll() {
         return new HashMap<>(hexGrid);
-    }
-
-    @Override
-    public void save(HexDetails details) {
-
-        hexGrid.put(details.getHexKey(), details);
-        saveHexGridToFile();
     }
 
     private void saveHexGridToFile() {
@@ -103,6 +97,11 @@ public class FileHexRepository implements IHexRepository {
         saveHexGridToFile();
     }
 
+    @Override
+    public Map<String, SafeHexDetails> loadSafeAll() {
+        return Map.of();
+    }
+    @Deprecated
     public HexDetails getHexDetails(String hexName) {
         HexDetails details = hexGrid.get(hexName);
         if (details == null) {
@@ -117,7 +116,7 @@ public class FileHexRepository implements IHexRepository {
     private final AtomicBoolean isDirty = new AtomicBoolean(false);
     private ScheduledFuture<?> pendingSave;
 
-    @Override
+    @Deprecated
     public void updateHexDetails(String hexKey, HexDetails details) {
         String hexName = hexKey;
         if (hexName == null) {
@@ -168,5 +167,5 @@ public class FileHexRepository implements IHexRepository {
 
         return new int[]{pixelX, pixelY};
     }
-
+*/
 }

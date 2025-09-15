@@ -255,12 +255,12 @@ public class LogisticsPanel extends JPanel {
             return;
         }
 
-        Map<String, HexDetails> hexGrid = hexRepository.loadAll();
+        Map<String, SafeHexDetails> hexGrid = hexRepository.loadSafeAll();
         int playerHexCount = 0;
 
-        for (Map.Entry<String, HexDetails> entry : hexGrid.entrySet()) {
+        for (Map.Entry<String, SafeHexDetails> entry : hexGrid.entrySet()) {
             String hexKey = entry.getKey();
-            HexDetails details = entry.getValue();
+            SafeHexDetails details = entry.getValue();
 
             if (hexKey != null && details != null) {
                 // ✅ NOUVEAU: Vérifier si l'hexagone appartient à la faction du joueur
@@ -353,7 +353,7 @@ public class LogisticsPanel extends JPanel {
         }
 
         // ✅ CORRECTION: Toujours récupérer des données fraîches
-        HexDetails hex = hexRepository.getHexDetails(selectedHexKey);
+        SafeHexDetails hex = hexRepository.getHexDetails(selectedHexKey);
         if (hex != null) {
             updateVehicleList(hex);
             updateWarehouseInfo();
@@ -372,11 +372,11 @@ public class LogisticsPanel extends JPanel {
         transportTimesArea.setText("");
     }
 
-    private void updateVehicleList(HexDetails hex) {
+    private void updateVehicleList(SafeHexDetails hex) {
         vehicleListModel.clear();
 
         // ✅ TOUJOURS récupérer depuis HexDetails via repository
-        HexDetails freshHex = hexRepository.getHexDetails(selectedHexKey);
+        SafeHexDetails freshHex = hexRepository.getHexDetails(selectedHexKey);
         if (freshHex == null) {
             vehicleListModel.addElement("Hex non trouvé");
             return;
@@ -604,7 +604,7 @@ public class LogisticsPanel extends JPanel {
         List<ProducedResource> producedResources = new ArrayList<>();
 
         try {
-            HexDetails hex = hexRepository.getHexDetails(hexKey);
+            SafeHexDetails hex = hexRepository.getHexDetails(hexKey);
             if (hex == null) return producedResources;
 
             // Vérifier production du bâtiment principal

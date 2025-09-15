@@ -7,7 +7,7 @@ import java.awt.event.ActionEvent;
 import java.util.Map;
 
 public class LivestockDialog extends JDialog {
-    private HexDetails hex;
+    private SafeHexDetails hex;
     private DATABASE.LivestockData selectedAnimalType;
     private JSpinner animalCountSpinner;
     private JSpinner feedingSpinner;
@@ -15,7 +15,7 @@ public class LivestockDialog extends JDialog {
     private JComboBox<DATABASE.LivestockData> animalTypeCombo;
     private boolean confirmed = false;
     IHexRepository repo;
-    public LivestockDialog(JFrame parent, HexDetails hex) {
+    public LivestockDialog(JFrame parent, SafeHexDetails hex) {
         super(parent, "Gestion de l'Élevage - " + hex.getHexKey(), true);
         this.hex = hex;
         initializeDialog();

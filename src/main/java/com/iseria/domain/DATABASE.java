@@ -1152,6 +1152,13 @@ public class DATABASE {
 
     }
 
+    public enum RumorStatus {
+        DRAFT,      // Brouillon (pas encore soumis)
+        PENDING,    // En attente de validation admin
+        APPROVED,   // Approuvé et diffusé
+        REJECTED    // Rejeté par l'admin
+    }
+
     public static final Map<String, Set<JobBuilding>> JOB_TO_BUILDINGS = new HashMap<>();
     public static final Map<JobBuilding, BuildingProduction> BUILDING_PRODUCTION_DATA = DATABASE.buildProductionData();
 

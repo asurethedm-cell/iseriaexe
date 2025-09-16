@@ -1,5 +1,7 @@
 package com.iseria.service;
 
+import com.iseria.domain.Rumor;
+
 import java.util.List;
 
 public interface RumorDataService {

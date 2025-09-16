@@ -33,7 +33,7 @@ public class LogisticsService {
 
 
 
-    private void initializeNetwork() {
+    public void initializeNetwork() {
         Map<String, SafeHexDetails> hexGrid = hexRepository.loadSafeAll();
 
         // 🔧 DEBUG: Vérifier le contenu du hexGrid
@@ -363,11 +363,10 @@ public class LogisticsService {
     }
 
     private int calculateHexDistance(int[] from, int[] to) {
-        // Distance Manhattan pour simplifier (vous pouvez améliorer plus tard)
+        // Distance Manhattan KEK
         return Math.abs(from[0] - to[0]) + Math.abs(from[1] - to[1]);
     }
 
-    // 🔧 CORRECTION : Adaptation pour le format (row,col)
     private List<String> getNeighboringHexes(String hexKey) {
         List<String> neighbors = new ArrayList<>();
 
@@ -386,11 +385,10 @@ public class LogisticsService {
             int row = currentPos[0];
             int col = currentPos[1];
 
-            // Les 6 voisins hexagonaux (adaptez selon votre grille)
             int[][] hexDirections = {
-                    {-1, 0}, {-1, 1},  // Nord-Ouest, Nord-Est
-                    {0, -1}, {0, 1},   // Ouest, Est
-                    {1, -1}, {1, 0}    // Sud-Ouest, Sud-Est
+                    {-1, 0}, {-1, 1},
+                    {0, -1}, {0, 1},
+                    {1, -1}, {1, 0}
             };
 
             for (int[] direction : hexDirections) {
@@ -435,7 +433,7 @@ public class LogisticsService {
         transportNetwork.computeIfAbsent(fromHex, k -> new ArrayList<>()).add(route);
     }
 
-    // Méthodes publiques pour debug
+
     public void printTransportNetwork() {
         System.out.println("=== RÉSEAU DE TRANSPORT ===");
         System.out.println("Hexagones connectés: " + transportNetwork.size());

@@ -11,9 +11,9 @@ import com.iseria.service.LogisticsService;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
+import javax.swing.text.JTextComponent;
 
 import java.io.IOException;
 import java.net.URL;
@@ -101,6 +101,7 @@ public class Mondes extends JFrame {
     private boolean detailViewOpen = false;
     private final ConcurrentHashMap<String, Float> alphaCache = new ConcurrentHashMap<>();
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
+
 
     Mondes(IDataProvider data, IAudioService audio, IHexRepository repo, boolean performHeavyInit) {
         this.data = data;
@@ -659,62 +660,106 @@ public class Mondes extends JFrame {
     }
 
     void openIconMenu(JButton targetButton) {
-
         final String finalDialogTitle;
         final int selectedIndex;
         Map<Integer, ImageIcon> selectedIcons;
-        Map<Integer, ImageIcon> iconList;
 
         if (targetButton == MainLabel) {
             finalDialogTitle = "Main Building";
             selectedIndex = currentIconMainIndex;
             selectedIcons = scaledIconsMain;
-            iconList = originalMainIcon;
         } else if (targetButton == AuxLabel) {
             finalDialogTitle = "Auxiliary Building";
             selectedIndex = currentIconAuxIndex;
             selectedIcons = scaledIconsAux;
-            iconList = originalAuxIcon;
         } else {
             finalDialogTitle = "Fortifications";
             selectedIndex = currentIconFortIndex;
             selectedIcons = scaledIconsFort;
-            iconList = originalFortIcon;
         }
 
         iconMenu = new JDialog(this, finalDialogTitle, true);
-        iconMenu.setSize(600, 250);
+        iconMenu.setSize(800, 700); // Élargi pour accommoder les descriptions
 
         iconPanel = new JPanel();
-        iconPanel.setLayout(new BoxLayout(iconPanel, BoxLayout.X_AXIS));
+        iconPanel.setLayout(new BoxLayout(iconPanel, BoxLayout.Y_AXIS));
 
         for (Map.Entry<Integer, ImageIcon> entry : selectedIcons.entrySet()) {
             final int index = entry.getKey();
             ImageIcon icon = entry.getValue();
 
+            // ✅ CORRECTION : Récupération correcte de la description
+            String iconDescription = getBuildingDescription(finalDialogTitle, index);
+            String buildingName = getBuildingName(finalDialogTitle, index);
+
+            // Créer un panel horizontal pour chaque élément (icône + texte)
+            JPanel itemPanel = new JPanel(new BorderLayout());
+            itemPanel.setMaximumSize(new Dimension(780, 120));
+            itemPanel.setPreferredSize(new Dimension(780, 120));
+            itemPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+
+            // Panel pour l'icône avec sélection
+            JPanel iconContainer = new JPanel(new FlowLayout(FlowLayout.LEFT));
             JLabel iconLabel = new JLabel(icon);
             iconLabel.setPreferredSize(new Dimension(100, 100));
             iconLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
             if (index == selectedIndex) {
-                iconLabel.setBorder(createLineBorder(Color.RED, 2));
+                iconLabel.setBorder(createLineBorder(Color.RED, 3));
             }
 
+            final JPanel currentItemPanel = itemPanel; // Pour la référence dans le listener
             iconLabel.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     selectIcon(iconLabel, index, finalDialogTitle);
+                    // Mettre à jour la sélection visuelle
+                    updateSelectionBorder(iconPanel, iconLabel, index, selectedIndex);
                 }
             });
 
-            iconPanel.add(iconLabel);
+            iconContainer.add(iconLabel);
+
+            // Panel pour le texte (nom + description)
+            JPanel textPanel = new JPanel();
+            textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
+            textPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+
+            // Nom du bâtiment (en gras)
+            JLabel nameLabel = new JLabel("<html><b>" + buildingName + "</b></html>");
+            nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
+            nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            // Description (texte wrappé)
+            JLabel descLabel = new JLabel("<html><div style='width: 400px;'>" + iconDescription + "</div></html>");
+            descLabel.setFont(new Font("Arial", Font.PLAIN, 12));
+            descLabel.setVerticalAlignment(SwingConstants.TOP);
+            descLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+            textPanel.add(nameLabel);
+            textPanel.add(Box.createRigidArea(new Dimension(0, 5)));
+            textPanel.add(descLabel);
+
+            // Assemblage
+            itemPanel.add(iconContainer, BorderLayout.WEST);
+            itemPanel.add(textPanel, BorderLayout.CENTER);
+
+            // Séparateur visuel
+            itemPanel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY),
+                    BorderFactory.createEmptyBorder(10, 10, 10, 10)
+            ));
+
+            iconPanel.add(itemPanel);
         }
 
-        JScrollPane scrollPane = new JScrollPane(iconPanel, JScrollPane.VERTICAL_SCROLLBAR_NEVER, JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS);
-        scrollPane.setPreferredSize(new Dimension(600, 250));
-
+        JScrollPane scrollPane = new JScrollPane(iconPanel,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setPreferredSize(new Dimension(780, 600));
         iconMenu.add(scrollPane, BorderLayout.CENTER);
 
+        // Boutons de confirmation
         JPanel buttonPanel = new JPanel();
         JButton confirmButton = new JButton("Confirm");
         JButton cancelButton = new JButton("Cancel");
@@ -730,15 +775,12 @@ public class Mondes extends JFrame {
         });
 
         cancelButton.addActionListener(e -> cancelSelection(e));
-
         buttonPanel.add(confirmButton);
         buttonPanel.add(cancelButton);
-
         iconMenu.add(buttonPanel, BorderLayout.SOUTH);
+
         iconMenu.setLocationRelativeTo(this);
         iconMenu.setVisible(true);
-
-
     }
 
     void resetIndexValue() {
@@ -847,11 +889,9 @@ public class Mondes extends JFrame {
     void MainBuidindButtonMenu(ActionEvent e) {
         openIconMenu(MainLabel);
     }
-
     void AuxilliaryButtonMenu(ActionEvent e) {
         openIconMenu(AuxLabel);
     }
-
     void FortificationButtonMenu(ActionEvent e) {
         openIconMenu(FortLabel);
     }
@@ -859,7 +899,6 @@ public class Mondes extends JFrame {
     void MoreDetaiButtonTrigger(ActionEvent e) {
         MoreDetailedView();
     }
-
     void saveButtonTrigger(ActionEvent e) {
         System.out.println("Save button clicked, label: " + hexKey);
         saveHexDetails();
@@ -876,7 +915,6 @@ public class Mondes extends JFrame {
         iconMenu.dispose();
 
     }
-
     void confirmAuxSelection(JButton targetButton) {
         System.out.println("Confirming Aux Selection, currentIconAuxIndex: " + currentIconAuxIndex); // Debug print
         ImageIcon selectedIcon = originalAuxIcon.get(currentIconAuxIndex);
@@ -888,7 +926,6 @@ public class Mondes extends JFrame {
         iconMenu.dispose();
 
     }
-
     void confirmFortSelection(JButton targetButton) {
 
 
@@ -901,9 +938,77 @@ public class Mondes extends JFrame {
         iconMenu.dispose();
 
     }
-
     void cancelSelection(ActionEvent e) {
         iconMenu.dispose();
+    }
+    private String getBuildingDescription(String buildingType, int index) {
+        try {
+            switch (buildingType) {
+                case "Main Building":
+                    if (index < DATABASE.MainBuilding.values().length) {
+                        return DATABASE.MainBuilding.values()[index].getMainDescription();
+                    }
+                    break;
+                case "Auxiliary Building":
+                    if (index < DATABASE.AuxBuilding.values().length) {
+                        return DATABASE.AuxBuilding.values()[index].getAuxDescription();
+                    }
+                    break;
+                case "Fortifications":
+                    if (index < DATABASE.FortBuilding.values().length) {
+                        return DATABASE.FortBuilding.values()[index].getFortDescription();
+                    }
+                    break;
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur récupération description : " + e.getMessage());
+        }
+        return "Description non disponible";
+    }
+    private String getBuildingName(String buildingType, int index) {
+        try {
+            switch (buildingType) {
+                case "Main Building":
+                    if (index < DATABASE.MainBuilding.values().length) {
+                        return DATABASE.MainBuilding.values()[index].getBuildName();
+                    }
+                    break;
+                case "Auxiliary Building":
+                    if (index < DATABASE.AuxBuilding.values().length) {
+                        return DATABASE.AuxBuilding.values()[index].getBuildName();
+                    }
+                    break;
+                case "Fortifications":
+                    if (index < DATABASE.FortBuilding.values().length) {
+                        return DATABASE.FortBuilding.values()[index].getBuildName();
+                    }
+                    break;
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur récupération nom : " + e.getMessage());
+        }
+        return "Bâtiment inconnu";
+    }
+    private void updateSelectionBorder(JPanel parentPanel, JLabel selectedLabel, int selectedIndex, int previousIndex) {
+        for (Component component : parentPanel.getComponents()) {
+            if (component instanceof JPanel) {
+                JPanel itemPanel = (JPanel) component;
+                Component iconContainer = itemPanel.getComponent(0); // BorderLayout.WEST
+                if (iconContainer instanceof JPanel) {
+                    JPanel iconPanel = (JPanel) iconContainer;
+                    for (Component icon : iconPanel.getComponents()) {
+                        if (icon instanceof JLabel) {
+                            JLabel iconLabel = (JLabel) icon;
+                            if (iconLabel == selectedLabel) {
+                                iconLabel.setBorder(createLineBorder(Color.RED, 3));
+                            } else {
+                                iconLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     void quittingwithbutton(ActionEvent e) {

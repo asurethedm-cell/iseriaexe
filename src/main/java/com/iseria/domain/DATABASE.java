@@ -197,13 +197,13 @@ public class DATABASE {
     }
 
     public enum MainBuilding  implements JobBuilding {
-            MAIN_00("Main0", "Free Slot"),
+            MAIN_00("Main0", "Free Slot", "Aucun Bâtiment construit ici."),
 
-            MAIN_1_0("Main1", "Donjon"),
+            MAIN_1_0("Main1", "Donjon", "Le Donjon du Loot"),
 
 
-            MAIN_2_0("Main2","Abbaye",0,0,0,0,0,0,0,"Permet la récolte de Ressources de Luxes en plus grande quantité. Accueille 20-100 Moines."),
-            MAIN_2_1("Main3", "Abbaye Tier 1", 30,0,20,15,0,0,1,""),
+            MAIN_2_0("Main2","Abbaye",0,0,0,0,0,0,0,"Permet la récolte de Ressources de Luxes en plus grande quantité. Accueille 20 Moines."),
+            MAIN_2_1("Main3", "Abbaye Tier 1", 30,0,20,15,0,0,1,"Permet la récolte de Ressources de Luxes en plus grande quantité. Accueille 60 Moines."),
 
             MAIN_3_0("Main4","Carrière - Argile",0,0,0,0,0,0,0," Permet de récolter de l'Argile"),
             MAIN_3_1("Main5", "Carrière - Argile Tier 1", 45,0,5,10, 0,0,1," Permet de récolter de l'Argile"),
@@ -271,10 +271,10 @@ public class DATABASE {
             MAIN_23_0("Main47", "Pépinière",0,0,0,0,0,0,0,"Réduit les Malus de Production d’Hiver des Fermes de 50%"),
             MAIN_23_1("Main48", "Pépinière Tier 1", 15,15,0,15,0,0,0,20),
 
-            MAIN_24_0("Main49", "Vergers",0,0,00,0,0,0,0,"Permet la production de Fruits."),
+            MAIN_24_0("Main49", "Vergers",0,0,0,0,0,0,0,"Permet la production de Fruits."),
             MAIN_24_1("Main50", "Vergers Tier 1", 20,0,10,20,0,0,1,"Permet la production de Fruits."),
 
-            MAIN_25_0("Main51", "Place-Forte"),
+            MAIN_25_0("Main51", "Place-Forte", "Pièce Maitresse de votre Maisonnée"),
 
             MAIN_26_0("Main52", "Camp de Bûcheron",0,0,0,0,0,0,0,"Permet de récolter du Bois"),
 
@@ -285,9 +285,18 @@ public class DATABASE {
             MAIN_28_2("Main56", "Ferme de Céréale Tier 2",10,0,100,50,25,0,2,"Permet de récolter de la nourriture sous forme de Céréales"),
 
             MAIN_29_0("Main57","Pâturages", 0,0,0,0,0,0,0,""),
-            MAIN_30_0("Main58", "Camp de chasseurs",0,0,0,0,0,0,0,"Récolte de la Peau ou de la Nourriture");
+            MAIN_30_0("Main58", "Camp de chasseurs",0,0,0,0,0,0,0,"Récolte de la Peau ou de la Nourriture"),
+            MAIN_31_0("Main59", "Monastère", "Permet la récolte de Ressources de Luxes. Accueille 10-50 Moines"),
+            MAIN_31_1("Main59", "Monastère",25,15,10,0,0,0,1, "Permet la récolte de Ressources de Luxes. Accueille 10-50 Moines")
 
 
+        ;
+
+
+            @Override
+            public String toString() {
+            return tag;
+        }
             @Override
             public String getTag() { return tag; }
             @Override
@@ -295,7 +304,7 @@ public class DATABASE {
             public String getMainTag() { return tag; }
             public int getMainCost() { return costPierre; }
             public int getMainTier() { return tier; }
-
+            public String getMainDescription() {return description;}
 
 
             private final String tag;
@@ -354,49 +363,45 @@ public class DATABASE {
                 this.costGlass = costGlass;
             }
 
-            MainBuilding(String tag, String name) {
-                this(tag, name, 0, 0, 0, 0, 0, 0, 0,"");
+            MainBuilding(String tag, String name, String description) {
+                this(tag, name, 0, 0, 0, 0, 0, 0, 0,description);
             }
 
 
 
-            @Override
-            public String toString() {
-                return tag;
-            }
         }
 
-    public enum AuxBuilding  implements JobBuilding {
-            AUX_0("Aux 0", "Free Slots"),
-            AUX_1_0("Aux 1", "Moulin"),
-            AUX_1_1("Aux 2","Moulin tier 1",5,0,45,10,0,0,1),
-            AUX_1_2("Aux 3","Moulin tier 2", 10,0,100,50,25,0,2),
-            AUX_2_0("Aux 4","Moulin à eau"),
-            AUX_2_1("Aux 5","Moulin à eau tier 1",5,0,45,10,0,0,1),
-            AUX_2_2("Aux 6","Moulin à eau tier 2", 10,0,100,50,25,0,2),
-            AUX_3_0("Aux 7", "Cloître"),
-            AUX_4_0("Aux 8","Prieuré"),
-            AUX_5_0("Aux 9", "Fonderie"),
-            AUX_5_1("Aux 10", "Fonderie tier 1", 40,10,0,0,0,0,1),
-            AUX_6_0("Aux 11", "Atelier d'Artisan"),
-            AUX_7_0("Aux 12", "Cuisines"),
-            AUX_8_0("Aux 13", "Atelier de Maçonnerie"),
-            AUX_8_1("Aux 14", "Atelier de Maçonnerie tier 1", 20,0,20,100,0,0,1),
-            AUX_9_0("Aux 15","Chapelle de Campagne"),
-            AUX_9_1("Aux 16", "Eglise", 25,0,25,10,0,0,1),
-            AUX_9_2("Aux 17", "Cathédrale", 100,0,100,50,0,0,2,20),
-            AUX_10_0("Aux 18", "Serres de Culture"),
-            AUX_10_1("Aux 19", "Serres de Culture tier 1", 15,0,25,5,0,0,1,10),
-            AUX_11_0("Aux 20", "Tribunal"),
-            AUX_12_0("Aux 21","Ruches et Atelier d'Apiculteur"),
-            AUX_12_1("Aux 22","Ruches et Atelier d'Apiculteur tier 1", 0,0,0,5,0,0,1),
-            AUX_13_0("Aux 23","Péage"),
-            AUX_14_0("Aux 24","Cave d'affinage"),
-            AUX_14_1("Aux 25", "Cave d'affinagetier 1", 10,0,25,15,0,0,1),
-            AUX_15_0("Aux 26", " Poste Frontière"),
-            AUX_16_0("Aux 27", "Pressoir"),
-            AUX_16_1("Aux 28", "Pressoir tier 1", 15,0,35,10,0,0,1),
-            AUX_17_0("Aux 29", "Atelier");
+    public enum AuxBuilding  implements JobBuilding     {
+            AUX_0("Aux 0", "Free Slots","Aucun Bâtiment construit"),
+            AUX_1_0("Aux 1", "Moulin","Permet de transformer les sacs de céréales en sacs de farine à un ratio de 1 : 2"),
+            AUX_1_1("Aux 2","Moulin tier 1",5,0,45,10,0,0,1,"Permet de transformer les sacs de céréales en sacs de farine à un ratio de 1 : 2"),
+            AUX_1_2("Aux 3","Moulin tier 2", 10,0,100,50,25,0,2,"Permet de transformer les sacs de céréales en sacs de farine à un ratio de 1 : 2"),
+            AUX_2_0("Aux 4","Moulin à eau","Permet de transformer les sacs de céréales en sacs de farine à un ratio de 1 : 3"),
+            AUX_2_1("Aux 5","Moulin à eau tier 1",5,0,45,10,0,0,1,"Permet de transformer les sacs de céréales en sacs de farine à un ratio de 1 : 3"),
+            AUX_2_2("Aux 6","Moulin à eau tier 2", 10,0,100,50,25,0,2,"Permet de transformer les sacs de céréales en sacs de farine à un ratio de 1 : 3"    ),
+            AUX_3_0("Aux 7", "Cloître","Donne un bonus des récoltes de Ressources de Luxes de 10%."),
+            AUX_4_0("Aux 8","Prieuré","Donne un bonus des récoltes de Ressources de Luxes de 20%."),
+            AUX_5_0("Aux 9", "Hauts-Fourneaux"," Permet de transformer le Minerai en Lingots."),
+            AUX_5_1("Aux 10", "Hauts-Fourneaux tier 1", 40,10,0,0,0,0,1," Permet de transformer le Minerai en Lingots."),
+            AUX_6_0("Aux 11", "Atelier d'Artisan","Permet de faire travailler jusqu’à 10 artisans."),
+            AUX_7_0("Aux 12", "Cuisines","Permet de faire travailler jusqu’à 10 cuisiniers."),
+            AUX_8_0("Aux 13", "Atelier de Maçonnerie","Permet de transformer les Pierres Brutes en Pierres de Constructions, 2 tailleurs Max et leurs 40 Ouvriers"),
+            AUX_8_1("Aux 14", "Atelier de Maçonnerie tier 1", 20,0,20,100,0,0,1,"Permet de transformer les Pierres Brutes en Pierres de Constructions, 4 tailleurs Max et 80 ouvriers"),
+            AUX_9_0("Aux 15","Chapelle de Campagne","Permet la tenue de messes religieuses (Conversion) pour moins cher sur 1 tuile de rayon autour du bâtiment"),
+            AUX_9_1("Aux 16", "Eglise", 25,0,25,10,0,0,1,"Permet la tenue de messes religieuses (Conversion) pour moins cher sur 2 tuiles de rayon autour du bâtiment"),
+            AUX_9_2("Aux 17", "Cathédrale", 100,0,100,50,0,0,2,20, "Permet la tenue de messes religieuses (Conversion) pour moins cher sur 2 tuiles de rayon autour du bâtiment"),
+            AUX_10_0("Aux 18", "Serres de Culture","Permet de continuer à produire pendant les saisons froides contre des ressources."),
+            AUX_10_1("Aux 19", "Serres de Culture tier 1", 15,0,25,5,0,0,1,10, "Permet de continuer à produire pendant les saisons froides contre des ressources."),
+            AUX_11_0("Aux 20", "Tribunal","Permet l'établissement d'une frontière, d'édicter des LOIS en vigueur dans le pays et d'établir des TAXATIONS"),
+            AUX_12_0("Aux 21","Ruches et Atelier d'Apiculteur","Permet la culture et élaboration du Miel."),
+            AUX_12_1("Aux 22","Ruches et Atelier d'Apiculteur tier 1", 0,0,0,5,0,0,1,"Permet la culture et élaboration du Miel."),
+            AUX_13_0("Aux 23","Péage","Permet de taxer un passage sur routes"),
+            AUX_14_0("Aux 24","Cave d'affinage","Permet de transformer une ancienne mine ou donjon en Cave d'affinage, pour le Fromage, le vin, la nourriture (Saucisson), champignons etc permettant d'augmenter la valeur, la qualité et la périssabilité des produits.\n Divise la durée avant que le produit soit considéré comme affiné par 2. \n Production modeste (moins de 10)"),
+            AUX_14_1("Aux 25", "Cave d'affinagetier 1", 10,0,25,15,0,0,1,"Permet de transformer une ancienne mine ou donjon en Cave d'affinage, pour le Fromage, le vin, la nourriture (Saucisson), champignons etc permettant d'augmenter la valeur, la qualité et la périssabilité des produits.\n Divise la durée avant que le produit soit considéré comme affiné par 2. \n Grande production (10+)."),
+            AUX_15_0("Aux 26", " Poste Frontière"," Permet de transformer les fruits en jus et permet l'élaboration de vins."),
+            AUX_16_0("Aux 27", "Pressoir"," Permet de transformer les fruits en jus et permet l'élaboration de vins."),
+            AUX_16_1("Aux 28", "Pressoir tier 1", 15,0,35,10,0,0,1,""),
+            AUX_17_0("Aux 29", "Atelier","Permet de Faire travailler des Transformateurs");
 
 
             private final String tag;
@@ -409,10 +414,10 @@ public class DATABASE {
             private final int costGold;
             private final int tier;
             private int costGlass;
-
+            private String description;
 
             AuxBuilding(String tag, String name, int costPierre, int costFer,  int costBois, int costPop,int costGemWeekly,
-                         int costGold, int tier){
+                         int costGold, int tier, String description){
                 this.tag = tag;
                 this.name = name;
                 this.costPierre = costPierre;
@@ -421,11 +426,12 @@ public class DATABASE {
                 this.costPop= costPop;
                 this.costGemWeekly = costGemWeekly;
                 this.costGold = costGold;
-                this.tier = tier;}
-            AuxBuilding(String tag, String name) {
-                this(tag, name, 0, 0, 0, 0, 0, 0, 0);}
+                this.tier = tier;
+                this.description = description;}
+            AuxBuilding(String tag, String name, String description) {
+                this(tag, name, 0, 0, 0, 0, 0, 0, 0, "");}
             AuxBuilding(String tag, String name, int costPierre, int costFer, int costBois, int costPop, int costGemWeekly,
-                         int costGold, int tier, int costGlass) {
+                         int costGold, int tier, int costGlass, String description) {
                 this.tag = tag;
                 this.name = name;
                 this.costPierre = costPierre;
@@ -436,6 +442,7 @@ public class DATABASE {
                 this.costGold = costGold;
                 this.tier = tier;
                 this.costGlass = costGlass;
+                this.description = description;
             }
         @Override
             public String getTag() { return tag; }
@@ -443,7 +450,9 @@ public class DATABASE {
             public String getAuxTag() { return tag; }
             public int getAuxCost() { return costPierre; }
             public int getAuxTier() { return tier; }
-            @Override
+            public String getAuxDescription() {return description;}
+
+        @Override
             public String toString() {
                 return tag;
             }
@@ -451,12 +460,15 @@ public class DATABASE {
 
     public enum FortBuilding  implements JobBuilding {
 
-            FORT_0("Fort 0", "Free Slot"),
-            FORT_1("Fort 1", "Pallisade", 0,0,10,0,0,0,0),
-            FORT_2("Fort 2", "Murs",10,0,0,0,0,0,0),
-            FORT_3("Fort 3", "Murailles", 20,0,0,0,0,0,0),
-            FORT_4("Fort 4", "Douve", 0,0,0,10,0,0,0),
-            FORT_5("Fort 5", "Tour de Guets", 5,0,5,0,0,250,0);
+            FORT_0("Fort 0", "Free Slot", "Aucune Fortification construite"),
+            FORT_1("Fort 1", "Pallisade", 0,0,10,0,0,0,0, "Ajoute la condition 'Tenir 1d6 Tours' aux conditions de victoire de Bataille Rangée."),
+            FORT_2("Fort 2", "Murs",10,0,0,0,0,0,0, "Ajoute la condition 'Tenir 1d6 Tours' aux conditions de victoire de Bataille Rangée.\n Donne -1 | -2 | -3 à l'initiative adverse, et + 1 à la sauvegarde des unités sur les fortifications."),
+            FORT_3("Fort 3", "Murailles", 20,0,0,0,0,0,0,
+                    "Ajoute la condition 'Tenir 1d6 Tours' aux conditions de victoire de Bataille Rangée.\n" +
+                    "Donne -1 | -2 | -3 à l'initiative adverse, et + 1 à la sauvegarde des unités sur les fortifications.\n" +
+                    "Les Troupes doivent mettre 0|1|2 tours de mouvement pour les escalades sans échelles de siège"),
+            FORT_4("Fort 4", "Douve", 0,0,0,10,0,0,0, " Donne -1 à l'initiative adverse, réduit de 1 Tours (minimum de 1) l'Objectif de Victoire \"Tenir\""),
+            FORT_5("Fort 5", "Tour de Guets", 5,0,5,0,0,250,0,"Permet des actions malgré une attaque sur la tuile où se trouve la tour");
 
 
             private final String tag;
@@ -469,9 +481,10 @@ public class DATABASE {
             private final int costGold;
             private final int tier;
             private int costGlass;
+            private String description;
 
             FortBuilding(String tag, String name, int costPierre, int costFer,  int costBois, int costPop,int costGemWeekly,
-                        int costGold, int tier){
+                        int costGold, int tier, String description){
                 this.tag = tag;
                 this.name = name;
                 this.costPierre = costPierre;
@@ -480,11 +493,12 @@ public class DATABASE {
                 this.costPop= costPop;
                 this.costGemWeekly = costGemWeekly;
                 this.costGold = costGold;
-                this.tier = tier;}
-            FortBuilding(String tag, String name) {
-                this(tag, name, 0, 0, 0, 0, 0, 0, 0);}
+                this.tier = tier;
+                this.description = description;}
+            FortBuilding(String tag, String name, String description) {
+                this(tag, name, 0, 0, 0, 0, 0, 0, 0,"");}
             FortBuilding(String tag, String name, int costPierre, int costFer, int costBois, int costPop, int costGemWeekly,
-                        int costGold, int tier, int costGlass) {
+                        int costGold, int tier, int costGlass, String description) {
                 this.tag = tag;
                 this.name = name;
                 this.costPierre = costPierre;
@@ -495,6 +509,7 @@ public class DATABASE {
                 this.costGold = costGold;
                 this.tier = tier;
                 this.costGlass = costGlass;
+                this.description = description;
             }
 
             @Override public String getBuildName() {return name;}
@@ -502,6 +517,7 @@ public class DATABASE {
             public String getFortTag() { return tag; }
             public int getFortCost() { return costPierre; }
             public int getFortTier() { return tier; }
+            public String getFortDescription() {return description;}
             @Override public String toString() { return tag;}
         }
 

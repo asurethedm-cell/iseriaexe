@@ -67,7 +67,7 @@ public class MainMenu extends JFrame implements ActionListener {
     public static boolean isFactionMenuOpen = false;
     public        boolean prodIsShowed;
     public        boolean ecoIsShowed;
-
+    public        boolean logIsShowed;
 
     static CardLayout generalCardLayout = new CardLayout();
     static JPanel generalPanel = new JPanel(generalCardLayout);
@@ -273,7 +273,7 @@ public class MainMenu extends JFrame implements ActionListener {
                 generalPanel.add(logisticsScrollPane, "Logistics");
 
 
-        miscButton.addActionListener(e -> {
+                miscButton.addActionListener(e -> {
                     generalCardLayout.show(generalPanel, "Miscellaneous");
                     backToGeneralButton.setVisible(true);
                 });
@@ -282,6 +282,7 @@ public class MainMenu extends JFrame implements ActionListener {
                     ecoIsShowed = true;
                     backToGeneralButton.setVisible(true);
                     economicService.calculateInitialData();
+                    updatePanel.setVisible(true);
                 });
                 productionButton.addActionListener(e -> {
                     generalCardLayout.show(generalPanel, "Production");
@@ -289,6 +290,13 @@ public class MainMenu extends JFrame implements ActionListener {
                     economicService.calculateInitialData();
                     backToGeneralButton.setVisible(true);
                     updatePanel.setVisible(true);
+                });
+                logisticsButton.addActionListener(e -> {
+                    generalCardLayout.show(generalPanel, "Logistics");
+                    logIsShowed = true;
+                    backToGeneralButton.setVisible(true);
+                    updatePanel.setVisible(true);
+                    if (logisticsService != null) { logisticsService.printTransportNetwork();}
                 });
                 backToGeneralButton.addActionListener(e -> {
                     generalCardLayout.show(generalPanel, "General");
@@ -298,9 +306,11 @@ public class MainMenu extends JFrame implements ActionListener {
                     updatePanel.setVisible(false);
                 });
                 updatePanel.addActionListener(e -> {
-                    if (ecoIsShowed) {economicService.calculateInitialData();}
-                    if (prodIsShowed){enhancedProductionPanelInstance.refreshContent();}
+                    if (ecoIsShowed) economicService.calculateInitialData();
+                    if (prodIsShowed)enhancedProductionPanelInstance.refreshContent();
+                    if (logIsShowed) logisticsService.initializeNetwork();
                 });
+
 
                 JPanel diplomacyPanel = new JPanel();
                 JPanel militaryPanel = new JPanel();
@@ -480,14 +490,7 @@ public class MainMenu extends JFrame implements ActionListener {
                 factionCardLayout.show(factionContentPanel, "Market");
                 openMarketAdminPanel();
                 });
-                logisticsButton.addActionListener(e -> {
-                     generalCardLayout.show(generalPanel, "Logistics");
-                     backToGeneralButton.setVisible(true);
-                     updatePanel.setVisible(true);
-                    if (logisticsService != null) {
-                        logisticsService.printTransportNetwork(); // Debug
-                    }
-                });
+
 
 
 

@@ -22,8 +22,10 @@ import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileSystemView;
 import java.io.*;
 import java.net.URL;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import static com.iseria.ui.LoadingWindow.splash;
 
@@ -192,7 +194,6 @@ public class MainMenu extends JFrame implements ActionListener {
 
 //==================================================Miscellaneous Panel===============================================\\
 
-                String rumorExcelPath = "tobecloud/rumorexcel" + currentUserFaction.getDisplayName() + ".xlsx";
 
 
                 MoralDataService moralService = new EnumMoralDataService();
@@ -207,11 +208,25 @@ public class MainMenu extends JFrame implements ActionListener {
                 mPgbc.gridx = 0;
                 mPgbc.weighty = 1;
                 miscellaneousPanel.add(moralPanel, mPgbc);
-                RumorDataService rumorService = new ExcelRumorDataService(data);
-                JPanel rumorPanel = UI.createRumorPanel(rumorService, rumorExcelPath, Login.currentUser);
+                RumorService rumorService = new RumorServiceImpl();
+                RumorDisplayPanel rumorDisplayPanel = new RumorDisplayPanel();
+                java.util.List<Rumor> approvedRumors = rumorService.getAllRumors()
+                .stream()
+                .filter(rumor -> rumor.getStatus() == DATABASE.RumorStatus.APPROVED)
+                .sorted(Comparator.comparing(Rumor::getDate).reversed())
+                .collect(Collectors.toList());
+                JScrollPane rumorScrollPane = new JScrollPane(rumorDisplayPanel);
+                rumorScrollPane.setPreferredSize(new Dimension(980, 600));
+                rumorScrollPane.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.BLACK, 2),
+                "📜 Rumeurs circulants chez : " + currentUserFaction.getDisplayName(),
+                0, 0,
+                new Font("Arial", Font.BOLD, 14),
+                Color.BLACK));
+                rumorDisplayPanel.displayRumors(approvedRumors);
                 mPgbc.gridy = 1;
                 mPgbc.weighty = 1;
-                miscellaneousPanel.add(rumorPanel, mPgbc);
+                miscellaneousPanel.add(rumorScrollPane, mPgbc);
                 miscellaneousPanel.setOpaque(false);
                 miscellaneousPanel.setBackground(Color.black);
 //====================================================================================================================\\

@@ -6,6 +6,7 @@ import com.iseria.domain.Rumor;
 import com.iseria.service.RumorPersistenceService;
 import com.iseria.service.RumorService;
 import com.iseria.infra.FactionRegistry;
+import com.iseria.service.RumorServiceImpl;
 
 import javax.swing.*;
 import java.awt.*;
@@ -301,23 +302,35 @@ public class AdminRumorManagementPanel extends JFrame {
                 return;
             }
 
-            // Convertir java.util.Date vers LocalDateTime
-            java.time.LocalDateTime dateTime = java.time.LocalDateTime.ofInstant(
-                    selectedDate.toInstant(),
-                    java.time.ZoneId.systemDefault()
-            );
+            try {
+                // Convertir java.util.Date vers LocalDateTime
+                java.time.LocalDateTime dateTime = java.time.LocalDateTime.ofInstant(
+                        selectedDate.toInstant(),
+                        java.time.ZoneId.systemDefault()
+                );
 
-            // Créer la rumeur avec la date sélectionnée
-            Rumor newRumor = rumorService.createFromTNCD(type, name, content, dateTime);
+                // ✅ SOLUTION : Créer la rumeur complète en une seule fois
+                Rumor newRumor = new Rumor(type, name, content, dateTime);
+                newRumor.setId(((RumorServiceImpl) rumorService).getNextId()); // Vous devrez ajouter cette méthode
+                newRumor.setStatus(DATABASE.RumorStatus.APPROVED);
+                newRumor.setAuthorFactionId(factionName); // ✨ Définir AVANT la sauvegarde
 
-            newRumor.setAuthorFactionId(factionName);
+                // Sauvegarder une seule fois
+                rumorService.saveRumor(newRumor);
 
-            JOptionPane.showMessageDialog(createDialog, "Rumeur créée avec succès!", "Succès", JOptionPane.INFORMATION_MESSAGE);
-            rumorService.saveRumor(newRumor);
-            createDialog.dispose();
+                JOptionPane.showMessageDialog(createDialog, "Rumeur créée avec succès!", "Succès", JOptionPane.INFORMATION_MESSAGE);
+                createDialog.dispose();
+                refreshFactionRumors(factionName);
 
-            // Actualiser l'affichage
-            refreshFactionRumors(factionName);
+            } catch (Exception ex) {
+                // ✅ SOLUTION : Afficher les vraies erreurs
+                System.err.println("Erreur création rumeur: " + ex.getMessage());
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(createDialog,
+                        "Erreur lors de la création: " + ex.getMessage(),
+                        "Erreur",
+                        JOptionPane.ERROR_MESSAGE);
+            }
         });
 
         cancelBtn.addActionListener(e -> createDialog.dispose());

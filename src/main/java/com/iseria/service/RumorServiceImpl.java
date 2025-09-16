@@ -110,9 +110,12 @@ public class RumorServiceImpl implements RumorService {
 
     @Override
     public List<Rumor> getAllRumors() {
-        loadRumorsFromDisk();
         return new ArrayList<>(rumors.values());
     }
+    public Long getNextId() {
+        return idCounter.getAndIncrement();
+    }
+
 
     @Override
     public List<Rumor> getPendingRumors() {

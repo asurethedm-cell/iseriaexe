@@ -588,11 +588,7 @@ public class MainMenu extends JFrame implements ActionListener {
                 setupAutoSave(myNoteArea);
                 setContentPane(layeredPane);
                 audio.playRandomMainThemeAuto();
-                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                    if (rumorService instanceof RumorServiceImpl) {
-                        ((RumorServiceImpl) rumorService).saveRumorsToDisk();
-                    }
-                }));
+
     }
 
     private ImageIcon resizeIcon(ImageIcon icon, int width, int height) {

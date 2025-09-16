@@ -38,7 +38,7 @@ public class Main {
            // System.out.println("Loaded " + hexes.size() + " hexes");
             new Login(audioService, hexRepository).setVisible(true);
         });
-        testSerialization();
+        //testSerialization();
     }
     public static void testSerialization() {
         RumorPersistenceService service = new RumorPersistenceService();

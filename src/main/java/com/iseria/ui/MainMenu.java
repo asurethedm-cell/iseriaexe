@@ -215,8 +215,15 @@ public class MainMenu extends JFrame implements ActionListener {
                 .filter(rumor -> rumor.getStatus() == DATABASE.RumorStatus.APPROVED)
                 .sorted(Comparator.comparing(Rumor::getDate).reversed())
                 .collect(Collectors.toList());
+                if ("Admin".equals(Login.currentUser)) {
+                // Panel admin avec bouton d'accès au panel de gestion
+                JPanel adminRumorPanel = createAdminRumorAccessPanel();
+                mPgbc.gridy = 1;
+                mPgbc.weighty = 1;
+                miscellaneousPanel.add(adminRumorPanel, mPgbc);
+                } else {
                 JScrollPane rumorScrollPane = new JScrollPane(rumorDisplayPanel);
-                rumorScrollPane.setPreferredSize(new Dimension(980, 600));
+                rumorScrollPane.setPreferredSize(new Dimension(980, 400));
                 rumorScrollPane.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.BLACK, 2),
                 "📜 Rumeurs circulants chez : " + currentUserFaction.getDisplayName(),
@@ -226,14 +233,14 @@ public class MainMenu extends JFrame implements ActionListener {
                 rumorDisplayPanel.displayRumors(approvedRumors);
                 mPgbc.gridy = 1;
                 mPgbc.weighty = 1;
-                miscellaneousPanel.add(rumorScrollPane, mPgbc);
+                miscellaneousPanel.add(rumorScrollPane, mPgbc);}
                 miscellaneousPanel.setOpaque(false);
                 miscellaneousPanel.setBackground(Color.black);
 //====================================================================================================================\\
 
 //====================================================Market Panel====================================================\\
 
-        JPanel marketPanel = createMarketPanel();
+                JPanel marketPanel = createMarketPanel();
 
 //====================================================================================================================\\
 
@@ -583,6 +590,11 @@ public class MainMenu extends JFrame implements ActionListener {
                 setupAutoSave(myNoteArea);
                 setContentPane(layeredPane);
                 audio.playRandomMainThemeAuto();
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    if (rumorService instanceof RumorServiceImpl) {
+                        ((RumorServiceImpl) rumorService).saveRumorsToDisk();
+                    }
+                }));
     }
 
     private ImageIcon resizeIcon(ImageIcon icon, int width, int height) {
@@ -1106,6 +1118,61 @@ public class MainMenu extends JFrame implements ActionListener {
         scrollPane.getHorizontalScrollBar().setUnitIncrement(unitIncrement);
         scrollPane.getVerticalScrollBar().setBlockIncrement(blockIncrement);
         scrollPane.getHorizontalScrollBar().setBlockIncrement(blockIncrement);
+    }
+    private JPanel createAdminRumorAccessPanel() {
+        JPanel adminPanel = new JPanel(new BorderLayout());
+        adminPanel.setOpaque(false);
+        adminPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.RED, 3),
+                "🛡️ Panel Administrateur - Gestion des Rumeurs",
+                0, 0,
+                new Font("Arial", Font.BOLD, 16),
+                Color.RED));
+
+        // Message d'accueil admin
+        JLabel adminWelcome = new JLabel(
+                "<html><center>" +
+                        "<h2>🛡️ Mode Administrateur Activé</h2>" +
+                        "<p>Vous avez accès à la gestion complète des rumeurs de toutes les factions.</p>" +
+                        "</center></html>",
+                SwingConstants.CENTER);
+        adminWelcome.setForeground(Color.BLACK);
+        adminPanel.add(adminWelcome, BorderLayout.CENTER);
+
+        // Panel de boutons admin
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.setOpaque(false);
+
+        // Bouton ouvrir panel de gestion
+        JButton openAdminBtn = new JButton("🗂️ Ouvrir Panel de Gestion");
+        openAdminBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        openAdminBtn.setBackground(new Color(220, 20, 60));
+        openAdminBtn.setForeground(Color.WHITE);
+        openAdminBtn.setPreferredSize(new Dimension(250, 40));
+        openAdminBtn.addActionListener(e -> openAdminRumorPanel());
+
+        // Bouton stats rapides
+        JButton quickStatsBtn = new JButton("📊 Statistiques");
+        quickStatsBtn.setFont(new Font("Arial", Font.BOLD, 14));
+        quickStatsBtn.setBackground(new Color(70, 130, 180));
+        quickStatsBtn.setForeground(Color.WHITE);
+        quickStatsBtn.setPreferredSize(new Dimension(150, 40));
+        quickStatsBtn.addActionListener(e -> audio.playClick());
+
+        buttonPanel.add(openAdminBtn);
+        buttonPanel.add(Box.createHorizontalStrut(20));
+        buttonPanel.add(quickStatsBtn);
+
+        adminPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        return adminPanel;
+    }
+
+    private void openAdminRumorPanel() {
+        audio.playClick();
+        RumorService rumorService = new RumorServiceImpl();
+        AdminRumorManagementPanel adminPanel = new AdminRumorManagementPanel(rumorService);
+        adminPanel.setVisible(true);
     }
 
     // TODO (À ajouter dans le menu ou comme bouton)

@@ -11,6 +11,48 @@ import java.util.stream.Collectors;
 public class RumorServiceImpl implements RumorService {
     private final Map<Long, Rumor> rumors = new HashMap<>();
     private final AtomicLong idCounter = new AtomicLong(1);
+    private final RumorPersistenceService persistenceService = new RumorPersistenceService();
+
+    // ✨ NOUVEAU : Chargement automatique au démarrage
+    public RumorServiceImpl() {
+        loadRumorsFromDisk();
+    }
+
+    // ✨ NOUVEAU : Méthodes de persistance
+    public void loadRumorsFromDisk() {
+        try {
+            List<Rumor> loadedRumors = persistenceService.loadRumors();
+            System.out.println("Chargement de " + loadedRumors.size() + " rumeurs depuis le disque");
+
+            for (Rumor rumor : loadedRumors) {
+                rumors.put(rumor.getId(), rumor);
+                // Ajuster le compteur d'ID pour éviter les conflits
+                if (rumor.getId() >= idCounter.get()) {
+                    idCounter.set(rumor.getId() + 1);
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("Aucune rumeur sauvegardée trouvée ou erreur de chargement");
+        }
+    }
+
+    public void saveRumorsToDisk() {
+        try {
+            List<Rumor> allRumors = new ArrayList<>(rumors.values());
+            persistenceService.saveRumors(allRumors);
+            System.out.println("Sauvegarde de " + allRumors.size() + " rumeurs sur le disque");
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la sauvegarde des rumeurs: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public Rumor saveRumor(Rumor rumor) {
+        rumors.put(rumor.getId(), rumor);
+        saveRumorsToDisk();
+        return rumor;
+    }
 
     @Override
     public Rumor createFromTNCD(String type, String name, String content, LocalDateTime date) {
@@ -67,13 +109,8 @@ public class RumorServiceImpl implements RumorService {
     }
 
     @Override
-    public Rumor saveRumor(Rumor rumor) {
-        rumors.put(rumor.getId(), rumor);
-        return rumor;
-    }
-
-    @Override
     public List<Rumor> getAllRumors() {
+        loadRumorsFromDisk();
         return new ArrayList<>(rumors.values());
     }
 

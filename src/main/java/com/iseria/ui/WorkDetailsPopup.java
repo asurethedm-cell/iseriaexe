@@ -28,6 +28,8 @@ public class WorkDetailsPopup extends JPanel {
         scrollPane = new JScrollPane(contentPane,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        UI.styleScrollPane(scrollPane);
+        UI.configureScrollSpeed(scrollPane,20,80);
         scrollPane.setOpaque(true);
         scrollPane.getViewport().setOpaque(true);
         add(scrollPane, BorderLayout.CENTER);

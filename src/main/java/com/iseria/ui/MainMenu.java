@@ -219,12 +219,15 @@ public class MainMenu extends JFrame implements ActionListener {
                 } else {
                 JScrollPane rumorScrollPane = new JScrollPane(rumorDisplayPanel);
                 rumorScrollPane.setPreferredSize(new Dimension(980, 300));
+                UI.styleScrollPane(rumorScrollPane);
+                configureScrollSpeed(rumorScrollPane,20,80);
                 rumorScrollPane.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(Color.BLACK, 2),
+                BorderFactory.createLineBorder(Color.white, 2),
                 "📜 Rumeurs circulants chez : " + currentUserFaction.getDisplayName(),
                 0, 0,
                 new Font("Arial", Font.BOLD, 14),
-                Color.BLACK));
+                Color.white));
+                rumorScrollPane.setBackground(new Color(50, 50, 50, 200));
                 rumorDisplayPanel.displayRumors(userFactionRumors);
                 mPgbc.gridy = 1;
                 mPgbc.weighty = 1;
@@ -258,6 +261,8 @@ public class MainMenu extends JFrame implements ActionListener {
 
         JScrollPane economyScrollPane = new JScrollPane(combinedEcoPanel);
         economyScrollPane.setOpaque(false);
+        UI.styleScrollPane(economyScrollPane);
+        configureScrollSpeed(economyScrollPane,20,80);
         economyScrollPane.getViewport().setOpaque(false);
 
 //====================================================================================================================\\
@@ -267,12 +272,15 @@ public class MainMenu extends JFrame implements ActionListener {
         Map<String, SafeHexDetails> hexProdGrid = repo.loadSafeAll();
         enhancedProductionPanelInstance = UIHelpers.createEnhancedProductionPanel(
                 hexProdGrid, currentUserFaction.getId(), repo, economicService);
+        UI.styleScrollPane(enhancedProductionPanelInstance);
 
 //===================+================================================================================================\\
 //================================================Logistics Panel=====================================================\\
         LogisticsService logisticsService = economicService.getLogisticsService();
         LogisticsPanel logisticsPanel = new LogisticsPanel(logisticsService, repo);
         JScrollPane logisticsScrollPane = new JScrollPane(logisticsPanel);
+        UI.styleScrollPane(logisticsScrollPane);
+        configureScrollSpeed(logisticsScrollPane,20,80);
         logisticsScrollPane.setOpaque(false);
         logisticsScrollPane.getViewport().setOpaque(false);
 
@@ -941,6 +949,7 @@ public class MainMenu extends JFrame implements ActionListener {
         scrollPane.getViewport().setOpaque(false);
         scrollPane.setPreferredSize(new Dimension(0, 300));
         scrollPane.setBorder(null);
+        UI.styleScrollPane(scrollPane);
         configureScrollSpeed(scrollPane, 20, 80);
         panel.add(scrollPane, BorderLayout.CENTER);
         return panel;
@@ -1100,6 +1109,7 @@ public class MainMenu extends JFrame implements ActionListener {
         textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
         JScrollPane scrollPane = new JScrollPane(textArea);
+        UI.styleScrollPane(scrollPane);
         JOptionPane.showMessageDialog(this, scrollPane,
                 "📊 Live Market Report", JOptionPane.INFORMATION_MESSAGE);
     }
@@ -1176,7 +1186,7 @@ public class MainMenu extends JFrame implements ActionListener {
         textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
         JScrollPane scrollPane = new JScrollPane(textArea);
-
+        UI.styleScrollPane(scrollPane);
         JOptionPane.showMessageDialog(
                 this,
                 scrollPane,

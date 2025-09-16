@@ -53,8 +53,9 @@ public class Login extends JFrame implements ActionListener {
         backgroundImage = loadRandomBackgroundImage();
 
         users.put("Admin", "");
-        users.put("Bladjorn", "orange");
-        users.put("Klowh", "poing");
+        users.put("Bladjorn", "");
+        users.put("Klowh", "");
+        users.put("Atrociter", "");
         users.put("t", "t");
 
         panel = new JPanel(new GridBagLayout()) {
@@ -371,7 +372,8 @@ public class Login extends JFrame implements ActionListener {
                 // ScrollPane
                 JScrollPane scrollPane = new JScrollPane(table);
                 scrollPane.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
-
+                UI.styleScrollPane(scrollPane);
+                UI.configureScrollSpeed(scrollPane,20,80);
                 // Panel d'informations en bas
                 JPanel infoPanel = createInfoPanel(fontNames.length);
 

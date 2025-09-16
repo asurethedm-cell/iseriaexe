@@ -151,6 +151,7 @@ public class FactionRegistry {
     private static final Map<String, String> USER_FACTION_MAP = Map.of(
             "Bladjorn", "Anima",
             "Klowh", "decimus",
+            "Atrociter", "arsmagicka",
             "Admin", "Admin",
             "t", "Free"
     );

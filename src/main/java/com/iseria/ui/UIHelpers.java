@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static com.iseria.domain.DATABASE.MoralAction.ActionType.UNIQUE;
 import static com.iseria.ui.MainMenu.*;
 import static com.iseria.ui.UI.HexSnapshotCache.mapBackground;
 
@@ -294,72 +295,55 @@ public class UIHelpers  extends JScrollPane{
         factionMenuPanel.add(factionContentPanel);
         return factionMenuPanel;
     }
-    public static DefaultListCellRenderer createMoralActionRenderer() {
-        return new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
-                                                          boolean isSelected, boolean cellHasFocus) {
-                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
-                if (value instanceof DATABASE.MoralAction) {
-                    DATABASE.MoralAction action = (DATABASE.MoralAction) value;
-                    String effectText = action.getMoralEffect() >= 0 ? "+" + action.getMoralEffect() : String.valueOf(action.getMoralEffect());
-                    label.setText(action.getName() + " (" + effectText + ")");
 
-                    // Couleur selon le type d'action
-                    switch (action.getType()) {
-                        case UNIQUE -> label.setForeground(Color.BLUE);
-                        case AUTO -> label.setForeground(Color.RED);
-                        default -> label.setForeground(Color.BLACK);
-                    }
-                } else if (value == null) {
-                    label.setText("Aucune action");
-                    label.setForeground(Color.GRAY);
-                }
-
-                if (isSelected) {
-                    label.setBackground(Color.LIGHT_GRAY);
-                } else {
-                    label.setBackground(Color.WHITE);
-                }
-
-                return label;
-            }
-        };
-    }
-    @SafeVarargs
-    public static void attachLiveMoralUpdater(JLabel moralEndValue, JComboBox<DATABASE.MoralAction>... dropdowns) {
+    public static void attachIntelligentMoralUpdater(JLabel moralEndValue, UI.MoralPanelResult result) {
         ActionListener listener = e -> {
             try {
-                java.util.List<DATABASE.MoralAction> selectedActions = new ArrayList<>();
-                for (JComboBox<DATABASE.MoralAction> dropdown : dropdowns) {
+                List<DATABASE.MoralAction> selectedActions = new ArrayList<>();
+                Set<DATABASE.MoralAction> uniqueActions = new HashSet<>();
+
+                // Collecter toutes les sélections
+                for (JComboBox<DATABASE.MoralAction> dropdown : result.dropdownMap.values()) {
                     DATABASE.MoralAction selected = (DATABASE.MoralAction) dropdown.getSelectedItem();
                     if (selected != null) {
                         selectedActions.add(selected);
+
+                        // Vérifier les règles UNIQUE
+                        if (selected.getType() == UNIQUE) {
+                            if (uniqueActions.contains(selected)) {
+                                // Conflit détecté - afficher avertissement
+                                moralEndValue.setText("CONFLIT!");
+                                moralEndValue.setForeground(Color.RED);
+                                return;
+                            }
+                            uniqueActions.add(selected);
+                        }
                     }
                 }
 
-                moralSum = MoralCalculator.sumMoral(selectedActions);
+                // Calculer le moral total
+                double moralSum = MoralCalculator.sumMoral(selectedActions);
                 moralEndValue.setText(String.format("%.1f", moralSum));
 
+                // Couleur selon la valeur
                 if (moralSum == 5.0) {
-                    moralEndValue.setBackground(Color.lightGray);
+                    moralEndValue.setForeground(Color.LIGHT_GRAY);
                 } else if (moralSum <= 4.0) {
-                    moralEndValue.setBackground(new Color(207, 65, 7));
+                    moralEndValue.setForeground(new Color(207, 65, 7));
                 } else {
-                    moralEndValue.setBackground(new Color(65, 186, 61));
+                    moralEndValue.setForeground(new Color(65, 186, 61));
                 }
 
             } catch (Exception ex) {
                 System.err.println("Erreur lors du calcul du moral : " + ex.getMessage());
-                ex.printStackTrace();
-                moralSum = 5.0;
-                moralEndValue.setText("5.0");
-                moralEndValue.setBackground(Color.lightGray);
+                moralEndValue.setText("ERREUR");
+                moralEndValue.setForeground(Color.RED);
             }
         };
 
-        for (JComboBox<DATABASE.MoralAction> dropdown : dropdowns) {
+        // Attacher le listener à tous les dropdowns
+        for (JComboBox<DATABASE.MoralAction> dropdown : result.dropdownMap.values()) {
             dropdown.addActionListener(listener);
         }
     }
@@ -489,26 +473,6 @@ public class UIHelpers  extends JScrollPane{
                 .map(DATABASE.Workers::getCategory)
                 .findFirst()
                 .orElse("Autre");
-    }
-    private static DefaultListCellRenderer createMoralRenderer() {
-        return new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-                JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (isSelected) {
-                    label.setBackground(Color.LIGHT_GRAY);
-                    label.setForeground(Color.BLACK);
-                } else {
-                    label.setBackground(Color.WHITE);
-                    label.setForeground(Color.BLACK);
-                }
-                return label;
-            }
-        };
-    }
-    private static JComboBox<String> createDropdown(IDataProvider data, String resourcePath, int column) {
-        List<String> options = data.loadOptions(resourcePath, column);
-        return new JComboBox<>(options.toArray(new String[0]));
     }
     private static void showPopulationSummaryDetails(WorkDetailsPopup popup,
                                                      IHexRepository repo,
@@ -810,6 +774,7 @@ public class UIHelpers  extends JScrollPane{
 
         return false;
     }
+
 }
 
 

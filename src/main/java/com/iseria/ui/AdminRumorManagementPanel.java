@@ -104,7 +104,8 @@ public class AdminRumorManagementPanel extends JFrame {
         JScrollPane scrollPane = new JScrollPane(rumorPanel);
         scrollPane.setBackground(new Color(60, 60, 60));
         scrollPane.getViewport().setBackground(new Color(60, 60, 60));
-
+        UI.styleScrollPane(scrollPane);
+        UI.configureScrollSpeed(scrollPane,20,80);
         factionMainPanel.add(scrollPane, BorderLayout.CENTER);
 
         // Stocker les références

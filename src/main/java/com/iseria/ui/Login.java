@@ -15,7 +15,7 @@ import java.util.Random;
 
 public class Login extends JFrame implements ActionListener {
 
-    private final IDataProvider data;
+
     private final IAudioService audio;
     private final IHexRepository repo;
     private BufferedImage backgroundImage;
@@ -43,8 +43,8 @@ public class Login extends JFrame implements ActionListener {
         placeForteEnabled = enabled;
     }
 
-    public Login(IDataProvider data, IAudioService audio, IHexRepository repo) {
-        this.data = data;
+    public Login(IAudioService audio, IHexRepository repo) {
+
         this.audio = audio;
         this.repo = repo;
         waitNextTurn = false;
@@ -266,7 +266,7 @@ public class Login extends JFrame implements ActionListener {
 
         if (users.containsKey(username) && users.get(username).equals(password)) {
             currentUser = username;
-            MainMenu mainMenu = new MainMenu(data, audio, repo);
+            MainMenu mainMenu = new MainMenu(audio, repo);
             mainMenu.setVisible(true);
             mainMenu.toBack();
             new javax.swing.Timer(500, t1 -> {((javax.swing.Timer)t1.getSource()).stop(); mainMenu.toFront();;}).start();

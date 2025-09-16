@@ -21,13 +21,12 @@ public class LoadingWindow extends JWindow {
     private JLabel statusLabel;
     private final IHexRepository repo;
     private final IAudioService audio;
-    private final IDataProvider data;
+
     public static boolean readyToClose;
     public static boolean audioOkStart;
     public static Mondes mondesWindow;
 
-    public LoadingWindow(BufferedImage fullImage, IHexRepository repo, IAudioService audio, IDataProvider data) {
-        this.data = data;
+    public LoadingWindow(BufferedImage fullImage, IHexRepository repo, IAudioService audio) {
         this.repo = repo;
         this.audio = audio;
 
@@ -66,10 +65,10 @@ public class LoadingWindow extends JWindow {
         loader.execute();
     }
     public static LoadingWindow splash;
-    public static void showSplash(IHexRepository repo, IAudioService audio, IDataProvider data) {
+    public static void showSplash(IHexRepository repo, IAudioService audio) {
             try {
                 BufferedImage img = ImageIO.read(LoadingWindow.class.getResource("/RessourceGen/bg_loading.jpg"));
-                splash = new LoadingWindow(img, repo, audio, data);
+                splash = new LoadingWindow(img, repo, audio);
                 splash.setVisible(true);
             } catch (Exception e) {
             e.printStackTrace(); e.getMessage();
@@ -90,7 +89,7 @@ public class LoadingWindow extends JWindow {
 
             // Pré-créer Mondes avec constructeur minimal
             SwingUtilities.invokeAndWait(() -> {
-                mondesWindow = new Mondes(data, audio, repo, false); // false = pas d'init lourde
+                mondesWindow = new Mondes(audio, repo, false); // false = pas d'init lourde
             });
 
             publish("Initialisation des caches...");

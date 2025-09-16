@@ -3,6 +3,7 @@ package com.iseria.ui;
 import com.iseria.domain.DATABASE;
 import com.iseria.domain.Faction;
 import com.iseria.domain.Rumor;
+import com.iseria.service.RumorPersistenceService;
 import com.iseria.service.RumorService;
 import com.iseria.infra.FactionRegistry;
 
@@ -308,6 +309,7 @@ public class AdminRumorManagementPanel extends JFrame {
 
             // Créer la rumeur avec la date sélectionnée
             Rumor newRumor = rumorService.createFromTNCD(type, name, content, dateTime);
+
             newRumor.setAuthorFactionId(factionName);
 
             JOptionPane.showMessageDialog(createDialog, "Rumeur créée avec succès!", "Succès", JOptionPane.INFORMATION_MESSAGE);

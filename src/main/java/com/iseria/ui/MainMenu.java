@@ -78,15 +78,13 @@ public class MainMenu extends JFrame implements ActionListener {
     static JPanel factionContentPanel = new JPanel(new CardLayout());
 
     public static Faction currentUserFaction;
-    private final IDataProvider data;
     private final IAudioService audio;
     private final IHexRepository repo;
     private UI.EnhancedProductionPanel enhancedProductionPanelInstance;
 
     public static EconomicDataService economicService;
 
-    MainMenu(IDataProvider data, IAudioService audio, IHexRepository repo) {
-        this.data = data;
+    MainMenu(IAudioService audio, IHexRepository repo) {
         this.audio = audio;
         this.repo = repo;
 
@@ -431,7 +429,7 @@ public class MainMenu extends JFrame implements ActionListener {
                 Menu5.setVisible(true);
                 factionMenu1.setVisible(false);
                 audio.playClick();
-                LoadingWindow.showSplash(repo, audio, data);
+                LoadingWindow.showSplash(repo, audio);
                         new Timer(100, evt -> {
                             if (LoadingWindow.readyToClose) {
                                 splash.dispose();

@@ -58,8 +58,8 @@ public class RumorDisplayPanel extends JPanel {
     // Méthodes helper manquantes
     private Color getColorForType(String type) {
         return switch (type.toLowerCase()) {
-            case "politique" -> Color.RED;
-            case "économie" -> Color.GREEN;
+            case "reçue" -> Color.RED;
+            case "envoyé" -> Color.GREEN;
             case "militaire" -> Color.BLUE;
             case "social" -> Color.ORANGE;
             default -> Color.BLACK;

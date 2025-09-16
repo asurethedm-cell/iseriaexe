@@ -1,11 +1,15 @@
 package com.iseria.domain;
 
 
+import java.io.Serial;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Set;
 
-public class Rumor {
+public class Rumor implements Serializable {
+    @Serial
+    private static final long serialVersionUID = 1L;
     // ✅ FORMAT TNCD CONSERVÉ (Core data)
     private String type;        // T - Type de rumeur
     private String name;        // N - Nom/titre

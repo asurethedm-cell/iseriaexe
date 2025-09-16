@@ -86,7 +86,6 @@ public class Mondes extends JFrame {
     private Map<Integer, ImageIcon> scaledIconsFort = new HashMap<>();
     private Map<Point, String> hexLabels = new HashMap<>();
     String hexKey;
-    IDataProvider data;
     IAudioService audio;
     IHexRepository repo;
     Point labelclick;
@@ -103,8 +102,7 @@ public class Mondes extends JFrame {
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
 
 
-    Mondes(IDataProvider data, IAudioService audio, IHexRepository repo, boolean performHeavyInit) {
-        this.data = data;
+    Mondes(IAudioService audio, IHexRepository repo, boolean performHeavyInit) {
         this.audio = audio;
         this.repo = repo;
         setupBasicComponents(); // Votre méthode existante pour unitHexagon

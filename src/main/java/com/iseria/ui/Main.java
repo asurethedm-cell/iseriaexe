@@ -2,6 +2,7 @@ package com.iseria.ui;
 
 import com.iseria.domain.*;
 import com.iseria.infra.*;
+import com.iseria.service.RumorPersistenceService;
 import com.iseria.service.RumorService;
 import com.iseria.service.SoundAudioService;
 import org.apache.commons.io.output.ByteArrayOutputStream;
@@ -17,6 +18,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -26,7 +28,7 @@ import static org.apache.poi.ss.util.DateParser.parseDate;
 public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            IDataProvider dataProvider = new ExcelDataProvider();
+
             IAudioService audioService = new SoundAudioService();
             IHexRepository hexRepository = HexRepositoryFactory.create();;
 
@@ -34,9 +36,25 @@ public class Main {
             diagnoseCurrentState(hexRepository);
             var hexes = hexRepository.loadSafeAll();
            // System.out.println("Loaded " + hexes.size() + " hexes");
-            new Login(dataProvider, audioService, hexRepository).setVisible(true);
+            new Login(audioService, hexRepository).setVisible(true);
         });
+        testSerialization();
+    }
+    public static void testSerialization() {
+        RumorPersistenceService service = new RumorPersistenceService();
 
+        // Créer une rumeur test
+        Rumor testRumor = new Rumor("Test", "Rumeur Test", "Contenu test", LocalDateTime.now());
+        testRumor.setId(1L);
+
+        // Test sauvegarde/chargement
+        try {
+            service.saveRumors(Arrays.asList(testRumor));
+            List<Rumor> loaded = service.loadRumors();
+            System.out.println("🎉 Sérialisation fonctionnelle ! Rumeurs chargées: " + loaded.size());
+        } catch (Exception e) {
+            System.err.println("🔥 Erreur persistance: " + e.getMessage());
+        }
     }
     public class SerializationDiagnostic {
         public static void diagnoseCurrentState(IHexRepository repo) {
@@ -121,5 +139,6 @@ public class Main {
             }
         }
     }
+
 
 }

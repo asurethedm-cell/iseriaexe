@@ -195,24 +195,21 @@ public class MainMenu extends JFrame implements ActionListener {
 
 
                 MoralDataService moralService = new EnumMoralDataService();
-                UI.MoralPanelResult result = UI.createMoralPanel(moralService, currentUserFaction, Login.currentUser);
+                UI.MoralPanelResult result = UI.createModernMoralPanel(moralService, currentUserFaction, Login.currentUser);
 
                 JPanel miscellaneousPanel = new JPanel(new GridBagLayout());
-                miscellaneousPanel.setPreferredSize(new Dimension(1000, 1000));
+                miscellaneousPanel.setPreferredSize(new Dimension(1000, 1200));
                 GridBagConstraints mPgbc = new GridBagConstraints();
                 JPanel moralPanel = result.panel;
                 mPgbc.anchor = GridBagConstraints.PAGE_START;
                 mPgbc.gridy = 0;
                 mPgbc.gridx = 0;
-                mPgbc.weighty = 1;
+                mPgbc.weightx = 1;
+                moralPanel.setPreferredSize(new Dimension(980, 400));
                 miscellaneousPanel.add(moralPanel, mPgbc);
                 RumorService rumorService = new RumorServiceImpl();
                 RumorDisplayPanel rumorDisplayPanel = new RumorDisplayPanel();
-                java.util.List<Rumor> approvedRumors = rumorService.getAllRumors()
-                .stream()
-                .filter(rumor -> rumor.getStatus() == DATABASE.RumorStatus.APPROVED)
-                .sorted(Comparator.comparing(Rumor::getDate).reversed())
-                .collect(Collectors.toList());
+                java.util.List<Rumor> userFactionRumors = rumorService.getApprovedRumorsForFaction(currentUserFaction.getDisplayName());
                 if ("Admin".equals(Login.currentUser)) {
                 // Panel admin avec bouton d'accès au panel de gestion
                 JPanel adminRumorPanel = createAdminRumorAccessPanel();
@@ -221,14 +218,14 @@ public class MainMenu extends JFrame implements ActionListener {
                 miscellaneousPanel.add(adminRumorPanel, mPgbc);
                 } else {
                 JScrollPane rumorScrollPane = new JScrollPane(rumorDisplayPanel);
-                rumorScrollPane.setPreferredSize(new Dimension(980, 400));
+                rumorScrollPane.setPreferredSize(new Dimension(980, 300));
                 rumorScrollPane.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.BLACK, 2),
                 "📜 Rumeurs circulants chez : " + currentUserFaction.getDisplayName(),
                 0, 0,
                 new Font("Arial", Font.BOLD, 14),
                 Color.BLACK));
-                rumorDisplayPanel.displayRumors(approvedRumors);
+                rumorDisplayPanel.displayRumors(userFactionRumors);
                 mPgbc.gridy = 1;
                 mPgbc.weighty = 1;
                 miscellaneousPanel.add(rumorScrollPane, mPgbc);}
@@ -583,7 +580,6 @@ public class MainMenu extends JFrame implements ActionListener {
                 File saveDir = new File(saveDirPath);
                 if (!saveDir.exists()) saveDir.mkdirs();
                 notesFile = new File(saveDir, notesFilename);
-                Map<String, JComboBox<DATABASE.MoralAction>> dropdownMap = result.dropdownMap;
                 loadNotes(myNoteArea);
                 setupAutoSave(myNoteArea);
                 setContentPane(layeredPane);

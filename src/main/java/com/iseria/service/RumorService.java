@@ -22,6 +22,6 @@ public interface RumorService {
     List<Rumor> getAllRumors();
     List<Rumor> getPendingRumors();
     Rumor findById(Long id);
-
+    List<Rumor> getApprovedRumorsForFaction(String factionId);
 }
 

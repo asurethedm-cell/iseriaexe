@@ -303,7 +303,8 @@ public class UIHelpers  extends JScrollPane{
 
                 if (value instanceof DATABASE.MoralAction) {
                     DATABASE.MoralAction action = (DATABASE.MoralAction) value;
-                    label.setText(action.getName());
+                    String effectText = action.getMoralEffect() >= 0 ? "+" + action.getMoralEffect() : String.valueOf(action.getMoralEffect());
+                    label.setText(action.getName() + " (" + effectText + ")");
 
                     // Couleur selon le type d'action
                     switch (action.getType()) {
@@ -312,7 +313,8 @@ public class UIHelpers  extends JScrollPane{
                         default -> label.setForeground(Color.BLACK);
                     }
                 } else if (value == null) {
-                    label.setText("Select...");
+                    label.setText("Aucune action");
+                    label.setForeground(Color.GRAY);
                 }
 
                 if (isSelected) {

@@ -99,6 +99,7 @@ public class AdminRumorManagementPanel extends JFrame {
         // Panel d'affichage des rumeurs
         RumorDisplayPanel rumorPanel = new RumorDisplayPanel();
         rumorPanel.setBackground(new Color(60, 60, 60));
+        rumorPanel.setEditCallback(this::showEditRumorDialog);
 
         JScrollPane scrollPane = new JScrollPane(rumorPanel);
         scrollPane.setBackground(new Color(60, 60, 60));
@@ -402,5 +403,149 @@ public class AdminRumorManagementPanel extends JFrame {
 
         return String.format("Total: %d | Approuvées: %d | En attente: %d | Rejetées: %d",
                 allRumors.size(), approved, pending, rejected);
+    }
+    private void showEditRumorDialog(Rumor rumor) {
+        JDialog editDialog = new JDialog(this, "✏️ Éditer Rumeur - ID: " + rumor.getId(), true);
+        editDialog.setSize(650, 500);
+        editDialog.setLocationRelativeTo(this);
+
+        JPanel mainPanel = new JPanel(new GridBagLayout());
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.anchor = GridBagConstraints.WEST;
+
+        // Type (modifiable)
+        gbc.gridx = 0; gbc.gridy = 0;
+        mainPanel.add(new JLabel("Type:"), gbc);
+        JComboBox<String> typeCombo = new JComboBox<>(new String[]{"Reçue", "Propagé", "Militaire", "Social"});
+        typeCombo.setSelectedItem(rumor.getType());
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        mainPanel.add(typeCombo, gbc);
+
+        // Nom (modifiable)
+        gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
+        mainPanel.add(new JLabel("Nom:"), gbc);
+        JTextField nameField = new JTextField(rumor.getName(), 30);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        mainPanel.add(nameField, gbc);
+
+        // ✅ NOUVEAU : Date modifiable
+        gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE;
+        mainPanel.add(new JLabel("Date:"), gbc);
+
+        SpinnerDateModel dateModel = new SpinnerDateModel();
+        JSpinner dateSpinner = new JSpinner(dateModel);
+        JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "dd/MM/yyyy HH:mm");
+        dateSpinner.setEditor(dateEditor);
+
+        // Convertir LocalDateTime vers Date pour le spinner
+        java.util.Date currentDate = java.util.Date.from(
+                rumor.getDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
+        );
+        dateSpinner.setValue(currentDate);
+
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        mainPanel.add(dateSpinner, gbc);
+
+        // ✅ NOUVEAU : Faction modifiable
+        gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE;
+        mainPanel.add(new JLabel("Faction:"), gbc);
+
+        // Récupérer toutes les factions disponibles
+        Collection<Faction> allFactions = FactionRegistry.all();
+        String[] factionNames = allFactions.stream()
+                .filter(Faction::getIsPlayer)
+                .map(Faction::getDisplayName)
+                .toArray(String[]::new);
+
+        JComboBox<String> factionCombo = new JComboBox<>(factionNames);
+        factionCombo.setSelectedItem(rumor.getAuthorFactionId());
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
+        mainPanel.add(factionCombo, gbc);
+
+        // Contenu (modifiable)
+        gbc.gridx = 0; gbc.gridy = 4; gbc.fill = GridBagConstraints.NONE;
+        mainPanel.add(new JLabel("Contenu:"), gbc);
+        JTextArea contentArea = new JTextArea(rumor.getContent(), 8, 30);
+        contentArea.setLineWrap(true);
+        contentArea.setWrapStyleWord(true);
+        JScrollPane contentScroll = new JScrollPane(contentArea);
+        gbc.gridx = 1; gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0; gbc.weighty = 1.0;
+        mainPanel.add(contentScroll, gbc);
+
+        // Informations de statut
+        gbc.gridx = 0; gbc.gridy = 5; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weighty = 0;
+        JLabel statusInfo = new JLabel(
+                String.format("Status: %s | ID: %d | Créé: %s",
+                        rumor.getStatus(), rumor.getId(), (rumor.getDate()))
+        );
+        statusInfo.setFont(new Font("Arial", Font.ITALIC, 10));
+        statusInfo.setForeground(Color.GRAY);
+        mainPanel.add(statusInfo, gbc);
+
+        // Boutons
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        JButton saveBtn = new JButton("💾 Sauvegarder");
+        JButton cancelBtn = new JButton("❌ Annuler");
+
+        saveBtn.addActionListener(e -> {
+            try {
+                // ✅ MISE À JOUR : Appliquer les modifications
+                rumor.setType((String) typeCombo.getSelectedItem());
+                rumor.setName(nameField.getText().trim());
+                rumor.setContent(contentArea.getText().trim());
+
+                // Convertir Date vers LocalDateTime
+                java.util.Date selectedDate = (java.util.Date) dateSpinner.getValue();
+                LocalDateTime newDateTime = LocalDateTime.ofInstant(
+                        selectedDate.toInstant(),
+                        java.time.ZoneId.systemDefault()
+                );
+                rumor.setDate(newDateTime);
+
+                // Changer la faction
+                rumor.setAuthorFactionId((String) factionCombo.getSelectedItem());
+
+                // Validation
+                if (rumor.getName().isEmpty() || rumor.getContent().isEmpty()) {
+                    JOptionPane.showMessageDialog(editDialog,
+                            "Le nom et le contenu sont requis!", "Erreur", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+
+                // ✅ SAUVEGARDER les modifications
+                rumorService.saveRumor(rumor);
+
+                JOptionPane.showMessageDialog(editDialog,
+                        "Rumeur mise à jour avec succès!", "Succès", JOptionPane.INFORMATION_MESSAGE);
+
+                editDialog.dispose();
+
+                // ✅ ACTUALISER l'affichage
+                refreshAllTabs();
+
+            } catch (Exception ex) {
+                System.err.println("Erreur modification rumeur: " + ex.getMessage());
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(editDialog,
+                        "Erreur lors de la modification: " + ex.getMessage(),
+                        "Erreur", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        cancelBtn.addActionListener(e -> editDialog.dispose());
+
+        buttonPanel.add(saveBtn);
+        buttonPanel.add(cancelBtn);
+
+        gbc.gridx = 0; gbc.gridy = 6; gbc.gridwidth = 2;
+        gbc.fill = GridBagConstraints.HORIZONTAL; gbc.weighty = 0;
+        mainPanel.add(buttonPanel, gbc);
+
+        editDialog.add(mainPanel);
+        editDialog.setVisible(true);
     }
 }

@@ -53,6 +53,15 @@ public class RumorServiceImpl implements RumorService {
         saveRumorsToDisk();
         return rumor;
     }
+    @Override
+    public List<Rumor> getApprovedRumorsForFaction(String factionId) {
+        return rumors.values().stream()
+                .filter(rumor -> rumor.getStatus() == DATABASE.RumorStatus.APPROVED)
+                .filter(rumor -> factionId.equals(rumor.getAuthorFactionId()))
+                .sorted(Comparator.comparing(Rumor::getDate).reversed())
+                .collect(Collectors.toList());
+    }
+
 
     @Override
     public Rumor createFromTNCD(String type, String name, String content, LocalDateTime date) {

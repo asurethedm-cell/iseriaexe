@@ -84,271 +84,291 @@ public class UI {
         return gIP;
     }
 
-    // Dans UI.java, remplacer createMoralResultLabel par cette version améliorée
-    private static JTextPane createMoralResultTextPane(String text) {
+
+    private static JTextPane createModernMoralTextPane(String content) {
         JTextPane textPane = new JTextPane();
         textPane.setContentType("text/html");
         textPane.setEditable(false);
         textPane.setOpaque(true);
-        textPane.setBackground(new Color(240, 240, 240));
-        textPane.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-        textPane.setFont(new Font("Arial", Font.PLAIN, 12));
-        textPane.setText(formatTextForDisplay(text));
+        textPane.setBackground(new Color(60, 60, 60));
+        textPane.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(Color.GRAY, 1),
+                BorderFactory.createEmptyBorder(15, 15, 15, 15)
+        ));
+
+        String css = """
+        <style>
+            body { 
+                font-family: 'Arial', sans-serif; 
+                font-size: 12px; 
+                color: #FFFFFF; 
+                background-color: #3C3C3C; 
+                margin: 0; 
+                padding: 10px;
+                line-height: 1.4;
+            }
+            .section { 
+                margin-bottom: 15px; 
+                padding: 10px;
+                background-color: rgba(255, 255, 255, 0.05);
+                border-radius: 8px;
+                border-left: 3px solid #4CAF50;
+            }
+            .section h3 { 
+                font-size: 14px; 
+                margin: 0 0 8px 0; 
+                color: #4CAF50;
+                font-weight: bold;
+            }
+            .positive { color: #4CAF50; }
+            .negative { color: #F44336; }
+            .neutral { color: #FFC107; }
+        </style>
+    """;
+
+        String html = "<html><head>" + css + "</head><body>" + content + "</body></html>";
+        textPane.setText(html);
         return textPane;
     }
-
-    private static String formatTextForDisplay(String text) {
-        if (text == null || text.isEmpty()) {
-            return "<html><body>← effect will show here</body></html>";
-        }
-
-        // Remplacer les \n par des <br> pour l'HTML
-        String formatted = text.replace("\n", "<br>");
-        return "<html><body style='padding: 5px;'>" + formatted + "</body></html>";
-    }
-
-    // Version mise à jour de createMoralPanel
-    public static MoralPanelResult createMoralPanel(MoralDataService moralService, Faction currentUserFaction, String currentUser) {
-        Map<String, JComboBox<DATABASE.MoralAction>> dropdownMap = new HashMap<>();
-        JPanel moralPanel = new JPanel(new GridBagLayout());
-        moralPanel.setPreferredSize(new Dimension(1000, 400)); // Augmenté la hauteur
-        moralPanel.setOpaque(false);
-        moralPanel.setBackground(Color.lightGray);
+    private static JPanel createMoralControlPanel(MoralDataService moralService, Faction faction, MoralPanelResult result) {
+        JPanel controlPanel = new JPanel(new GridBagLayout());
+        controlPanel.setOpaque(false);
+        controlPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.GRAY, 1),
+                "Actions Morales Disponibles",
+                0, 0,
+                new Font("Arial", Font.BOLD, 12),
+                Color.WHITE
+        ));
 
         GridBagConstraints gbc = new GridBagConstraints();
-        gbc.anchor = GridBagConstraints.PAGE_START;
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.anchor = GridBagConstraints.WEST;
 
-        // Header
-        JLabel title = new JLabel("Moral");
-        title.setFont(new Font("Bahnschrift", Font.BOLD, 25));
-        gbc.gridx = 2; gbc.gridy = 0;
-        moralPanel.add(title, gbc);
+        try {
+            List<DATABASE.MoralAction> availableActions = moralService.getAvailableActions(faction);
 
-        // Column headers
-        gbc.gridheight = 1;
-        gbc.ipady = 10;
-        gbc.anchor = GridBagConstraints.BASELINE;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+            // Créer des dropdowns pour différents types d'actions
+            String[] actionCategories = {"Action Principale", "Action Secondaire", "Action d'Urgence"};
 
-        JLabel type = makeCell("Type :", Color.ORANGE);
-        gbc.gridx = 1; gbc.gridy = 1;
-        type.setPreferredSize(new Dimension(200,25));
-        moralPanel.add(type, gbc);
+            for (int i = 0; i < actionCategories.length && i < 3; i++) {
+                String category = actionCategories[i];
 
-        JLabel effect = makeCell("Effets :", Color.ORANGE);
-        gbc.gridx = 2;
-        effect.setPreferredSize(new Dimension(500,25));
-        moralPanel.add(effect, gbc);
+                // Label de catégorie
+                gbc.gridx = 0; gbc.gridy = i;
+                JLabel categoryLabel = new JLabel(category + ":");
+                categoryLabel.setFont(new Font("Arial", Font.BOLD, 11));
+                categoryLabel.setForeground(Color.WHITE);
+                controlPanel.add(categoryLabel, gbc);
 
-        JLabel tirage = makeCell("Tiré le :", Color.ORANGE);
-        gbc.gridx = 3;
-        tirage.setPreferredSize(new Dimension(100,25));
-        moralPanel.add(tirage, gbc);
+                // Créer le ComboBox avec le bon type générique
+                JComboBox<DATABASE.MoralAction> actionCombo = new JComboBox<>();
+                actionCombo.setRenderer(createMoralActionRenderer());
 
-        JLabel fin = makeCell("Fin le :", Color.ORANGE);
-        gbc.gridx = 4;
-        fin.setPreferredSize(new Dimension(100,25));
-        fin.setFont(new Font("Bahnschrift", Font.BOLD, 15));
-        fin.setBackground(Color.orange);
-        fin.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        moralPanel.add(fin, gbc);
+                // Ajouter l'option "Aucune action"
+                actionCombo.addItem(null); // représente "Aucune action"
 
-        // Dropdowns + Result TextPanes (au lieu de Labels)
-        JComboBox<DATABASE.MoralAction>[] dropdowns = new JComboBox[5];
-        JTextPane[] resultTextPanes = new JTextPane[5]; // Changé de JLabel à JTextPane
+                // Ajouter les actions disponibles
+                for (DATABASE.MoralAction action : availableActions) {
+                    actionCombo.addItem(action);
+                }
 
-        List<DATABASE.MoralAction> availableActions = moralService.getAvailableActions(currentUserFaction);
+                actionCombo.setPreferredSize(new Dimension(200, 25));
+                gbc.gridx = 1;
+                controlPanel.add(actionCombo, gbc);
 
-        gbc.anchor = GridBagConstraints.PAGE_START;
-        gbc.fill = GridBagConstraints.BOTH; // Changé pour BOTH
+                // Stocker dans la map avec le bon type
+                result.dropdownMap.put(category, actionCombo);
+            }
 
-        for (int i = 0; i < 5; i++) {
-            String key = "dropdown_" + (i + 1);
-
-            // Créer dropdown avec les actions disponibles pour la faction
-            dropdowns[i] = new JComboBox<>();
-            dropdowns[i].addItem(null); // Option vide
-            availableActions.forEach(dropdowns[i]::addItem);
-
-            dropdowns[i].setPreferredSize(new Dimension(200, 30));
-            dropdowns[i].setFocusable(false);
-            dropdowns[i].setRenderer(createMoralActionRenderer());
-            dropdownMap.put(key, dropdowns[i]);
+            // Affichage du moral total
+            gbc.gridx = 0; gbc.gridy = actionCategories.length;
+            JLabel moralLabel = new JLabel("Moral Total:");
+            moralLabel.setFont(new Font("Arial", Font.BOLD, 12));
+            moralLabel.setForeground(Color.WHITE);
+            controlPanel.add(moralLabel, gbc);
 
             gbc.gridx = 1;
-            gbc.gridy = i + 2;
-            gbc.weightx = 0.3;
-            gbc.weighty = 0.2; // Ajouté du poids vertical
-            moralPanel.add(dropdowns[i], gbc);
+            JLabel moralValueLabel = new JLabel("5.0");
+            moralValueLabel.setFont(new Font("Arial", Font.BOLD, 12));
+            moralValueLabel.setForeground(Color.GREEN);
+            controlPanel.add(moralValueLabel, gbc);
 
-            // Utiliser JTextPane au lieu de JLabel
-            resultTextPanes[i] = createMoralResultTextPane("← effect will show here");
-            resultTextPanes[i].setPreferredSize(new Dimension(500, 60)); // Hauteur fixe
+            // Connecter le système de mise à jour en temps réel
+            attachLiveMoralUpdater(moralValueLabel, result.dropdownMap.values().toArray(new JComboBox[0]));
 
-            int finalI = i;
-            dropdowns[i].addActionListener(e -> {
-                DATABASE.MoralAction selectedAction = (DATABASE.MoralAction) dropdowns[finalI].getSelectedItem();
-                if (selectedAction != null) {
-                    resultTextPanes[finalI].setText(formatTextForDisplay(selectedAction.getDescription()));
-                    resultTextPanes[finalI].setToolTipText(selectedAction.getLoreDescription());
-                } else {
-                    resultTextPanes[finalI].setText(formatTextForDisplay("← effect will show here"));
-                    resultTextPanes[finalI].setToolTipText(null);
-                }
-            });
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la création des contrôles moraux: " + e.getMessage());
 
-            gbc.gridx = 2;
-            gbc.gridy = i + 2;
-            gbc.weightx = 0.7;
-            moralPanel.add(resultTextPanes[finalI], gbc);
+            // Panel de fallback en cas d'erreur
+            gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+            JLabel errorLabel = new JLabel("Erreur lors du chargement des actions morales");
+            errorLabel.setForeground(Color.RED);
+            controlPanel.add(errorLabel, gbc);
         }
 
-        // Total label
-        JLabel totalTitle = createMoralResultLabel("Moral Total : ");
-        totalTitle.setPreferredSize(new Dimension(200, 28));
-        totalTitle.setFont(new Font("Oswald", Font.BOLD, 20));
-        totalTitle.setHorizontalAlignment(SwingConstants.CENTER);
-        totalTitle.setBackground(Color.ORANGE);
-        gbc.gridx = 1; gbc.gridy = 4; // Ajusté la position
-        gbc.weighty = 0;
-        moralPanel.add(totalTitle, gbc);
+        return controlPanel;
+    }    // Version mise à jour de createMoralPanel
 
-        JLabel totalValue = createMoralResultLabel(" ");
-        totalValue.setHorizontalAlignment(SwingConstants.CENTER);
-        totalValue.setFont(new Font("Oswald", Font.BOLD, 20));
-        gbc.gridx = 2;
+    private static String formatMoralContentForDisplay(String text) {
+        if (text == null || text.isEmpty()) {
+            return "<div class='section'><p>← Les effets du moral s'afficheront ici</p></div>";
+        }
 
-        attachLiveMoralUpdater(totalValue, dropdowns);
-        moralPanel.add(totalValue, gbc);
+        StringBuilder html = new StringBuilder();
+        String[] lines = text.split("\n");
 
-        MoralPanelResult result = new MoralPanelResult(moralPanel, dropdownMap);
+        boolean inSection = false;
 
-        // Charger les sélections sauvegardées
-        MoralSaveService.MoralSaveData loadedData = moralSaveService.loadMoralSelections(currentUser, currentUserFaction);
+        for (String line : lines) {
+            line = line.trim();
+            if (line.isEmpty()) continue;
 
-        moralSaveService.applyLoadedSelections(dropdownMap, loadedData);
-
-        // Auto-sauvegarde à chaque changement
-        for (JComboBox<DATABASE.MoralAction> dropdown : dropdowns) {
-            dropdown.addActionListener(e -> {
-                // Calculer les totaux actuels
-                List<DATABASE.MoralAction> selectedActions = new ArrayList<>();
-                for (JComboBox<DATABASE.MoralAction> cb : dropdowns) {
-                    DATABASE.MoralAction selected = (DATABASE.MoralAction) cb.getSelectedItem();
-                    if (selected != null) {
-                        selectedActions.add(selected);
-                    }
+            if (line.contains(":") && !line.startsWith("*")) {
+                if (inSection) {
+                    html.append("</div>");
+                }
+                html.append("<div class='section'>");
+                html.append("<h3>").append(line).append("</h3>");
+                inSection = true;
+            } else {
+                String cssClass = "";
+                if (line.contains("+")) {
+                    cssClass = " class='positive'";
+                } else if (line.contains("-")) {
+                    cssClass = " class='negative'";
                 }
 
-                double moral = MoralCalculator.sumMoral(selectedActions);
-                int instability = MoralCalculator.sumInstability(selectedActions);
+                html.append("<p").append(cssClass).append(">")
+                        .append(line.replace("*", "•"))
+                        .append("</p>");
+            }
+        }
 
-                // Sauvegarder
-                moralSaveService.saveMoralSelections(currentUser, currentUserFaction, dropdownMap, moral, instability);
-            });
-        }    return result;
+        if (inSection) {
+            html.append("</div>");
+        }
 
+        return html.toString();
     }
+    public static MoralPanelResult createModernMoralPanel(MoralDataService moralService, Faction currentUserFaction, String currentUser) {
+        MoralPanelResult result = new MoralPanelResult();
 
-    public static JPanel createRumorPanel(RumorDataService rumorService, String excelResourcePath, String currentUser) {
-        JPanel container = new JPanel(new BorderLayout());
-        container.setOpaque(false);
-        container.setBackground(new Color(0, 0, 0, 0));
-        container.setPreferredSize(new Dimension(1000, 400));
+        // Panneau principal avec style moderne
+        JPanel moralPanel = new JPanel(new BorderLayout());
+        moralPanel.setOpaque(false);
+        moralPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(Color.BLACK, 2),
+                "📊 État du Moral - " + currentUserFaction.getDisplayName(),
+                0, 0,
+                new Font("Arial", Font.BOLD, 16),
+                Color.BLACK
+        ));
 
-        JPanel rumorPanel = new JPanel(new GridBagLayout());
-        rumorPanel.setOpaque(false);
-        GridBagConstraints gbc = new GridBagConstraints();
+        // Header avec informations de faction
+        JPanel headerPanel = createMoralHeaderPanel(currentUserFaction);
 
-        // Title
-        JLabel title = new JLabel("Rumeurs");
-        title.setFont(new Font("Bahnschrift", Font.BOLD, 25));
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 4;
-        gbc.anchor = GridBagConstraints.CENTER;
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        title.setHorizontalAlignment(SwingConstants.CENTER);
-        title.setPreferredSize(new Dimension(900, 35));
-        rumorPanel.add(title, gbc);
-
-        // Column headers
-        gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.anchor = GridBagConstraints.PAGE_START;
-        gbc.gridy = 1; gbc.gridwidth = 1;
-
-        JLabel typeLabel = makeCell("Type", Color.ORANGE);
-        typeLabel.setPreferredSize(new Dimension(50, 40));
-        typeLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        gbc.gridx = 0; rumorPanel.add(typeLabel, gbc);
-
-        JLabel nameLabel = makeCell("Nom", Color.ORANGE);
-        nameLabel.setPreferredSize(new Dimension(150, 40));
-        nameLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        gbc.gridx = 1; rumorPanel.add(nameLabel, gbc);
-
-        JLabel contentLabel = makeCell("On dit que ...", Color.ORANGE);
-        contentLabel.setPreferredSize(new Dimension(625, 40));
-        contentLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        gbc.gridx = 2; rumorPanel.add(contentLabel, gbc);
-
-        JLabel dateLabel = makeCell("Date", Color.ORANGE);
-        dateLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        dateLabel.setPreferredSize(new Dimension(50, 40));
-        gbc.gridx = 3; rumorPanel.add(dateLabel, gbc);
-
-        // Load rumors using service
-        List<RumorDataService.RumorEntry> rumors = rumorService.loadRumors(excelResourcePath);
-        int rowCount = 2;
-
-        for (RumorDataService.RumorEntry rumor : rumors) {
-            gbc.gridy = rowCount++;
-
-            JLabel typeCell = createRumorCell(rumor.type, 50);
-            gbc.gridx = 0; rumorPanel.add(typeCell, gbc);
-
-            JLabel nameCell = createRumorCell(rumor.name, 150);
-            gbc.gridx = 1; rumorPanel.add(nameCell, gbc);
-
-            JLabel contentCell = createRumorCell(rumor.content, 625);
-            gbc.gridx = 2; rumorPanel.add(contentCell, gbc);
-
-            JLabel dateCell = createRumorCell(rumor.date, 50);
-            gbc.gridx = 3; rumorPanel.add(dateCell, gbc);
-        }
-
-        JScrollPane scrollPane = new JScrollPane(rumorPanel);
-        scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_ALWAYS);
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(0,0,0,0)));
+        // Contenu principal avec TextPane moderne
+        JTextPane moralContentPane = createModernMoralTextPane("Chargement des données de moral...");
+        JScrollPane scrollPane = new JScrollPane(moralContentPane);
         scrollPane.setOpaque(false);
         scrollPane.getViewport().setOpaque(false);
-        scrollPane.setBackground(new Color(0, 0, 0, 0));
-        scrollPane.getViewport().setBackground(new Color(0, 0, 0, 0));
-        container.add(scrollPane, BorderLayout.CENTER);
+        scrollPane.setBorder(null);
+        scrollPane.setPreferredSize(new Dimension(0, 200));
 
-        return container;
+        // Panneau de contrôles des actions morales
+        JPanel controlPanel = createMoralControlPanel(moralService, currentUserFaction, result);
+
+        // Assembly du panneau
+        moralPanel.add(headerPanel, BorderLayout.NORTH);
+        moralPanel.add(scrollPane, BorderLayout.CENTER);
+        moralPanel.add(controlPanel, BorderLayout.SOUTH);
+
+        // Configuration du résultat
+        result.panel = moralPanel;
+        result.contentPane = moralContentPane;
+
+        // Initialiser les données morales
+        updateMoralData(result, moralService, currentUserFaction);
+
+        return result;
     }
-
-    public static JLabel createRumorCell(String text, int width) {
-        JLabel label = new JLabel(text);
-        label.setOpaque(true);
-        label.setBackground(Color.white);
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        label.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY));
-        label.setPreferredSize(new Dimension(width, 40));
-        label.setFont(new Font("Oswald", Font.PLAIN, 12));
-        return label;
-    }
-
     public static class MoralPanelResult {
         public JPanel panel;
-        public Map<String, JComboBox<DATABASE.MoralAction>> dropdownMap;
+        public JTextPane contentPane;
+        public Map<String, JComboBox<DATABASE.MoralAction>> dropdownMap = new HashMap<>();
+        public JButton refreshButton;
 
-        public MoralPanelResult(JPanel panel, Map<String, JComboBox<DATABASE.MoralAction>> dropdownMap) {
-            this.panel = panel;
-            this.dropdownMap = dropdownMap;
+        // Méthode pour mettre à jour le contenu moral
+        public void updateMoralDisplay(String moralText) {
+            if (contentPane != null) {
+                String formattedContent = formatMoralContentForDisplay(moralText);
+                contentPane.setText(formattedContent);
+            }
         }
     }
+    private static void updateMoralData(MoralPanelResult result, MoralDataService moralService, Faction faction) {
+        try {
+            List<DATABASE.MoralAction> availableActions = moralService.getAvailableActions(faction);
 
+            StringBuilder moralInfo = new StringBuilder();
+            moralInfo.append("État Moral de la Faction:\n");
+            moralInfo.append("Actions disponibles: ").append(availableActions.size()).append("\n\n");
+
+            moralInfo.append("Effets Actuels:\n");
+            moralInfo.append("• Moral de base: 5.0\n");
+            moralInfo.append("• Bonus/Malus appliqués selon les actions sélectionnées\n\n");
+
+            moralInfo.append("Guide des Actions:\n");
+            for (DATABASE.MoralAction action : availableActions) {
+                if (action != null) {
+                    String effect = action.getMoralEffect() >= 0 ? "+" + action.getMoralEffect() : String.valueOf(action.getMoralEffect());
+                    moralInfo.append("• ").append(action.getName())
+                            .append(" (").append(effect).append(")\n");
+                }
+            }
+
+            result.updateMoralDisplay(moralInfo.toString());
+
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la mise à jour des données morales: " + e.getMessage());
+            result.updateMoralDisplay("Erreur lors du chargement des données morales.");
+        }
+    }
+    private static JPanel createMoralHeaderPanel(Faction faction) {
+        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        headerPanel.setOpaque(false);
+
+        JLabel factionLabel = new JLabel(faction.getDisplayName());
+        factionLabel.setFont(new Font("Arial", Font.BOLD, 14));
+        factionLabel.setForeground(Color.WHITE);
+        headerPanel.add(factionLabel);
+
+        return headerPanel;
+    }
+
+    private static JButton createStyledMoralButton(String text) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Arial", Font.BOLD, 12));
+        button.setBackground(new Color(70, 130, 180));
+        button.setForeground(Color.WHITE);
+        button.setBorderPainted(false);
+        button.setOpaque(true);
+        button.setPreferredSize(new Dimension(120, 30));
+        button.setFocusPainted(false);
+
+        // Effet hover
+        button.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                button.setBackground(new Color(90, 150, 200));
+            }
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                button.setBackground(new Color(70, 130, 180));
+            }
+        });
+
+        return button;
+    }
     public static class WorkerSelectionDialog extends JDialog {
         private JSpinner workerSpinner;
         private int selectedCount = 0;

@@ -77,21 +77,18 @@ public class PopulationManagementPanel extends JPanel implements PersonnelDataSe
     }
 
     private JScrollPane createPopulationTable() {
-        // Colonnes comme demandé
-        String[] columns = {
-                "Nombre", "Nom", "Métier", "Salaire", "Consommation",
-                "Affectation", "Localisation", "Gérer"
-        };
+        // **MODIFICATION:** Add "Personnel" as first hidden column
+        String[] columns = {"Personnel", "Nom", "Métier", "Salaire", "Consommation", "Affectation", "Localisation", "Gérer"};
 
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 7; // Seule la colonne "Gérer" est éditable
+                return column == 7; // Only "Gérer" column is editable
             }
 
             @Override
             public Class<?> getColumnClass(int columnIndex) {
-                if (columnIndex == 0) return Integer.class;
+                if (columnIndex == 0) return PersonnelDataService.HiredPersonnel.class; // Hidden
                 if (columnIndex == 3 || columnIndex == 4) return Double.class;
                 if (columnIndex == 7) return JButton.class;
                 return String.class;
@@ -99,11 +96,13 @@ public class PopulationManagementPanel extends JPanel implements PersonnelDataSe
         };
 
         populationTable = new JTable(tableModel);
-        populationTable.setRowHeight(25);
-        populationTable.setAutoCreateRowSorter(true);
 
-        // Configuration des colonnes
-        populationTable.getColumn("Nombre").setPreferredWidth(60);
+        // **HIDE the Personnel column**
+        populationTable.getColumnModel().getColumn(0).setMinWidth(0);
+        populationTable.getColumnModel().getColumn(0).setMaxWidth(0);
+        populationTable.getColumnModel().getColumn(0).setWidth(0);
+
+        // Set other column widths...
         populationTable.getColumn("Nom").setPreferredWidth(120);
         populationTable.getColumn("Métier").setPreferredWidth(100);
         populationTable.getColumn("Salaire").setPreferredWidth(80);
@@ -145,47 +144,34 @@ public class PopulationManagementPanel extends JPanel implements PersonnelDataSe
 
     private void refreshData() {
         tableModel.setRowCount(0);
-
         List<PersonnelDataService.HiredPersonnel> allPersonnel =
                 personnelService.getFactionPersonnel(currentFaction);
-
-        // Grouper par métier pour afficher le nombre
-        Map<String, List<PersonnelDataService.HiredPersonnel>> personnelByJob =
-                allPersonnel.stream().collect(
-                        Collectors.groupingBy(p -> p.workerType.getJobName())
-                );
 
         double totalSalary = 0;
         double totalFood = 0;
         int totalCount = 0;
 
-        for (Map.Entry<String, List<PersonnelDataService.HiredPersonnel>> entry : personnelByJob.entrySet()) {
-            List<PersonnelDataService.HiredPersonnel> jobPersonnel = entry.getValue();
+        for (PersonnelDataService.HiredPersonnel personnel : allPersonnel) {
+            String affectation = personnel.isAssigned ? personnel.assignedBuilding : "Non assigné";
+            String localisation = personnel.isAssigned ? personnel.assignedHex : "-";
 
-            for (PersonnelDataService.HiredPersonnel personnel : jobPersonnel) {
-                String affectation = personnel.isAssigned ?
-                        personnel.assignedBuilding : "Non assigné";
-                String localisation = personnel.isAssigned ?
-                        personnel.assignedHex : "-";
+            // **MODIFICATION:** Store the HiredPersonnel object in column 0 (hidden)
+            tableModel.addRow(new Object[]{
+                    personnel,                          // Hidden: HiredPersonnel object
+                    personnel.name,                     // Column 1: Name
+                    personnel.workerType.getJobName(),  // Column 2: Job
+                    personnel.currentSalary,            // Column 3: Salary
+                    personnel.foodConsumption,          // Column 4: Food
+                    affectation,                        // Column 5: Assignment
+                    localisation,                       // Column 6: Location
+                    "Gérer"                            // Column 7: Button
+            });
 
-                tableModel.addRow(new Object[]{
-                        1, // Nombre (toujours 1 par ligne individual)
-                        personnel.name,
-                        personnel.workerType.getJobName(),
-                        personnel.currentSalary,
-                        personnel.foodConsumption,
-                        affectation,
-                        localisation,
-                        "Gérer"
-                });
-
-                totalSalary += personnel.currentSalary;
-                totalFood += personnel.foodConsumption;
-                totalCount++;
-            }
+            totalSalary += personnel.currentSalary;
+            totalFood += personnel.foodConsumption;
+            totalCount++;
         }
 
-        // Mettre à jour les statistiques
         updateStatsLabels(totalCount, totalSalary, totalFood);
     }
 
@@ -277,7 +263,12 @@ public class PopulationManagementPanel extends JPanel implements PersonnelDataSe
     }
 
     private void confirmAndFirePersonnel(int row) {
-        String personnelName = (String) tableModel.getValueAt(row, 1);
+        // **GET the HiredPersonnel object from hidden column 0**
+        PersonnelDataService.HiredPersonnel personnel =
+                (PersonnelDataService.HiredPersonnel) tableModel.getValueAt(row, 0);
+
+        String personnelName = personnel.name;
+
         int confirm = JOptionPane.showConfirmDialog(this,
                 "Êtes-vous sûr de vouloir licencier " + personnelName + " ?",
                 "Confirmation de Licenciement",
@@ -285,10 +276,10 @@ public class PopulationManagementPanel extends JPanel implements PersonnelDataSe
                 JOptionPane.WARNING_MESSAGE);
 
         if (confirm == JOptionPane.YES_OPTION) {
-            // TODO: Récupérer l'ID du personnel et appeler le service
-            // personnelService.firePersonnel(personnelId);
+            personnelService.firePersonnel(personnel.personnelId);
         }
     }
+
 
     // **IMPLÉMENTATION DES OBSERVATEURS**
     @Override

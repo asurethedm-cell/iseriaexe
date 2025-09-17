@@ -222,8 +222,7 @@ public class MainMenu extends JFrame implements ActionListener {
                 BorderFactory.createLineBorder(Color.white, 2),
                 "Rumeurs circulants chez : " + currentUserFaction.getDisplayName(),
                 0, 0,
-                new Font("Arial", Font.BOLD, 14),
-                Color.white));
+                new Font("Arial", Font.BOLD, 14),Color.white));
                 rumorScrollPane.setBackground(new Color(50, 50, 50, 200));
                 rumorDisplayPanel.displayRumors(userFactionRumors);
                 mPgbc.gridy = 1;

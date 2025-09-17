@@ -395,9 +395,14 @@ public class UI {
         } catch (Exception e) {}
         try {
             String description = action.getDescription();
+            String loreDescription =action.getLoreDescription();
             if (description != null && !description.trim().isEmpty()) {
                 html.append("<hr><p><strong>Description:</strong></p>");
-                html.append("<p style='font-style: italic; color: #666;'>").append(description).append("</p>");
+                html.append("<p style='font-style: italic; color:black;'>")
+                        .append(description)
+                        .append("</p>")
+                        .append(loreDescription)
+                        .append("</p>");
             }
         } catch (Exception e) {
             html.append("<hr><p><strong>Description:</strong></p>");

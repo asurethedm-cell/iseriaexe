@@ -44,11 +44,6 @@ public class PersonnelRecruitmentPanel extends JPanel implements PersonnelDataSe
         gbc.gridx = 0; gbc.gridy = 0;
         gbc.weightx = 1.0; gbc.weighty = 0.4;
         add(createRecruitmentSection(), gbc);
-
-        // **SECTION PERSONNEL NON-ASSIGNÉ**
-        gbc.gridy = 1;
-        gbc.weighty = 0.6;
-        add(createUnassignedPersonnelSection(), gbc);
     }
 
     private JPanel createRecruitmentSection() {
@@ -104,33 +99,8 @@ public class PersonnelRecruitmentPanel extends JPanel implements PersonnelDataSe
         return panel;
     }
 
-    private JPanel createUnassignedPersonnelSection() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBorder(BorderFactory.createTitledBorder("🎯 Personnel Disponible pour Assignation"));
-        panel.setBackground(new Color(60, 60, 60, 200));
-
-        // Table du personnel non-assigné
-        String[] columns = {"Nom", "Métier", "Salaire", "Nourriture", "Actions"};
-        unassignedTableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return column == 4; // Actions
-            }
-        };
-
-        unassignedPersonnelTable = new JTable(unassignedTableModel);
-        unassignedPersonnelTable.setRowHeight(30);
-
-        JScrollPane scrollPane = new JScrollPane(unassignedPersonnelTable);
-        scrollPane.setPreferredSize(new Dimension(800, 250));
-
-        panel.add(scrollPane, BorderLayout.CENTER);
-
-        return panel;
-    }
-
     private void refreshData() {
-        // Rafraîchir la table des workers disponibles
+
         availableTableModel.setRowCount(0);
         List<DATABASE.Workers> availableWorkers = personnelService.getAvailableWorkersForRecruitment(currentFaction);
 
@@ -148,21 +118,6 @@ public class PersonnelRecruitmentPanel extends JPanel implements PersonnelDataSe
                     String.format("%.1f", worker.getCurrentFoodConsumption()),
                     buildingNames,
                     "Recruter"
-            });
-        }
-
-        // Rafraîchir la table du personnel non-assigné
-        unassignedTableModel.setRowCount(0);
-        List<PersonnelDataService.HiredPersonnel> unassigned =
-                personnelService.getUnassignedPersonnel(currentFaction);
-
-        for (PersonnelDataService.HiredPersonnel personnel : unassigned) {
-            unassignedTableModel.addRow(new Object[]{
-                    personnel.name,
-                    personnel.workerType.getJobName(),
-                    String.format("%.1f Po", personnel.currentSalary),
-                    String.format("%.1f", personnel.foodConsumption),
-                    "Assigner/Licencier"
             });
         }
     }

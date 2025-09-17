@@ -62,8 +62,14 @@ public class MarketManagementPanel extends JPanel {
 
         // Affichage rapide des stats globales
         JLabel populationTotal = new JLabel("Population: 0");
+        populationTotal.setForeground(Color.WHITE);
+        populationTotal.setFont(new Font("Arial",Font.BOLD , 10));
         JLabel budgetDisponible = new JLabel("Budget: 0 Po");
+        budgetDisponible.setFont(new Font("Arial",Font.BOLD , 10));
+        budgetDisponible.setForeground(Color.WHITE);
         JLabel maintenanceTotal = new JLabel("Maintenance: 0 Po/sem");
+        maintenanceTotal.setFont(new Font("Arial",Font.BOLD , 10));
+        maintenanceTotal.setForeground(Color.WHITE);
 
         panel.add(populationTotal);
         panel.add(Box.createHorizontalStrut(20));

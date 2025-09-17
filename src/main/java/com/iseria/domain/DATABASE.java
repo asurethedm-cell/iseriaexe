@@ -54,7 +54,7 @@ public class DATABASE {
         ),
         WRONGWAY(
                 "Direction Incohérente",
-                "Perdez un point de Moral, augmentez votre Instabilité de 10 %",
+                "Perdez un point de Moral, augmentez votre Instabilité de 10%",
                 "Vous agissez de manière contraire à votre alignement et votre Personnel le désapprouve ",
                 -1, 10, ActionType.AUTO, false, 0, null
         ),

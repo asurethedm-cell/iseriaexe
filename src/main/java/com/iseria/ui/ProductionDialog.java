@@ -1,9 +1,9 @@
 package com.iseria.ui;
 
+import com.iseria.domain.HexResourceData;
 import com.iseria.domain.SafeHexDetails;
 import com.iseria.service.EconomicDataService;
 import com.iseria.domain.DATABASE;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -11,29 +11,26 @@ import java.util.*;
 import java.util.List;
 
 public class ProductionDialog extends JDialog {
-
     private String hexKey;
     private String buildingType;
     private String buildingName;
     private int currentWorkerCount;
     private EconomicDataService economicService;
-
     private JSpinner workerSpinner;
     private JComboBox<DATABASE.ResourceType> resourceTypeCombo;
     private JSpinner resourceProductionSpinner;
     private JTextArea detailsArea;
-
     private boolean confirmed = false;
     private int selectedWorkerCount = 0;
     private DATABASE.JobBuilding building;
     private SafeHexDetails hex;
 
-    public ProductionDialog(JFrame parent, String hexKey, String buildingType,
-                            String buildingName, int currentWorkers,
-                            EconomicDataService economicService,
-                            SafeHexDetails hex) {
+    private Map<String, Double> currentTurnSalaries = new HashMap<>();
+    private Map<DATABASE.ResourceType, Double> resourceModifiers = new HashMap<>();
 
-        super(parent, "Configuration Production - " + buildingName , true);
+    public ProductionDialog(JFrame parent, String hexKey, String buildingType, String buildingName,
+                            int currentWorkers, EconomicDataService economicService, SafeHexDetails hex) {
+        super(parent, "Configuration Production - " + buildingName, true);
         this.hex = hex;
         this.hexKey = hexKey;
         this.building = UIHelpers.getBuildingFromHex(hex, buildingType);
@@ -41,6 +38,10 @@ public class ProductionDialog extends JDialog {
         this.buildingType = buildingType;
         this.currentWorkerCount = currentWorkers;
         this.economicService = economicService;
+
+        // **NOUVEAU** - Initialiser les données intégrées
+        initializeIntegratedData();
+
         initializeDialog();
     }
 
@@ -71,9 +72,9 @@ public class ProductionDialog extends JDialog {
         workerSpinner = new JSpinner(new SpinnerNumberModel(currentWorkerCount, 0, 100, 1));
         workerPanel.add(workerSpinner);
 
+
         gbc.gridx = 1;
         mainPanel.add(workerPanel, gbc);
-
         gbc.gridy++; gbc.gridx = 0;
         JLabel resourceLabel = new JLabel("Production Ressource:");
         resourceLabel.setFont(new Font("Arial", Font.BOLD, 12));
@@ -178,7 +179,6 @@ public class ProductionDialog extends JDialog {
         updateProductionDetails();
         loadExistingData();
     }
-
     private JPanel createResourceInfoPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder("Données Ressource"));
@@ -229,80 +229,6 @@ public class ProductionDialog extends JDialog {
             panel.add(noProductionLabel, gbc);
         }
         return panel;
-    }
-    private List<DATABASE.ResourceType> getResourceTypesForBuilding() {
-        if (building == null) {
-            return Collections.emptyList();
-        }
-        return DATABASE.getResourcesForBuilding(building);
-    }
-    private void updateProductionDetails() {
-        StringBuilder details = new StringBuilder();
-        int newWorkers = (Integer) workerSpinner.getValue();
-        DATABASE.ResourceType resourceType = (DATABASE.ResourceType) resourceTypeCombo.getSelectedItem();
-        double production = (Double) resourceProductionSpinner.getValue();
-
-        details.append("=== CONFIGURATION ACTUELLE ===\n");
-        details.append(String.format("Hexagone: %s\n", hexKey));
-        details.append(String.format("Bâtiment: %s (%s)\n", buildingName, buildingType));
-        details.append(String.format("Personnel: %d → %d (%+d)\n",
-                currentWorkerCount, newWorkers, newWorkers - currentWorkerCount));
-
-        details.append("\n=== PRODUCTION HEBDOMADAIRE ===\n");
-
-        if (resourceType != null && production > 0) {
-            details.append(String.format("• %s %s: %.1f unités\n",
-                    resourceType.getIcon(), resourceType.getName(), production));
-            double valeurEconomique = production * resourceType.getBaseValue();
-            details.append(String.format("• Valeur économique: %.1f Po\n", valeurEconomique));
-            double salaireParWorker = getSalaryForWorker(buildingType);
-            double totalSalaires = newWorkers * salaireParWorker;
-            details.append(String.format("• Coût salaires: %.1f Po\n", totalSalaires));
-            double profitNet = valeurEconomique - totalSalaires;
-            details.append(String.format("• Profit net: %.1f Po\n", profitNet));
-            if (newWorkers > 0) {
-                double efficacite = production / newWorkers;
-                details.append(String.format("• Efficacité: %.2f unités/worker\n", efficacite));
-            }
-            double productionMax = calculateMaxProduction(resourceType, newWorkers);
-            if (productionMax > production) {
-                details.append(String.format("• Production max possible: %.1f unités\n", productionMax));
-            }
-        } else {
-            details.append("• Aucune production configurée\n");
-        }
-        details.append("\n=== IMPACT ÉCONOMIQUE ===\n");
-        if (newWorkers != currentWorkerCount) {
-            details.append(String.format("• Population totale: %+d\n",
-                    newWorkers - currentWorkerCount));
-            double foodImpact = (newWorkers - currentWorkerCount) * 0.7; // Consommation moyenne
-            details.append(String.format("• Consommation nourriture: %+.1f/sem\n", foodImpact));
-        }
-        if (resourceType != null && production > 0) {
-            details.append(String.format("• Production %s: +%.1f/sem\n",
-                    resourceType.getName(), production));
-            if ("Nourriture".equals(resourceType.getName())) {
-                details.append("• Réduit la faim de la population\n");
-            }
-        }
-        detailsArea.setText(details.toString());
-    }
-    private double getSalaryForWorker(String buildingType) {
-        // TODO Link to true salaryCalc
-        String defaultJob = switch (buildingType.toLowerCase()) {
-            case "main", "main building" -> "Fermier";
-            case "aux", "auxiliary building" -> "Marchand";
-            case "fort", "fort building" -> "Garde";
-            default -> "Ouvrier";
-        };
-        return DATABASE.getSalaryForJob(defaultJob);
-    }
-    private double calculateMaxProduction(DATABASE.ResourceType resource, int workers) {
-        if (building == null || resource == null || workers <= 0) {
-            return 0.0;
-        }
-        double efficiency = UIHelpers.getBuildingEfficiency(building);
-        return resource.getBaseValue() * workers * efficiency;
     }
     private void confirm(ActionEvent e) {
         selectedWorkerCount = (Integer) workerSpinner.getValue();
@@ -359,5 +285,245 @@ public class ProductionDialog extends JDialog {
     }
     public boolean isConfirmed() { return confirmed; }
     public int getSelectedWorkerCount() { return selectedWorkerCount; }
+    private void initializeIntegratedData() {
+        try {
+            for (DATABASE.Workers worker : DATABASE.Workers.values()) {
+                currentTurnSalaries.put(worker.getJobName(), worker.getCurrentSalary());
+            }
+
+            List<DATABASE.ResourceType> availableResources = getResourceTypesForBuilding();
+            for (DATABASE.ResourceType resource : availableResources) {
+                double modifier = economicService != null ?
+                        economicService.getResourceProductionModifier(hexKey, resource) : 1.0;
+                resourceModifiers.put(resource, modifier);
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur lors de l'initialisation des données intégrées: " + e.getMessage());
+            initializeFallbackData();
+        }
+    }
+    private void initializeFallbackData() {
+        for (DATABASE.Workers worker : DATABASE.Workers.values()) {
+            currentTurnSalaries.put(worker.getJobName(), worker.getBaseSalary());
+        }
+    }
+    private double getSalaryForWorker(String buildingType) {
+        try {
+            String optimalJob = determineOptimalWorkerType(buildingType);
+            if (currentTurnSalaries.containsKey(optimalJob)) {
+                return currentTurnSalaries.get(optimalJob);
+            }
+
+            // **ÉTAPE 3** - Utiliser DATABASE pour les calculs réels
+            return DATABASE.getSalaryForJob(optimalJob);
+
+        } catch (Exception e) {
+            System.err.println("Erreur lors du calcul de salaire: " + e.getMessage());
+            // Fallback sécurisé
+            return DATABASE.getSalaryForJob("Ouvrier");
+        }
+    }
+    private String determineOptimalWorkerType(String buildingType) {
+        if (building == null) return "Ouvrier";
+        Set<String> compatibleJobs = DATABASE.getJobsForBuilding(building);
+        if (!compatibleJobs.isEmpty()) {
+            return compatibleJobs.iterator().next();
+        }
+        return switch (buildingType.toLowerCase()) {
+            case "main", "main building" -> {
+                if (building instanceof DATABASE.MainBuilding mb) {
+                    String name = mb.getBuildName().toLowerCase();
+                    if (name.contains("mine")) yield "Compagnie de Mineur";
+                    if (name.contains("ferme")) yield "Fermier libre";
+                    if (name.contains("camp")) yield "Bcheron";
+                }
+                yield "Fermier libre";
+            }
+            case "aux", "auxiliary building" -> {
+                if (building instanceof DATABASE.AuxBuilding ab) {
+                    String name = ab.getBuildName().toLowerCase();
+                    if (name.contains("moulin")) yield "Meunier";
+                    if (name.contains("atelier")) yield "Artisan";
+                    if (name.contains("cuisine")) yield "Cuisinier";
+                }
+                yield "Artisan";
+            }
+            case "fort", "fort building" -> "Garde";
+            default -> "Ouvrier";
+        };
+    }
+    private double calculateMaxProduction(DATABASE.ResourceType resource, int workers) {
+        if (building == null || resource == null || workers <= 0) return 0.0;
+
+        try {
+
+            double efficiency = UIHelpers.getBuildingEfficiency(building);
+            double baseProduction = DATABASE.calculateActualProduction(building, resource, workers, efficiency);
+            double modifier = resourceModifiers.getOrDefault(resource, 1.0);
+            double factionBonus = economicService != null ?
+                    economicService.getFactionProductionBonus(hexKey, resource) : 1.0;
+
+            return baseProduction * modifier * factionBonus;
+
+        } catch (Exception e) {
+            System.err.println("Erreur lors du calcul de production: " + e.getMessage());
+            return resource.getBaseValue() * workers * 0.8;
+        }
+    }
+    private List<DATABASE.ResourceType> getResourceTypesForBuilding() {
+        if (building == null) return Collections.emptyList();
+
+        // **UTILISER DATABASE** au lieu de logique isolée
+        return DATABASE.getResourcesForBuilding(building);
+    }
+    private void updateProductionDetails() {
+        StringBuilder details = new StringBuilder();
+        int newWorkers = (Integer) workerSpinner.getValue();
+        DATABASE.ResourceType resourceType = (DATABASE.ResourceType) resourceTypeCombo.getSelectedItem();
+        double production = (Double) resourceProductionSpinner.getValue();
+
+        details.append("=== CONFIGURATION ACTUELLE ===\n");
+        details.append(String.format("Hexagone: %s\n", hexKey));
+        details.append(String.format("Bâtiment: %s (%s)\n", buildingName, buildingType));
+        details.append(String.format("Personnel: %d -> %d (%+d)\n", currentWorkerCount, newWorkers, newWorkers - currentWorkerCount));
+
+        details.append("\n=== PRODUCTION HEBDOMADAIRE ===\n");
+        if (resourceType != null && production > 0) {
+            details.append(String.format("%s %s: %.1f unités\n", resourceType.getIcon(), resourceType.getName(), production));
+
+            // **UTILISER VALEURS INTÉGRÉES** au lieu de getBaseValue direct
+            double realValue = economicService != null ?
+                    economicService.getResourceMarketValue(resourceType) : resourceType.getBaseValue();
+            double valeurEconomique = production * realValue;
+            details.append(String.format("Valeur économique: %.1f Po\n", valeurEconomique));
+
+            // **CALCUL DE SALAIRE INTÉGRÉ**
+            String optimalJob = determineOptimalWorkerType(buildingType);
+            double salaireParWorker = getSalaryForWorker(buildingType);
+            double totalSalaires = newWorkers * salaireParWorker;
+            details.append(String.format("Coût salaires (%s): %.1f Po\n", optimalJob, totalSalaires));
+
+            double profitNet = valeurEconomique - totalSalaires;
+            details.append(String.format("Profit net: %.1f Po\n", profitNet));
+
+            if (newWorkers > 0) {
+                double efficacite = production / newWorkers;
+                details.append(String.format("Efficacité: %.2f unités/worker\n", efficacite));
+
+                // **UTILISER CALCUL INTÉGRÉ** pour production max
+                double productionMax = calculateMaxProduction(resourceType, newWorkers);
+                if (productionMax > production) {
+                    details.append(String.format("Production max possible: %.1f unités\n", productionMax));
+                }
+            }
+        } else {
+            details.append("Aucune production configurée\n");
+        }
+
+        details.append("\n=== IMPACT ÉCONOMIQUE ===\n");
+        if (newWorkers != currentWorkerCount) {
+            details.append(String.format("Population totale: %+d\n", newWorkers - currentWorkerCount));
+
+            // **UTILISER DATABASE** pour consommation nourriture
+            String optimalJob = determineOptimalWorkerType(buildingType);
+            double foodConsumption = DATABASE.getFoodConsumptionForJob(optimalJob) * (newWorkers - currentWorkerCount);
+            details.append(String.format("Consommation nourriture: %.1f/sem\n", foodConsumption));
+        }
+
+        if (resourceType != null && production > 0) {
+            details.append(String.format("Production %s: %.1f/sem\n", resourceType.getName(), production));
+            if ("Nourriture".equals(resourceType.getName())) {
+                details.append("-> Réduit la faim de la population\n");
+            }
+        }
+
+        detailsArea.setText(details.toString());
+    }
+    private JPanel createResourceStatePanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("État des Ressources"));
+        panel.setBackground(new Color(60, 60, 60, 200));
+
+        HexResourceData resourceData = economicService.getHexResourceData(hexKey);
+        if (resourceData == null) {
+            panel.add(new JLabel("Aucune donnée d'état disponible", SwingConstants.CENTER));
+            return panel;
+        }
+
+        JTextArea statusArea = new JTextArea(8, 40);
+        statusArea.setText(resourceData.getDetailedStatusReport());
+        statusArea.setEditable(false);
+        statusArea.setBackground(new Color(245, 245, 245));
+        statusArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
+
+        JScrollPane scrollPane = new JScrollPane(statusArea);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        // Panel de maintenance
+        JPanel maintenancePanel = new JPanel(new FlowLayout());
+        maintenancePanel.setBackground(new Color(60, 60, 60, 200));
+
+        JButton maintenanceButton = new JButton("🔧 Effectuer Maintenance");
+        maintenanceButton.addActionListener(e -> performMaintenanceAction(resourceData));
+        maintenancePanel.add(maintenanceButton);
+
+        panel.add(maintenancePanel, BorderLayout.SOUTH);
+
+        return panel;
+    }
+
+    private void performMaintenanceAction(HexResourceData resourceData) {
+        List<String> recommendations = resourceData.getMaintenanceRecommendations();
+
+        if (recommendations.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Aucune maintenance requise actuellement.",
+                    "Maintenance", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        // Dialog de sélection de maintenance
+        String[] options = recommendations.toArray(new String[0]);
+        String selected = (String) JOptionPane.showInputDialog(this,
+                "Sélectionnez l'élément à maintenir:",
+                "Maintenance",
+                JOptionPane.QUESTION_MESSAGE,
+                null, options, options[0]);
+
+        if (selected != null) {
+            // Calculer le coût et effectuer la maintenance
+            double cost = calculateMaintenanceCost(selected);
+
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    String.format("Maintenance coûtera %.0f Po. Continuer?", cost),
+                    "Confirmer Maintenance",
+                    JOptionPane.YES_NO_OPTION);
+
+            if (confirm == JOptionPane.YES_OPTION) {
+                // TODO: Effectuer la maintenance via EconomicDataService
+                boolean success = economicService.performHexMaintenance(hexKey, null, cost);
+
+                if (success) {
+                    JOptionPane.showMessageDialog(this,
+                            "Maintenance effectuée avec succès!",
+                            "Maintenance", JOptionPane.INFORMATION_MESSAGE);
+                    updateProductionDetails(); // Rafraîchir l'affichage
+                } else {
+                    JOptionPane.showMessageDialog(this,
+                            "Maintenance échouée (fonds insuffisants?)",
+                            "Erreur", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        }
+    }
+
+    private double calculateMaintenanceCost(String maintenanceItem) {
+        // Calculer le coût basé sur le type de maintenance
+        if (maintenanceItem.contains("bâtiment")) {
+            return 500.0; // Coût fixe pour maintenance de bâtiment
+        } else {
+            return 200.0; // Coût pour maintenance de ressource
+        }
+    }
 
 }

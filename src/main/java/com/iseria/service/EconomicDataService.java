@@ -145,27 +145,42 @@ public class EconomicDataService {
     private void calculateHexProduction(String hexKey, SafeHexDetails hex) {
         ProductionCalculationService productionService = new ProductionCalculationService();
         Map<String, Double> hexProduction = new HashMap<>();
+
+        HexResourceData resourceData = hexResourceStates.get(hexKey);
+        if (resourceData == null) {
+            resourceData = new HexResourceData(hexKey);
+            hexResourceStates.put(hexKey, resourceData);
+        }
+
         for (String buildingType : Arrays.asList("main", "aux", "fort")) {
             String savedResource = hex.getSelectedResourceType(buildingType);
             Double savedProduction = hex.getSelectedResourceProduction(buildingType);
 
             if (savedResource != null && savedProduction != null && savedProduction > 0) {
-                hexProduction.put(savedResource, savedProduction);
-                System.out.println("Using saved production data: " + savedResource + " = " + savedProduction);
+                DATABASE.ResourceType resourceType = DATABASE.ResourceType.lookupByName(savedResource);
+                if (resourceType != null) {
+                    // **NOUVEAU** - Appliquer le multiplicateur d'état
+                    double effectiveMultiplier = resourceData.getEffectiveProductionMultiplier(
+                            resourceType, buildingType);
+
+                    double adjustedProduction = savedProduction * effectiveMultiplier;
+                    hexProduction.put(savedResource, adjustedProduction);
+
+                    System.out.println(String.format("Production %s: %.1f -> %.1f (multiplicateur: %.2f)",
+                            savedResource, savedProduction, adjustedProduction, effectiveMultiplier));
+                }
             }
-        }
-        if (hexProduction.isEmpty()) {
-            hexProduction = productionService.calculateHexProduction(hex);
         }
         for (Map.Entry<String, Double> entry : hexProduction.entrySet()) {
             String resourceName = entry.getKey();
             double production = entry.getValue();
+
             economicData.productionRessources.merge(resourceName, production, Double::sum);
             if (isFood(resourceName)) {
                 economicData.productionNourriture += production;
             }
         }
-        calculateLivestockProduction(hexKey, hex);
+         calculateLivestockProduction(hexKey, hex);
     }
     private void calculateProductionWithLogistics(String hexKey, SafeHexDetails hex) {
         // Production locale immédiate (comme avant)
@@ -190,8 +205,6 @@ public class EconomicDataService {
     }
     private void scheduleResourceDelivery(String resource, double quantity,
                                           int transportTime, StorageWarehouse warehouse) {
-        // Pour l'instant, on peut simplement ajouter immédiatement
-        // Plus tard, vous pourrez implémenter un système de délais
 
         if (warehouse.canStore(resource, quantity)) {
             warehouse.addResource(resource, quantity);
@@ -206,7 +219,6 @@ public class EconomicDataService {
     private Map<String, Double> calculateLocalProduction(SafeHexDetails hex) {
         Map<String, Double> production = new HashMap<>();
 
-        // Utiliser votre ProductionCalculationService existant
         ProductionCalculationService service = new ProductionCalculationService();
         return service.calculateHexProduction(hex);
     }
@@ -223,20 +235,15 @@ public class EconomicDataService {
             LivestockFarm.LivestockHerd herd = entry.getValue();
 
             if (herd.isEstEnProduction()) {
-                // Production de nourriture
                 double production = herd.getProductionHebdomadaire();
                 economicData.productionRessources.merge("nourriture", production, Double::sum);
                 economicData.productionNourriture += production;
 
-                // Sous-produits selon l'animal
                 calculateAnimalByproducts(animalData, herd);
 
-                // Consommation de nourriture de l'élevage
                 double consommation = herd.getNourritureParSemaine() * herd.getNombreBetes();
                 economicData.consommationNourriture += consommation;
             }
-
-            // Coûts des bergers
             int bergersNecessaires = (herd.getNombreBetes() + animalData.getAnimauxParBerger() - 1)
                     / animalData.getAnimauxParBerger();
             economicData.jobCounts.merge("Berger", bergersNecessaires, Integer::sum);
@@ -247,19 +254,19 @@ public class EconomicDataService {
 
         switch (animalName) {
             case "vache":
-                double laitProduction = herd.getNombreBetes() * 2.0; // 2L de lait par vache/semaine
+                double laitProduction = herd.getNombreBetes() * 2.0;
                 economicData.productionRessources.merge("lait", laitProduction, Double::sum);
                 break;
             case "mouton", "chevre":
-                double laineProduction = herd.getNombreBetes() * 0.5; // 0.5kg de laine/semaine
+                double laineProduction = herd.getNombreBetes() * 0.5;
                 economicData.productionRessources.merge("laine_brute", laineProduction, Double::sum);
                 break;
             case "poule":
-                double oeufsProduction = herd.getNombreBetes() * 5.0; // 5 œufs par poule/semaine
+                double oeufsProduction = herd.getNombreBetes() * 5.0;
                 economicData.productionRessources.merge("oeufs_de_poule", oeufsProduction, Double::sum);
                 break;
             case "canard":
-                double oeufsCanardProduction = herd.getNombreBetes() * 3.0; // 3 œufs par canard/semaine
+                double oeufsCanardProduction = herd.getNombreBetes() * 3.0;
                 economicData.productionRessources.merge("oeufs_de_canard", oeufsCanardProduction, Double::sum);
                 break;
         }
@@ -273,8 +280,6 @@ public class EconomicDataService {
                 hexRepository.updateHexDetails(hex.getHexKey(), hex);
             }
         }
-
-        // Recalculer les données économiques
         calculateInitialData();
     }
 
@@ -296,7 +301,6 @@ public class EconomicDataService {
         for (String key : economicData.salaires.keySet()) {
             economicData.salaires.put(key, 0.0);
         }
-
         for (Map.Entry<String, Integer> entry : economicData.jobCounts.entrySet()) {
             String jobName = entry.getKey();
             int count = entry.getValue();
@@ -307,7 +311,6 @@ public class EconomicDataService {
                 economicData.salaires.merge(category, totalSalary, Double::sum);
             }
         }
-
         economicData.depenses = economicData.salaires.values()
                 .stream()
                 .mapToDouble(Double::doubleValue)
@@ -428,6 +431,101 @@ public class EconomicDataService {
     public LogisticsService getLogisticsService() {
         return logisticsService;
     }
+    public double getResourceProductionModifier(String hexKey, DATABASE.ResourceType resource) {
+        // Logique pour récupérer les modificateurs de production spécifiques à l'hex
+        // Par exemple: bonus de terrain, technologies, effets de faction
+        return 1.0; // TODO Placeholder
+    }
+    public double getFactionProductionBonus(String hexKey, DATABASE.ResourceType resource) {
+        // Logique pour calculer les bonus de faction
+        // Par exemple: bonus raciaux, technologies recherchées
+        return 1.0; // TODO Placeholder
+    }
+    public double getResourceMarketValue(DATABASE.ResourceType resource) {
+        // Valeur de marché actuelle (peut fluctuer selon l'économie du jeu)
+        // Au lieu d'utiliser resource.getBaseValue() statique
+        return resource.getBaseValue(); // TODO Placeholder
+    }
+
+    private final Map<String, HexResourceData> hexResourceStates = new HashMap<>();
+
+    // **NOUVELLE MÉTHODE** - Initialiser les états des ressources
+    private void initializeResourceStates() {
+        Map<String, SafeHexDetails> hexGrid = hexRepository.loadSafeAll();
+
+        for (Map.Entry<String, SafeHexDetails> entry : hexGrid.entrySet()) {
+            String hexKey = entry.getKey();
+            SafeHexDetails hex = entry.getValue();
+
+            if (factionName.equals(hex.getFactionClaim())) {
+                HexResourceData resourceData = new HexResourceData(hexKey);
+
+                // Initialiser les états pour les ressources produites
+                for (String buildingType : Arrays.asList("main", "aux", "fort")) {
+                    String resourceName = hex.getSelectedResourceType(buildingType);
+                    if (resourceName != null) {
+                        DATABASE.ResourceType resourceType = DATABASE.ResourceType.lookupByName(resourceName);
+                        if (resourceType != null) {
+                            // Déclencher l'initialisation de l'état
+                            resourceData.getResourceState(resourceType);
+                            resourceData.getBuildingState(buildingType);
+                        }
+                    }
+                }
+
+                hexResourceStates.put(hexKey, resourceData);
+            }
+        }
+    }
+
+    // **NOUVELLE MÉTHODE** - Progression hebdomadaire
+    public void advanceWeek() {
+        for (HexResourceData resourceData : hexResourceStates.values()) {
+            resourceData.progressWeek();
+        }
+
+        // Recalculer les données économiques après progression
+        calculateInitialData();
+        notifyObservers();
+    }
+
+    // **NOUVELLES MÉTHODES PUBLIQUES**
+    public HexResourceData getHexResourceData(String hexKey) {
+        return hexResourceStates.get(hexKey);
+    }
+
+    public List<String> getMaintenanceAlerts() {
+        List<String> alerts = new ArrayList<>();
+
+        for (Map.Entry<String, HexResourceData> entry : hexResourceStates.entrySet()) {
+            String hexKey = entry.getKey();
+            HexResourceData resourceData = entry.getValue();
+
+            List<String> hexRecommendations = resourceData.getMaintenanceRecommendations();
+            for (String recommendation : hexRecommendations) {
+                alerts.add(hexKey + ": " + recommendation);
+            }
+        }
+
+        return alerts;
+    }
+
+    public boolean performHexMaintenance(String hexKey, DATABASE.ResourceType resource, double cost) {
+        HexResourceData resourceData = hexResourceStates.get(hexKey);
+        if (resourceData != null && economicData.tresorerie >= cost) {
+            boolean success = resourceData.performMaintenance(resource, cost);
+            if (success) {
+                economicData.tresorerie -= cost;
+                calculateInitialData(); // Recalculer après maintenance
+                notifyObservers();
+            }
+            return success;
+        }
+        return false;
+    }
+
+
+
     public class ProductionCalculationService {
 
         public Map<String, Double> calculateHexProduction(SafeHexDetails hex) {

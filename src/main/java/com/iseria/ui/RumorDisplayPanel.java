@@ -48,19 +48,7 @@ public class RumorDisplayPanel extends JPanel {
                 BorderFactory.createLineBorder(Color.GRAY, 1),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        headerPanel.setOpaque(false);
-        JLabel typeLabel = new JLabel("[ " + rumor.getType() + " ]");
-        typeLabel.setOpaque(false);
-        typeLabel.setForeground(getColorForType(rumor.getType()));
-        typeLabel.setFont(new Font("Arial", Font.BOLD, 12));
-
-        JLabel nameLabel = new JLabel(rumor.getName());
-        nameLabel.setOpaque(false);
-        nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
-
-        headerPanel.add(typeLabel);
-        headerPanel.add(nameLabel);
+        JPanel headerPanel = getJPanel(rumor);
 
         JTextArea contentArea = new JTextArea(rumor.getContent());
         contentArea.setWrapStyleWord(true);
@@ -90,6 +78,23 @@ public class RumorDisplayPanel extends JPanel {
         rumorPanel.add(footerPanel, BorderLayout.SOUTH);
 
         return rumorPanel;
+    }
+
+    private JPanel getJPanel(Rumor rumor) {
+        JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        headerPanel.setOpaque(false);
+        JLabel typeLabel = new JLabel("[ " + rumor.getType() + " ]");
+        typeLabel.setOpaque(false);
+        typeLabel.setForeground(getColorForType(rumor.getType()));
+        typeLabel.setFont(new Font("Arial", Font.BOLD, 12));
+
+        JLabel nameLabel = new JLabel(rumor.getName());
+        nameLabel.setOpaque(false);
+        nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
+
+        headerPanel.add(typeLabel);
+        headerPanel.add(nameLabel);
+        return headerPanel;
     }
 
     private void showEditRumorDialog(Rumor rumor) {

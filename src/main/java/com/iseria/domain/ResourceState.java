@@ -41,7 +41,6 @@ public enum ResourceState {
     public double getWeeklyDegradation() { return weeklyDegradation; }
     public boolean isFiniteResource() { return isFiniteResource; }
 
-    // **MÉTHODES DE PROGRESSION**
     public ResourceState degradeOneLevel() {
         return switch (this) {
             case ABUNDANT -> NORMAL;

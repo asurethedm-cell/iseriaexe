@@ -79,7 +79,15 @@ public class MainMenu extends JFrame implements ActionListener {
 
     MainMenu(IAudioService audio, IHexRepository repo) {
         this.audio = audio;
+        currentUserFaction = FactionRegistry.getFactionForUser(Login.currentUser);
+        System.out.println("User is " + Login.currentUser);
+        System.out.println("Faction is " + currentUserFaction.getDisplayName());
+        String factionBackgroundImage = currentUserFaction.getBackgroundImage();
+        String factionLogPath = currentUserFaction.getEmblemImage();
 
+        initializePersonnelService();
+        MoralDataService moralService = new EnumMoralDataService();
+        economicService = UIHelpers.initializeEconomicService(repo, currentUserFaction.getDisplayName());
 //================================================INITIAL=============================================================\\
         ToolTipManager.sharedInstance().setInitialDelay(100);
         AtomicBoolean factionTheme = new AtomicBoolean(false);
@@ -118,11 +126,6 @@ public class MainMenu extends JFrame implements ActionListener {
 
 
 //================================================FACTION SCREEN======================================================\\
-        currentUserFaction = FactionRegistry.getFactionForUser(Login.currentUser);
-        System.out.println("User is " + Login.currentUser);
-        System.out.println("Faction is " + currentUserFaction.getDisplayName());
-        String factionBackgroundImage = currentUserFaction.getBackgroundImage();
-        String factionLogPath = currentUserFaction.getEmblemImage();
 
                 // Faction Panel Container with CardLayout in JLayer for switching
 
@@ -185,7 +188,6 @@ public class MainMenu extends JFrame implements ActionListener {
 
 
 
-                MoralDataService moralService = new EnumMoralDataService();
                 UI.MoralPanelResult result = UI.createModernMoralPanel(moralService, currentUserFaction);
 
                 JPanel miscellaneousPanel = new JPanel(new GridBagLayout());
@@ -237,7 +239,7 @@ public class MainMenu extends JFrame implements ActionListener {
 
 //===============================================Economic Panel=======================================================\\
 
-        economicService = UIHelpers.initializeEconomicService(repo, currentUserFaction.getDisplayName());
+
         UI.EnhancedEconomicPanel enhancedEconomyPanel = new UI.EnhancedEconomicPanel(economicService, repo);
         JPanel populationSummary = UIHelpers.createPopulationSummaryPanel(repo, currentUserFaction.getDisplayName());
         JPanel combinedEcoPanel = new JPanel(new GridBagLayout());
@@ -740,7 +742,30 @@ public class MainMenu extends JFrame implements ActionListener {
 
         return adminPanel;
     }
+    private void initializePersonnelService() {
+        try {
+            // Créer le répertoire de sauvegarde s'il n'existe pas
+            String user = Login.currentUser.toLowerCase();
+            String documentsPath = FileSystemView.getFileSystemView().getDefaultDirectory().getPath();
+            String saveDirPath = documentsPath + File.separator + "IseriaDivers" + File.separator + user;
 
+            File saveDir = new File(saveDirPath);
+            if (!saveDir.exists()) {
+                saveDir.mkdirs();
+            }
+
+            // Initialiser le service
+            personnelService = new PersonnelDataService(saveDirPath);
+            System.out.println("PersonnelDataService initialized successfully");
+
+        } catch (Exception e) {
+            System.err.println("Error initializing PersonnelDataService: " + e.getMessage());
+            e.printStackTrace();
+
+            // Fallback - service basique
+            personnelService = new PersonnelDataService(System.getProperty("user.home"));
+        }
+    }
     private void openAdminRumorPanel() {
         audio.playClick();
         RumorService rumorService = new RumorServiceImpl();

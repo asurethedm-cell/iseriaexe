@@ -32,9 +32,10 @@ public class MarketManagementPanel extends JPanel {
 
     private void initializePanel() {
         setLayout(new BorderLayout());
-        setBackground(new Color(50, 50, 50, 200));
+
 
         tabbedPane = new JTabbedPane();
+        tabbedPane.setBackground(new Color(50, 50, 50, 200));
         tabbedPane.setTabPlacement(JTabbedPane.TOP);
 
         // Onglet 1: Market principal (existant)

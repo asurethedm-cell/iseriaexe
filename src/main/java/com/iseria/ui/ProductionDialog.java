@@ -4,13 +4,18 @@ import com.iseria.domain.HexResourceData;
 import com.iseria.domain.SafeHexDetails;
 import com.iseria.service.EconomicDataService;
 import com.iseria.domain.DATABASE;
+import com.iseria.service.PersonnelDataService;
+
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.util.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ProductionDialog extends JDialog {
+    private final PersonnelDataService personnelService;
     private String hexKey;
     private String buildingType;
     private String buildingName;
@@ -29,7 +34,9 @@ public class ProductionDialog extends JDialog {
     private Map<DATABASE.ResourceType, Double> resourceModifiers = new HashMap<>();
 
     public ProductionDialog(JFrame parent, String hexKey, String buildingType, String buildingName,
-                            int currentWorkers, EconomicDataService economicService, SafeHexDetails hex) {
+                            int currentWorkers, EconomicDataService economicService,
+                            PersonnelDataService personnelService, SafeHexDetails hex) {
+
         super(parent, "Configuration Production - " + buildingName, true);
         this.hex = hex;
         this.hexKey = hexKey;
@@ -38,146 +45,75 @@ public class ProductionDialog extends JDialog {
         this.buildingType = buildingType;
         this.currentWorkerCount = currentWorkers;
         this.economicService = economicService;
+        this.personnelService = personnelService;
 
-        // **NOUVEAU** - Initialiser les données intégrées
         initializeIntegratedData();
 
         initializeDialog();
     }
 
-    private void initializeDialog() {
-        setSize(1000, 900);
-        setLocationRelativeTo(getParent());
-        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+    private void initializeDialog() {  setSize(1200, 800);
 
-        JPanel mainPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(10, 10, 10, 10);
+        JTabbedPane tabbedPane = new JTabbedPane();
 
-        JLabel titleLabel = new JLabel("Configuration: " + buildingName);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
-        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
-        mainPanel.add(titleLabel, gbc);
+        tabbedPane.addTab("Production", createResourceInfoPanel());
 
-        gbc.gridwidth = 1; gbc.gridy++;
-        JLabel workerLabel = new JLabel("Personnel:");
-        workerLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        gbc.gridx = 0;
-        mainPanel.add(workerLabel, gbc);
+        if (personnelService != null) {
+            tabbedPane.addTab("Personnel", createPersonnelAssignmentPanel());
+        }
+        add(tabbedPane, BorderLayout.CENTER);
 
-        JPanel workerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        workerPanel.add(new JLabel("Actuel: " + currentWorkerCount));
-        workerPanel.add(new JLabel("→ Nouveau:"));
+    }
+    private JPanel createPersonnelAssignmentPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
 
-        workerSpinner = new JSpinner(new SpinnerNumberModel(currentWorkerCount, 0, 100, 1));
-        workerPanel.add(workerSpinner);
+        // Personnel assigné à ce bâtiment
+        JPanel assignedPanel = new JPanel(new BorderLayout());
+        assignedPanel.setBorder(BorderFactory.createTitledBorder("Personnel Assigné"));
 
+        String[] columns = {"Nom", "Métier", "Salaire", "Performance", "Actions"};
+        DefaultTableModel tableModel = new DefaultTableModel(columns, 0);
+        JTable personnelTable = new JTable(tableModel);
 
-        gbc.gridx = 1;
-        mainPanel.add(workerPanel, gbc);
-        gbc.gridy++; gbc.gridx = 0;
-        JLabel resourceLabel = new JLabel("Production Ressource:");
-        resourceLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        mainPanel.add(resourceLabel, gbc);
+        // Remplir avec le personnel assigné
+        List<PersonnelDataService.HiredPersonnel> assigned =
+                personnelService.getAssignedPersonnelForHex(MainMenu.getCurrentFactionId(), hexKey)
+                        .stream()
+                        .filter(p -> buildingType.equals(p.assignedBuilding))
+                        .collect(Collectors.toList());
 
-        JPanel resourcePanel = new JPanel(new GridBagLayout());
-        GridBagConstraints rgbc = new GridBagConstraints();
-        rgbc.insets = new Insets(2, 5, 2, 5);
-
-        rgbc.gridx = 0; rgbc.gridy = 0;
-        resourcePanel.add(new JLabel("Type:"), rgbc);
-
-        resourceTypeCombo = new JComboBox<>();
-        resourceTypeCombo.addItem(null);
-
-        List<DATABASE.ResourceType> availableResources = getResourceTypesForBuilding();
-        for (DATABASE.ResourceType resource : availableResources) {
-            resourceTypeCombo.addItem(resource);
+        for (PersonnelDataService.HiredPersonnel personnel : assigned) {
+            tableModel.addRow(new Object[]{
+                    personnel.name,
+                    personnel.workerType.getJobName(),
+                    String.format("%.1f Po", personnel.currentSalary),
+                    "85%", // TODO: Calcul performance réelle
+                    "Gérer"
+            });
         }
 
-        resourceTypeCombo.setRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
-                                                          boolean isSelected, boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                if (value instanceof DATABASE.ResourceType resource) {
-                    setText(resource.getIcon() + " " + resource.getName());
-                } else if (value == null) {
-                    setText("Aucune");
-                }
-                return this;
-            }
-        });
+        JScrollPane scrollPane = new JScrollPane(personnelTable);
+        assignedPanel.add(scrollPane, BorderLayout.CENTER);
 
-        resourceTypeCombo.addActionListener(e -> updateProductionDetails());
-        rgbc.gridx = 1;
-        resourcePanel.add(resourceTypeCombo, rgbc);
+        // Panel de contrôles avec reassignation
+        JPanel controlPanel = new JPanel(new FlowLayout());
 
-        rgbc.gridx = 0; rgbc.gridy = 1;
-        resourcePanel.add(new JLabel("Quantité/sem:"), rgbc);
+        JButton reassignButton = new JButton("↔️ Reassigner");
+        reassignButton.addActionListener(e -> showReassignmentDialog());
+        controlPanel.add(reassignButton);
 
-        resourceProductionSpinner = new JSpinner(new SpinnerNumberModel(0.0, 0.0, 1000.0, 0.1));
-        resourceProductionSpinner.setPreferredSize(new Dimension(100, 25));
-        resourceProductionSpinner.addChangeListener(e -> updateProductionDetails());
-        rgbc.gridx = 1;
-        resourcePanel.add(resourceProductionSpinner, rgbc);
+        JButton unassignButton = new JButton("⬅️ Désassigner");
+        unassignButton.addActionListener(e -> personnelService.unassignPersonnel(String.valueOf(personnelTable)));
+        controlPanel.add(unassignButton);
 
-        rgbc.gridx = 0; rgbc.gridy = 2;
-        double efficiency = UIHelpers.getBuildingEfficiency(building) * 100;
-        resourcePanel.add(new JLabel(String.format("Efficacité bâtiment: %.0f%%", efficiency)));
+        assignedPanel.add(controlPanel, BorderLayout.SOUTH);
+        panel.add(assignedPanel, BorderLayout.CENTER);
 
-        JLabel efficiencyLabel = new JLabel("100%");
-        efficiencyLabel.setToolTipText("Efficacité de production basée sur les workers et le bâtiment");
-        rgbc.gridx = 1;
-        resourcePanel.add(efficiencyLabel, rgbc);
-
-        gbc.gridx = 1;
-        mainPanel.add(resourcePanel, gbc);
-
-        gbc.gridy++; gbc.gridx = 0; gbc.gridwidth = 1;
-        JLabel infoLabel = new JLabel("Informations Ressource:");
-        infoLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        mainPanel.add(infoLabel, gbc);
-
-        gbc.gridy++;
-        JPanel infoResourcePanel = createResourceInfoPanel();
-        mainPanel.add(infoResourcePanel, gbc);
-
-        gbc.gridy = 3 ; gbc.gridx = 1; gbc.gridwidth = 2;
-        JLabel detailsLabel = new JLabel("Résumé Production:");
-        detailsLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        mainPanel.add(detailsLabel, gbc);
-
-        gbc.gridy++; gbc.fill = GridBagConstraints.BOTH; gbc.weightx = 1.0; gbc.weighty = 1.0;
-        detailsArea = new JTextArea(8, 50);
-        detailsArea.setEditable(false);
-        detailsArea.setBackground(new Color(245, 245, 245));
-        detailsArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
-
-        JScrollPane scrollPane = new JScrollPane(detailsArea);
-        scrollPane.setBorder(BorderFactory.createTitledBorder("Impact Économique"));
-        mainPanel.add(scrollPane, gbc);
-
-        gbc.gridy++;
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-
-        JButton confirmButton = new JButton("Confirmer");
-        confirmButton.setBackground(new Color(76, 175, 80));
-        confirmButton.setForeground(Color.WHITE);
-        confirmButton.addActionListener(this::confirm);
-
-        JButton cancelButton = new JButton("Annuler");
-        cancelButton.setBackground(new Color(244, 67, 54));
-        cancelButton.setForeground(Color.WHITE);
-        cancelButton.addActionListener(this::cancel);
-
-        buttonPanel.add(confirmButton);
-        buttonPanel.add(cancelButton);
-        mainPanel.add(buttonPanel, gbc);
-
-        add(mainPanel);
-        updateProductionDetails();
-        loadExistingData();
+        return panel;
+    }
+    private void showReassignmentDialog() {
+        ReassignmentDialog dialog = new ReassignmentDialog((JFrame) SwingUtilities.getWindowAncestor(this), personnelService, hexKey, buildingType);
+        dialog.setVisible(true);
     }
     private JPanel createResourceInfoPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
@@ -356,25 +292,46 @@ public class ProductionDialog extends JDialog {
         if (building == null || resource == null || workers <= 0) return 0.0;
 
         try {
-
             double efficiency = UIHelpers.getBuildingEfficiency(building);
-            double baseProduction = DATABASE.calculateActualProduction(building, resource, workers, efficiency);
+
+            // **CORRECTION** - Utiliser la méthode existante au lieu de la méthode manquante
+            double baseProduction = resource.getBaseValue();
+            double totalProduction = baseProduction * workers * efficiency;
+
+            // Appliquer les modificateurs si disponibles
             double modifier = resourceModifiers.getOrDefault(resource, 1.0);
             double factionBonus = economicService != null ?
                     economicService.getFactionProductionBonus(hexKey, resource) : 1.0;
 
-            return baseProduction * modifier * factionBonus;
+            return totalProduction * modifier * factionBonus;
 
         } catch (Exception e) {
             System.err.println("Erreur lors du calcul de production: " + e.getMessage());
+            // Fallback sécurisé
             return resource.getBaseValue() * workers * 0.8;
         }
     }
     private List<DATABASE.ResourceType> getResourceTypesForBuilding() {
         if (building == null) return Collections.emptyList();
 
-        // **UTILISER DATABASE** au lieu de logique isolée
-        return DATABASE.getResourcesForBuilding(building);
+        try {
+            // **CORRECTION** - Utiliser la méthode disponible ou créer une logique simple
+            return Arrays.stream(DATABASE.ResourceType.values())
+                    .filter(resource -> canBuildingProduceResource(building, resource))
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la récupération des ressources: " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+    private boolean canBuildingProduceResource(DATABASE.JobBuilding building, DATABASE.ResourceType resource) {
+        // Logique simple basée sur les types de bâtiments
+        if (building instanceof DATABASE.MainBuilding) {
+            return "Nourriture".equals(resource.getCategory()) || "Matériaux".equals(resource.getCategory());
+        } else if (building instanceof DATABASE.AuxBuilding) {
+            return "Artisanat".equals(resource.getCategory()) || "Nourriture".equals(resource.getCategory());
+        }
+        return false;
     }
     private void updateProductionDetails() {
         StringBuilder details = new StringBuilder();
@@ -526,4 +483,56 @@ public class ProductionDialog extends JDialog {
         }
     }
 
+    static class ReassignmentDialog extends JDialog {
+
+        private final PersonnelDataService personnelService;
+        private final String currentHexKey;
+        private final String currentBuildingType;
+
+        public ReassignmentDialog(JFrame parent, PersonnelDataService personnelService,
+                                  String hexKey, String buildingType) {
+            super(parent, "Reassignation du Personnel", true);
+            this.personnelService = personnelService;
+            this.currentHexKey = hexKey;
+            this.currentBuildingType = buildingType;
+
+            initializeDialog();
+        }
+
+        private void initializeDialog() {
+            setSize(600, 400);
+            setLocationRelativeTo(getParent());
+
+            JPanel mainPanel = new JPanel(new BorderLayout());
+
+            // Interface de reassignation
+            JLabel titleLabel = new JLabel("Sélectionnez la nouvelle destination", SwingConstants.CENTER);
+            titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+            mainPanel.add(titleLabel, BorderLayout.NORTH);
+
+            // TODO: Implémenter interface complète
+            JTextArea infoArea = new JTextArea("Interface de reassignation à implémenter:\n" +
+                    "- Liste des hexagones disponibles\n" +
+                    "- Sélection du type de bâtiment\n" +
+                    "- Validation des capacités");
+            mainPanel.add(new JScrollPane(infoArea), BorderLayout.CENTER);
+
+            JPanel buttonPanel = new JPanel(new FlowLayout());
+            JButton confirmButton = new JButton("Confirmer");
+            JButton cancelButton = new JButton("Annuler");
+
+            confirmButton.addActionListener(e -> {
+                // TODO: Implémenter logique de reassignation
+                dispose();
+            });
+
+            cancelButton.addActionListener(e -> dispose());
+
+            buttonPanel.add(confirmButton);
+            buttonPanel.add(cancelButton);
+            mainPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+            add(mainPanel);
+        }
+    }
 }

@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 public class EconomicDataService {
 
     public static class EconomicData {
-        public double tresorerie = 0.0;
+        public double tresorerie = 20000.0;
         public double revenus = 0.0;
         public double depenses = 0.0;
         public int populationTotale = 0;

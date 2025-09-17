@@ -88,6 +88,10 @@ public class MainMenu extends JFrame implements ActionListener {
         initializePersonnelService();
         MoralDataService moralService = new EnumMoralDataService();
         economicService = UIHelpers.initializeEconomicService(repo, currentUserFaction.getDisplayName());
+        if (personnelService != null && economicService != null) {
+            personnelService.setEconomicDataService(economicService);
+            System.out.println("Services connectés: PersonnelService <-> EconomicService");
+        }
 //================================================INITIAL=============================================================\\
         ToolTipManager.sharedInstance().setInitialDelay(100);
         AtomicBoolean factionTheme = new AtomicBoolean(false);

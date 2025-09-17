@@ -3,6 +3,8 @@ package com.iseria.ui;
 import com.iseria.domain.*;
 import com.iseria.domain.DATABASE;
 import com.iseria.service.*;
+import com.iseria.service.PersonnelDataService;
+
 
 
 import javax.imageio.ImageIO;
@@ -29,6 +31,7 @@ import static com.iseria.ui.UIHelpers.*;
 public class UI {
 
     private static MoralSaveService moralSaveService = new MoralSaveService();
+    private static PersonnelDataService personnelService;
 
     public static JPanel createGeneralInfoPanel(JTextArea myNoteArea) {
         JPanel gIP = new JPanel(new GridBagLayout());
@@ -1437,6 +1440,7 @@ public class UI {
                     hexKey, buildingType, building.getBuildName(),
                     hex.getWorkerCountByType(buildingType),
                     economicService,
+                    personnelService,
                     hex
             );
 

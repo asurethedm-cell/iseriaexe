@@ -27,7 +27,8 @@ public class TradeMarketPanel extends JPanel {
 
     private void initializePanel() {
         setLayout(new BorderLayout());
-        setOpaque(false);
+        setOpaque(true);
+        setBackground(new Color(50, 50, 50, 200));
 
         // Panel de titre
         JPanel titlePanel = createTitlePanel();
@@ -40,7 +41,7 @@ public class TradeMarketPanel extends JPanel {
 
     private JPanel createTitlePanel() {
         JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.setOpaque(false);
+        titlePanel.setOpaque(true);
         titlePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
 
         JLabel titleLabel = new JLabel("🏪 Live Market Data", SwingConstants.CENTER);
@@ -56,7 +57,7 @@ public class TradeMarketPanel extends JPanel {
 
     private JPanel createContentPanel() {
         JPanel contentPanel = new JPanel(new GridBagLayout());
-        contentPanel.setOpaque(false);
+        contentPanel.setOpaque(true);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
 
         GridBagConstraints gbc = new GridBagConstraints();

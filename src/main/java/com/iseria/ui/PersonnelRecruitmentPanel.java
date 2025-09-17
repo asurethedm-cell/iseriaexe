@@ -13,6 +13,7 @@ public class PersonnelRecruitmentPanel extends JPanel implements PersonnelDataSe
     private final PersonnelDataService personnelService;
     private final EconomicDataService economicService;
     private final String currentFaction;
+    public static boolean noFunds = false;
 
     private JTable availableWorkersTable;
     private DefaultTableModel availableTableModel;
@@ -167,7 +168,7 @@ public class PersonnelRecruitmentPanel extends JPanel implements PersonnelDataSe
     }
 
     // **CLASSES INTERNES POUR LES BOUTONS DANS LES TABLES**
-    private class ButtonRenderer extends JButton implements TableCellRenderer {
+    private static class ButtonRenderer extends JButton implements TableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus, int row, int column) {
@@ -216,11 +217,16 @@ public class PersonnelRecruitmentPanel extends JPanel implements PersonnelDataSe
                             "Recrutement",
                             JOptionPane.QUESTION_MESSAGE
                     );
-
                     try {
                         int quantity = Integer.parseInt(quantityStr);
                         if (quantity > 0) {
                             personnelService.hirePersonnel(currentFaction, selectedWorker, quantity);
+
+                            if(noFunds){
+                                JOptionPane.showMessageDialog(PersonnelRecruitmentPanel.this,
+                                "Budget MENSUEL INSUFFISANT pour recruter " + quantity + " " + selectedWorker.getJobName(),
+                                "Manque Trésorerie", JOptionPane.WARNING_MESSAGE);
+                            }
                         }
                     } catch (NumberFormatException ex) {
                         JOptionPane.showMessageDialog(PersonnelRecruitmentPanel.this,

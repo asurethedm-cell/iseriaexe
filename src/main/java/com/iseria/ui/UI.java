@@ -28,8 +28,6 @@ import static com.iseria.ui.UIHelpers.*;
 
 public class UI {
 
-    private static EconomicDataService economicService;
-
     private static MoralSaveService moralSaveService = new MoralSaveService();
 
     public static JPanel createGeneralInfoPanel(JTextArea myNoteArea) {
@@ -104,25 +102,20 @@ public class UI {
 
         try {
             result.availableActions = moralService.getAvailableActions(faction);
-
-            // Créer des dropdowns pour différents slots d'actions
             String[] actionSlots = {"Action 1", "Action 2", "Action 3", "Action 4", "Action 5", };
 
             for (int i = 0; i < actionSlots.length; i++) {
                 String slotName = actionSlots[i];
 
-                // Label de slot
                 gbc.gridx = 0; gbc.gridy = i;
                 JLabel slotLabel = new JLabel(slotName + ":");
                 slotLabel.setFont(new Font("Arial", Font.BOLD, 11));
                 slotLabel.setForeground(Color.WHITE);
                 controlPanel.add(slotLabel, gbc);
 
-                // ComboBox avec modèle intelligent
                 JComboBox<DATABASE.MoralAction> actionCombo = createIntelligentMoralActionCombo(result);
                 actionCombo.setPreferredSize(new Dimension(250, 25));
 
-                // Ajouter les listeners pour gérer les règles UNIQUE
                 setupComboBoxListeners(actionCombo, result);
 
                 gbc.gridx = 1;
@@ -131,7 +124,6 @@ public class UI {
                 result.dropdownMap.put(slotName, actionCombo);
             }
 
-            // Affichage du moral total avec mise à jour en temps réel
             gbc.gridx = 0; gbc.gridy = actionSlots.length;
             JLabel moralLabel = new JLabel("Moral Total:");
             moralLabel.setFont(new Font("Arial", Font.BOLD, 25));
@@ -144,7 +136,6 @@ public class UI {
             moralValueLabel.setForeground(Color.GREEN);
             controlPanel.add(moralValueLabel, gbc);
 
-            // Connecter le système de mise à jour
             attachIntelligentMoralUpdater(moralValueLabel, result);
 
         } catch (Exception e) {
@@ -190,33 +181,27 @@ public class UI {
         scrollPane.getVerticalScrollBar().setUnitIncrement(unitIncrement);
         scrollPane.getVerticalScrollBar().setBlockIncrement(blockIncrement);
 
-        // Amélioration du scroll avec la molette de souris
         scrollPane.addMouseWheelListener(e -> {
             JScrollBar scrollBar = scrollPane.getVerticalScrollBar();
             int currentValue = scrollBar.getValue();
             int scrollAmount = e.getScrollAmount() * unitIncrement;
 
             if (e.getWheelRotation() < 0) {
-                // Scroll vers le haut
                 scrollBar.setValue(currentValue - scrollAmount);
             } else {
-                // Scroll vers le bas
                 scrollBar.setValue(currentValue + scrollAmount);
             }
         });
     }
     private static JButton createClickableMoralActionButton(DATABASE.MoralAction action) {
-        // Créer le bouton avec le nom de l'action
         JButton actionButton = new JButton("<html><center>" + action.getName() + "</center></html>");
 
-        // Style du bouton - **MODIFIÉ** pour être plus compact
         actionButton.setFont(new Font("Arial", Font.BOLD, 9));
         actionButton.setPreferredSize(new Dimension(110, 45));
         actionButton.setMinimumSize(new Dimension(110, 45));
         actionButton.setMaximumSize(new Dimension(110, 45));
         actionButton.setMargin(new Insets(3, 3, 3, 3));
 
-        // Reste du code couleur inchangé...
         Color buttonColor;
         Color textColor = Color.WHITE;
 
@@ -254,7 +239,6 @@ public class UI {
         actionButton.setBorderPainted(true);
         actionButton.setFocusPainted(false);
 
-        // Effets hover
         Color originalColor = buttonColor;
         actionButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseEntered(java.awt.event.MouseEvent evt) {
@@ -265,7 +249,6 @@ public class UI {
             }
         });
 
-        // Action de clic pour afficher la popup
         actionButton.addActionListener(e -> showMoralActionPopup(actionButton, action));
 
         return actionButton;
@@ -291,7 +274,6 @@ public class UI {
                 return mainGridPanel;
             }
 
-            // **NOUVEAU** - Trier les actions par type
             Map<DATABASE.MoralAction.ActionType, List<DATABASE.MoralAction>> actionsByType =
                     availableActions.stream()
                             .collect(Collectors.groupingBy(DATABASE.MoralAction::getType));
@@ -300,7 +282,6 @@ public class UI {
             categorizedPanel.setLayout(new BoxLayout(categorizedPanel, BoxLayout.Y_AXIS));
             categorizedPanel.setOpaque(false);
 
-            // Ordre de priorité des types
             DATABASE.MoralAction.ActionType[] typeOrder = {
                     DATABASE.MoralAction.ActionType.UNIQUE,
                     DATABASE.MoralAction.ActionType.AUTO,
@@ -339,7 +320,6 @@ public class UI {
         JPanel sectionPanel = new JPanel(new BorderLayout());
         sectionPanel.setOpaque(false);
 
-        // Header avec le nom du type et description
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         headerPanel.setOpaque(false);
 
@@ -349,7 +329,6 @@ public class UI {
         typeLabel.setForeground(getColorForActionType(type));
         headerPanel.add(typeLabel);
 
-        // Grille des boutons pour ce type
         int cols = Math.min(4, Math.max(2, actions.size()));
         int rows = (int) Math.ceil((double) actions.size() / cols);
 
@@ -357,7 +336,6 @@ public class UI {
         buttonGrid.setOpaque(false);
         buttonGrid.setBorder(BorderFactory.createEmptyBorder(5, 15, 5, 15));
 
-        // Trier les actions par nom pour une présentation cohérente
         actions.sort(Comparator.comparing(DATABASE.MoralAction::getName));
 
         for (DATABASE.MoralAction action : actions) {
@@ -365,7 +343,6 @@ public class UI {
             buttonGrid.add(actionButton);
         }
 
-        // Remplir les cases vides si nécessaire
         int totalSlots = rows * cols;
         for (int i = actions.size(); i < totalSlots; i++) {
             JPanel emptyPanel = new JPanel();
@@ -393,22 +370,18 @@ public class UI {
         };
     }
     private static void showMoralActionPopup(Component parentComponent, DATABASE.MoralAction action) {
-        // Créer le contenu HTML formaté pour la popup
         StringBuilder html = new StringBuilder();
         html.append("<html><body style='width: 300px; font-family: Arial; padding: 10px;'>");
         html.append("<h2 style='color: #4CAF50; margin-top: 0;'>").append(action.getName()).append("</h2>");
 
-        // Effet moral
         String effectColor = action.getMoralEffect() >= 0 ? "#4CAF50" : "#F44336";
         String effectSign = action.getMoralEffect() >= 0 ? "+" : "";
         html.append("<p><strong>Effet Moral:</strong> <span style='color: ")
                 .append(effectColor).append("; font-weight: bold;'>")
                 .append(effectSign).append(action.getMoralEffect()).append("</span></p>");
 
-        // Type d'action
         html.append("<p><strong>Type:</strong> ").append(action.getType().name()).append("</p>");
 
-        // Effet d'instabilité si disponible
         try {
             int instabilityEffect = action.getInstabilityEffect();
             String instabilityColor = instabilityEffect >= 0 ? "#F44336" : "#4CAF50";
@@ -424,7 +397,6 @@ public class UI {
                 html.append("<p style='font-style: italic; color: #666;'>").append(description).append("</p>");
             }
         } catch (Exception e) {
-            // Si getDescription() n'existe pas, créer une description basique
             html.append("<hr><p><strong>Description:</strong></p>");
             html.append("<p style='font-style: italic; color: #666;'>");
             html.append("Cette action modifie le moral de votre faction de ");
@@ -432,20 +404,17 @@ public class UI {
             html.append("</p>");
         }
 
-        // Conseils d'utilisation
         html.append("<hr><p style='font-size: 11px; color: #888;'>");
         if (action.getMoralEffect() > 0) {
             html.append("💡 <em>Action bénéfique pour le moral de votre faction.</em>");
         } else if (action.getMoralEffect() < 0) {
-            html.append("⚠️ <em>Action risquée - peut affecter négativement le moral.</em>");
+            html.append("⚠️ <em>Action risquée - affecte négativement le moral.</em>");
         } else {
             html.append("ℹ️ <em>Action neutre - aucun effet direct sur le moral.</em>");
         }
         html.append("</p>");
-
         html.append("</body></html>");
 
-        // Créer et afficher le dialog
         JDialog popup = new JDialog();
         popup.setTitle("Détails: " + action.getName());
         popup.setModal(true);
@@ -479,20 +448,16 @@ public class UI {
         popup.setVisible(true);
     }
     private static JScrollPane createScrollableActionsGrid(MoralDataService moralService, Faction faction) {
-        // Créer la grille normale
         JPanel gridPanel = createClickableActionsGrid(moralService, faction);
 
-        // Envelopper dans un JScrollPane
         JScrollPane scrollPane = new JScrollPane(gridPanel);
         scrollPane.setOpaque(false);
         scrollPane.getViewport().setOpaque(false);
         scrollPane.setBorder(null);
 
-        // Configuration du scroll
         scrollPane.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED);
         scrollPane.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
 
-        // Hauteur préférée pour montrer environ 2-3 lignes de boutons
         scrollPane.setPreferredSize(new Dimension(0, 150));
         scrollPane.setMinimumSize(new Dimension(0, 100));
         scrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, 200));
@@ -507,7 +472,6 @@ public class UI {
         JComboBox<DATABASE.MoralAction> combo = new JComboBox<>();
         combo.setRenderer(createEnhancedMoralActionRenderer());
 
-        // Initialiser avec le modèle filtré
         updateDropdownModel(combo, result);
 
         return combo;
@@ -519,89 +483,64 @@ public class UI {
                                                           boolean isSelected, boolean cellHasFocus) {
                 JLabel label = (JLabel) super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
 
-                if (value instanceof DATABASE.MoralAction) {
-                    DATABASE.MoralAction action = (DATABASE.MoralAction) value;
-
-                    // Texte avec effet et type
+                if (value instanceof DATABASE.MoralAction action) {
                     String effectText = action.getMoralEffect() >= 0 ? "+" + action.getMoralEffect() : String.valueOf(action.getMoralEffect());
-
                     label.setText(" " + action.getName() + " (" + effectText + ")");
-
-                    // Couleur selon le type
                     Color textColor = getColorForActionType(action.getType());
                     if (!isSelected) {
                         label.setForeground(textColor);
                     }
-
-                    // Style spécial pour les actions UNIQUE
                     if (action.getType() == DATABASE.MoralAction.ActionType.UNIQUE) {
                         label.setFont(label.getFont().deriveFont(Font.BOLD));
                     }
-
                 } else if (value == null) {
                     label.setText("🚫 Aucune action");
                     label.setForeground(Color.GRAY);
                 }
-
                 return label;
             }
         };
     }
     private static void updateDropdownModel(JComboBox<DATABASE.MoralAction> combo, MoralPanelResult result) {
-        // **NOUVEAU** - Sauvegarder l'état actuel pour éviter les événements en cascade
         DATABASE.MoralAction currentSelection = (DATABASE.MoralAction) combo.getSelectedItem();
 
-        // Temporairement retirer tous les listeners
         ItemListener[] listeners = combo.getItemListeners();
         for (ItemListener listener : listeners) {
             combo.removeItemListener(listener);
         }
-
         try {
             combo.removeAllItems();
-            combo.addItem(null); // Option "Aucune action"
-
+            combo.addItem(null);
             for (DATABASE.MoralAction action : result.availableActions) {
                 boolean shouldAdd = false;
-
                 switch (action.getType()) {
                     case UNIQUE:
                         shouldAdd = result.selectedUniqueActions.isEmpty() ||
                                 result.selectedUniqueActions.contains(action) ||
                                 action.equals(currentSelection);
                         break;
-
                     case AUTO:
-                        shouldAdd = false;
                         break;
-
-                    default: // REPETABLE et autres
+                    default:
                         shouldAdd = true;
                         break;
                 }
-
                 if (shouldAdd) {
                     combo.addItem(action);
                 }
             }
-
-            // Restaurer la sélection si elle est toujours valide
             if (currentSelection != null && isActionAvailableInCombo(combo, currentSelection)) {
                 combo.setSelectedItem(currentSelection);
             } else if (currentSelection != null && currentSelection.getType() == DATABASE.MoralAction.ActionType.UNIQUE) {
-                // L'action UNIQUE n'est plus disponible - la désélectionner
                 combo.setSelectedItem(null);
             }
 
         } finally {
-            // **IMPORTANT** - Restaurer tous les listeners
             for (ItemListener listener : listeners) {
                 combo.addItemListener(listener);
             }
         }
     }
-
-
     private static boolean isActionAvailableInCombo(JComboBox<DATABASE.MoralAction> combo, DATABASE.MoralAction action) {
         for (int i = 0; i < combo.getItemCount(); i++) {
             if (action.equals(combo.getItemAt(i))) {
@@ -611,15 +550,11 @@ public class UI {
         return false;
     }
     private static void setupComboBoxListeners(JComboBox<DATABASE.MoralAction> combo, MoralPanelResult result) {
-        // **NOUVEAU** - Flag pour éviter les boucles infinies
         final boolean[] isUpdating = {false};
-
         combo.addItemListener(e -> {
-            // **CORRECTION** - Ignorer les événements pendant les mises à jour programmatiques
             if (isUpdating[0]) {
                 return;
             }
-
             try {
                 isUpdating[0] = true;
 
@@ -627,23 +562,15 @@ public class UI {
                     DATABASE.MoralAction selectedAction = (DATABASE.MoralAction) e.getItem();
 
                     if (selectedAction != null && selectedAction.getType() == DATABASE.MoralAction.ActionType.UNIQUE) {
-                        // Vérifier si cette action UNIQUE est déjà sélectionnée ailleurs
                         if (result.selectedUniqueActions.contains(selectedAction)) {
-                            // Déjà sélectionnée - désélectionner dans ce combo
-                            SwingUtilities.invokeLater(() -> {
-                                combo.setSelectedItem(null);
-                            });
+                            SwingUtilities.invokeLater(() -> combo.setSelectedItem(null));
                             return;
                         }
-
-                        // Ajouter à la liste des actions UNIQUE sélectionnées
                         result.addSelectedUniqueAction(selectedAction);
                     }
                 } else if (e.getStateChange() == ItemEvent.DESELECTED) {
                     DATABASE.MoralAction deselectedAction = (DATABASE.MoralAction) e.getItem();
-
                     if (deselectedAction != null && deselectedAction.getType() == DATABASE.MoralAction.ActionType.UNIQUE) {
-                        // Retirer de la liste des actions UNIQUE sélectionnées
                         result.removeSelectedUniqueAction(deselectedAction);
                     }
                 }
@@ -652,10 +579,6 @@ public class UI {
             }
         });
     }
-
-
-
-
 
     private static String formatMoralContentForDisplay(String text) {
         if (text == null || text.isEmpty()) {
@@ -698,10 +621,9 @@ public class UI {
 
         return html.toString();
     }
-    public static MoralPanelResult createModernMoralPanel(MoralDataService moralService, Faction currentUserFaction, String currentUser) {
+    public static MoralPanelResult createModernMoralPanel(MoralDataService moralService, Faction currentUserFaction) {
         MoralPanelResult result = new MoralPanelResult();
 
-        // Panneau principal avec style moderne
         JPanel moralPanel = new JPanel(new BorderLayout());
         moralPanel.setOpaque(true);
         moralPanel.setBackground(new Color(50, 50, 50, 200));
@@ -713,18 +635,14 @@ public class UI {
                 Color.WHITE
         ));
 
-        // Header avec informations de faction
         JPanel headerPanel = createMoralHeaderPanel(currentUserFaction);
         headerPanel.setBackground(new Color(50, 50, 50, 200));
-        // **MODIFIÉ** - Grille d'actions avec ScrollPane
         JScrollPane actionsScrollPane = createScrollableActionsGrid(moralService, currentUserFaction);
         UI.styleScrollPane(actionsScrollPane);
 
         actionsScrollPane.setBackground(new Color(50, 50, 50, 200));
-        // Panneau de contrôles des sélecteurs (en bas)
         JPanel controlPanel = createMoralControlPanel(moralService, currentUserFaction, result);
         controlPanel.setBackground(new Color(50, 50, 50, 200));
-        // Assembly du panneau avec la nouvelle grille scrollable
         JPanel centerPanel = new JPanel(new BorderLayout());
         centerPanel.setOpaque(false);
         centerPanel.add(actionsScrollPane, BorderLayout.NORTH);
@@ -734,56 +652,35 @@ public class UI {
         moralPanel.add(centerPanel, BorderLayout.CENTER);
         moralPanel.add(controlPanel, BorderLayout.SOUTH);
         moralPanel.setBackground(new Color(50, 50, 50, 200));
-        // Configuration du résultat
         result.panel = moralPanel;
 
         return result;
     }
     public static class MoralPanelResult {
         public JPanel panel;
-        public JTextPane contentPane;
         public Map<String, JComboBox<DATABASE.MoralAction>> dropdownMap = new HashMap<>();
-        public JButton refreshButton;
 
-        // **NOUVEAU** - Suivi des sélections pour les règles
         private Set<DATABASE.MoralAction> selectedUniqueActions = new HashSet<>();
         private List<DATABASE.MoralAction> availableActions = new ArrayList<>();
 
-        public void updateMoralDisplay(String moralText) {
-            if (contentPane != null) {
-                String formattedContent = formatMoralContentForDisplay(moralText);
-                contentPane.setText(formattedContent);
-            }
-        }
-
-        // **NOUVEAU** - Méthodes de gestion des sélections
         public void addSelectedUniqueAction(DATABASE.MoralAction action) {
             if (action.getType() == DATABASE.MoralAction.ActionType.UNIQUE) {
                 selectedUniqueActions.add(action);
                 updateDropdownAvailability();
             }
         }
-
         public void removeSelectedUniqueAction(DATABASE.MoralAction action) {
             if (action.getType() == DATABASE.MoralAction.ActionType.UNIQUE) {
                 selectedUniqueActions.remove(action);
                 updateDropdownAvailability();
             }
         }
-
-        public boolean canSelectUniqueAction(DATABASE.MoralAction action) {
-            return action.getType() != DATABASE.MoralAction.ActionType.UNIQUE ||
-                    selectedUniqueActions.isEmpty() ||
-                    selectedUniqueActions.contains(action);
-        }
-
         private void updateDropdownAvailability() {
             for (JComboBox<DATABASE.MoralAction> dropdown : dropdownMap.values()) {
                 updateDropdownModel(dropdown, this);
             }
         }
     }
-
     private static JPanel createMoralHeaderPanel(Faction faction) {
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         headerPanel.setOpaque(false);
@@ -795,17 +692,14 @@ public class UI {
 
         return headerPanel;
     }
-
     public static class WorkerSelectionDialog extends JDialog {
         private JSpinner workerSpinner;
         private int selectedCount = 0;
         private boolean confirmed = false;
-        private final String buildingType;
         private final String buildingName;
 
-        public WorkerSelectionDialog(JFrame parent, String buildingType, String buildingName, int currentWorkers) {
+        public WorkerSelectionDialog(JFrame parent, String buildingName, int currentWorkers) {
             super(parent, "Affecter du personnel", true);
-            this.buildingType = buildingType;
             this.buildingName = buildingName;
             initializeDialog(currentWorkers);
         }
@@ -818,20 +712,17 @@ public class UI {
             JPanel mainPanel = new JPanel(new GridBagLayout());
             GridBagConstraints gbc = new GridBagConstraints();
 
-            // Title
             JLabel titleLabel = new JLabel("Personnel pour " + buildingName);
             titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
             gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
             gbc.insets = new Insets(10, 10, 20, 10);
             mainPanel.add(titleLabel, gbc);
 
-            // Current workers display
             JLabel currentLabel = new JLabel("Personnel actuel: " + currentWorkers);
             gbc.gridy = 1; gbc.gridwidth = 1;
             gbc.insets = new Insets(5, 10, 5, 10);
             mainPanel.add(currentLabel, gbc);
 
-            // Worker spinner
             JLabel spinnerLabel = new JLabel("Nouveau personnel:");
             gbc.gridx = 0; gbc.gridy = 2;
             mainPanel.add(spinnerLabel, gbc);
@@ -841,7 +732,16 @@ public class UI {
             gbc.gridx = 1;
             mainPanel.add(workerSpinner, gbc);
 
-            // Buttons
+            JPanel buttonPanel = getButtonPanel();
+
+            gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
+            gbc.insets = new Insets(20, 10, 10, 10);
+            mainPanel.add(buttonPanel, gbc);
+
+            add(mainPanel);
+        }
+
+        private JPanel getButtonPanel() {
             JPanel buttonPanel = new JPanel(new FlowLayout());
             JButton confirmButton = new JButton("Confirmer");
             JButton cancelButton = new JButton("Annuler");
@@ -859,12 +759,7 @@ public class UI {
 
             buttonPanel.add(confirmButton);
             buttonPanel.add(cancelButton);
-
-            gbc.gridx = 0; gbc.gridy = 3; gbc.gridwidth = 2;
-            gbc.insets = new Insets(20, 10, 10, 10);
-            mainPanel.add(buttonPanel, gbc);
-
-            add(mainPanel);
+            return buttonPanel;
         }
 
         public int getSelectedCount() { return selectedCount; }
@@ -874,41 +769,27 @@ public class UI {
     public static class HexSnapshotCache {
         private static final Map<String, BufferedImage> hexImageCache = new ConcurrentHashMap<>();
         public static BufferedImage mapBackground; // Image de fond de la carte
-
         static {
-            // Initialiser l'image de fond au démarrage
             try {
-                mapBackground = ImageIO.read(UI.class.getResource("/Iseria.png"));
+                mapBackground = ImageIO.read(Objects.requireNonNull(UI.class.getResource("/Iseria.png")));
             } catch (IOException e) {
                 System.err.println("Erreur chargement carte: " + e.getMessage());
             }
         }
-
-        /**
-         * Retourne l'image hexagonale pour la clé donnée avec cache
-         */
         public static BufferedImage getHexSnapshot(String hexKey, IHexRepository repo) {
             return hexImageCache.computeIfAbsent(hexKey, key -> generateHexSnapshot(key, repo));
         }
 
         private static BufferedImage generateHexSnapshot(String hexKey, IHexRepository repo) {
             if (mapBackground == null) return null;
-
-            // 1. Récupérer les coordonnées pixel de l'hexagone
             Rectangle bounds = getHexPixelBounds(hexKey, repo);
-
-            // 2. Extraire la zone rectangulaire
             BufferedImage square = extractSquareRegion(bounds);
-
-            // 3. Appliquer le masque hexagonal
             return createHexagonalSnapshot(square);
         }
 
-        private static Rectangle getHexPixelBounds(String hexKey, IHexRepository repo) {
+        private static Rectangle getHexPixelBounds(String hexKey, IHexRepository repo){
             int[] pos = repo.getHexPosition(hexKey);
-            int size = 100; // Taille souhaitée pour le snapshot
-
-            // Centrer le rectangle sur la position de l'hex
+            int size = 100;
             return new Rectangle(
                     pos[0] - size/2,
                     pos[1] - size/2,
@@ -959,13 +840,7 @@ public class UI {
             hexagon.closePath();
             return hexagon;
         }
-
-        public static void clearCache() {
-            hexImageCache.clear();
-        }
     }
-
-    // Enhanced Economic Panel with instability from saved state
     public static class EnhancedEconomicPanel extends JPanel
             implements EconomicDataService.EconomicDataObserver {
 
@@ -973,8 +848,6 @@ public class UI {
         private JLabel tresorerieLabel, populationLabel, instabiliteLabel, agressiviteLabel, faimLabel;
         private JPanel resourcePanel, salaryPanel;
         private IHexRepository hexRepository;
-        private LogisticsPanel logisticsPanel;
-
 
         public EnhancedEconomicPanel(EconomicDataService economicService, IHexRepository hexRepository) {
             this.economicService = economicService;
@@ -1000,16 +873,13 @@ public class UI {
             setBackground(new Color(50, 50, 50, 200));
             GridBagConstraints gbc = new GridBagConstraints();
 
-            // Gestion Sociale section with "faim" parameter
             gbc.gridx = 0; gbc.gridy = 0;
             gbc.fill = GridBagConstraints.BOTH;
             add(createGestionSocialePanel(), gbc);
 
-            // Trésorerie
             gbc.gridy++;
             add(createTresoreriePanel(), gbc);
 
-            // Salaries
             gbc.gridy++;
             salaryPanel = new JPanel(new GridBagLayout());
             TitledBorder salaryPanelBorder = BorderFactory.createTitledBorder("Salaires");
@@ -1019,7 +889,6 @@ public class UI {
             salaryPanel.setBackground(new Color(50, 50, 50, 200));
             add(salaryPanel, gbc);
 
-            // Resources
             gbc.gridx = 1;
             gbc.gridy = 0;
             gbc.fill = GridBagConstraints.BOTH;
@@ -1031,9 +900,9 @@ public class UI {
             resourcePanel.setBackground(new Color(50, 50, 50, 200));
             add(resourcePanel, gbc);
 
-
             updateDisplay(economicService.getEconomicData());
         }
+
         private JPanel createGestionSocialePanel() {
             JPanel panel = new JPanel(new GridBagLayout());
             TitledBorder border = BorderFactory.createTitledBorder("Gestion Sociale");
@@ -1045,7 +914,6 @@ public class UI {
             GridBagConstraints gbc = new GridBagConstraints();
             gbc.insets = new Insets(5, 5, 5, 5);
 
-            // Population
             gbc.gridx = 0; gbc.gridy = 0;
             JLabel pops = new JLabel("Population:");
             pops.setFont(new Font("Arial", Font.BOLD, 11));
@@ -1057,7 +925,6 @@ public class UI {
             populationLabel.setForeground(Color.WHITE);
             panel.add(populationLabel, gbc);
 
-            // Instabilité
             gbc.gridx = 0; gbc.gridy = 1;
             JLabel insta = new JLabel("Instabilité:");
             insta.setFont(new Font("Arial", Font.BOLD, 11));
@@ -1069,7 +936,6 @@ public class UI {
             instabiliteLabel.setForeground(Color.WHITE);
             panel.add(instabiliteLabel, gbc);
 
-            // Agressivité
             gbc.gridx = 0; gbc.gridy = 2;
             JLabel aggro = new JLabel("Agressivité:");
             aggro.setFont(new Font("Arial", Font.BOLD, 11));
@@ -1081,7 +947,6 @@ public class UI {
             agressiviteLabel.setForeground(Color.WHITE);
             panel.add(agressiviteLabel, gbc);
 
-            // Faim - NEW PARAMETER
             gbc.gridx = 0; gbc.gridy = 3;
             JLabel hunger = new JLabel("Faim:");
             hunger.setFont(new Font("Arial", Font.BOLD, 11));
@@ -1139,7 +1004,6 @@ public class UI {
             instabiliteLabel.setText(String.format("%.1f%%", data.instabilite));
             agressiviteLabel.setText(String.format("%.0f", data.agressivite));
 
-            // Calculate and display "faim" based on food production vs consumption
             double faim = Math.max(0, data.consommationNourriture - data.productionNourriture);
             faimLabel.setText(String.format("%.1f", faim));
             if (faim > 0) {
@@ -1147,7 +1011,6 @@ public class UI {
             } else {
                 faimLabel.setForeground(Color.GREEN);
             }
-
             updateResourcesDisplay();
             updateSalaryDisplay(data);
         }
@@ -1170,8 +1033,6 @@ public class UI {
 
                     if (resourceName != null && production != null && production > 0) {
                         totalProduction.merge(resourceName, production, Double::sum);
-
-
                         resourceSources.computeIfAbsent(resourceName, k -> new HashSet<>())
                                 .add(hexKey + ":" + buildingType);
                     }
@@ -1183,8 +1044,6 @@ public class UI {
             gbc.anchor = GridBagConstraints.WEST;
 
             int row = 0;
-
-
             for (Map.Entry<String, Double> resource : totalProduction.entrySet()) {
                 String resourceName = resource.getKey();
                 Double production = resource.getValue();
@@ -1207,7 +1066,6 @@ public class UI {
                 productionLabel.setFont(new Font("Arial", Font.PLAIN, 11));
                 resourcePanel.add(productionLabel, gbc);
 
-                // Info tooltip avec sources
                 if (resourceSources.containsKey(resourceName)) {
                     String tooltip = "Produit par: " + String.join(", ", resourceSources.get(resourceName));
                     nameLabel.setToolTipText(tooltip);
@@ -1223,10 +1081,8 @@ public class UI {
                 noResourcesLabel.setFont(new Font("Arial", Font.ITALIC, 12));
                 resourcePanel.add(noResourcesLabel, gbc);
             }
-
             resourcePanel.revalidate();
             resourcePanel.repaint();
-
             System.out.println("Resource display updated: " + totalProduction.size() + " active resources");
         }
 
@@ -1246,15 +1102,11 @@ public class UI {
                 };
             }
 
-            return Color.BLACK; // Fallback
+            return Color.BLACK;
         }
+        private boolean isRecentlyAdded(String resourceName) {return false; }
+        private boolean hasProductionIncreased(String resourceName, double currentProduction) { return false; }
 
-        private boolean isRecentlyAdded(String resourceName) {
-            return false;
-        }
-        private boolean hasProductionIncreased(String resourceName, double currentProduction) {
-            return false;
-        }
         private void updateSalaryDisplay(EconomicDataService.EconomicData data) {
             salaryPanel.removeAll();
             GridBagConstraints gbc = new GridBagConstraints();
@@ -1289,8 +1141,7 @@ public class UI {
         }
     }
 
-    // Enhanced Production Panel with merged functionality
-    public static class EnhancedProductionPanel extends JScrollPane
+    public static class ProductionPanel extends JScrollPane
             implements EconomicDataService.EconomicDataObserver {
         private JPanel contentPanel;
         private Map<String, SafeHexDetails> hexGrid;
@@ -1300,8 +1151,8 @@ public class UI {
         private WorkDetailsPopup workDetailsPopup;
         private Map<String, JPanel> hexPanels = new HashMap<>();
         private boolean showHexPreview = true;
-        public EnhancedProductionPanel(Map<String, SafeHexDetails> hexGrid, String factionName,
-                                       IHexRepository repo, EconomicDataService economicService) {
+        public ProductionPanel(Map<String, SafeHexDetails> hexGrid, String factionName,
+                               IHexRepository repo, EconomicDataService economicService) {
             super();
             this.hexGrid = hexGrid;
             this.factionName = factionName;
@@ -1328,7 +1179,7 @@ public class UI {
             configureScrollSpeed();
 
             if (getParent() instanceof JLayeredPane) {
-                ((JLayeredPane) getParent()).add(workDetailsPopup, JLayeredPane.POPUP_LAYER);
+                getParent().add(workDetailsPopup, JLayeredPane.POPUP_LAYER);
             }
         }
         public void configureScrollSpeed() {
@@ -1340,10 +1191,8 @@ public class UI {
                 int scrollAmount = e.getScrollAmount() * scrollSpeedMultiplier;
 
                 if (e.getWheelRotation() < 0) {
-                    // Scroll up
                     scrollBar.setValue(currentValue - scrollAmount);
                 } else {
-                    // Scroll down
                     scrollBar.setValue(currentValue + scrollAmount);
                 }
             });
@@ -1351,8 +1200,6 @@ public class UI {
         public void refreshContent() {
             contentPanel.removeAll();
             hexPanels.clear();
-
-            // Add hex preview toggle
             JPanel controlPanel = createControlPanel();
             contentPanel.add(controlPanel);
 
@@ -1395,7 +1242,6 @@ public class UI {
             gbc.insets = new Insets(5, 5, 5, 5);
             gbc.anchor = GridBagConstraints.WEST;
 
-            // Hex preview (if enabled)
             if (showHexPreview) {
                 gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 3;
                 JPanel hexPreview = createHexPreview(hexKey, hex, repo);
@@ -1404,7 +1250,6 @@ public class UI {
                 gbc.gridwidth = 1;
             }
 
-            // Building sections
             String[] buildingTypes = {"main", "aux", "fort"};
             String[] buildingLabels = {"Principal", "Auxiliaire", "Fortification"};
 
@@ -1440,7 +1285,7 @@ public class UI {
             );
 
             JLabel info = new JLabel(String.format("Faction: %s | %s",
-                    hex.getFactionClaim(), buildingNames));;
+                    hex.getFactionClaim(), buildingNames));
             preview.add(info);
             preview.add(hexImageLabel);
 
@@ -1458,7 +1303,6 @@ public class UI {
             gbc.insets = new Insets(2, 2, 2, 2);
             gbc.anchor = GridBagConstraints.WEST;
 
-            // Workers count with pull ability
             int workerCount = hex.getWorkerCountByType(buildingType);
             gbc.gridx = 0; gbc.gridy = 0;
 
@@ -1468,13 +1312,11 @@ public class UI {
             JLabel workerLabel = new JLabel("👥 " + workerCount);
             workerPanel.add(workerLabel);
 
-            // Pull workers button
             JButton pullButton = new JButton("↑");
             pullButton.setToolTipText("Retirer des workers");
             pullButton.addActionListener(e -> pullWorkers(hexKey, hex, buildingType));
             workerPanel.add(pullButton);
 
-            // Add workers button
             JButton addButton = new JButton("↓");
             addButton.setToolTipText("Ajouter des workers");
             addButton.addActionListener(e -> addWorkers(hexKey, hex, buildingType));
@@ -1482,7 +1324,6 @@ public class UI {
 
             panel.add(workerPanel, gbc);
 
-            // Lock mechanism
             gbc.gridy = 1;
             JCheckBox lockCheckbox = new JCheckBox("🔒", hex.isSlotLocked(buildingType));
             lockCheckbox.setOpaque(false);
@@ -1497,14 +1338,12 @@ public class UI {
             });
             panel.add(lockCheckbox, gbc);
 
-            // Resource production info using DATABASE resources
             gbc.gridy = 2;
             String resourceInfo = getResourceProductionInfo(hexKey, buildingType);
             JLabel resourceLabel = new JLabel(resourceInfo);
 
             panel.add(resourceLabel, gbc);
 
-            // Configuration button
             gbc.gridy = 3;
             JButton configButton = new JButton("Config");
             configButton.addActionListener(e -> openProductionDialog(hexKey, hex, buildingType, label));
@@ -1513,7 +1352,7 @@ public class UI {
             gbc.gridy = 3; gbc.gridx++;
             JButton livestockButton = new JButton("Élevage");
             livestockButton.setPreferredSize(new Dimension(120, 30));
-            livestockButton.setBackground(new Color(139, 69, 19)); // Couleur terre
+            livestockButton.setBackground(new Color(139, 69, 19));
             livestockButton.setForeground(Color.WHITE);
             livestockButton.setVisible(false);
             livestockButton.addActionListener(e -> openLivestockDialog(hexKey, hex));
@@ -1539,11 +1378,10 @@ public class UI {
             refreshContent();
         }
         private String getResourceProductionInfo(String hexKey, String buildingType) {
-            // Use DATABASE resources instead of hardcoded values
             DATABASE.ResourceType[] availableResources = getAvailableResourcesForBuilding(buildingType);
 
             if (availableResources.length > 0) {
-                DATABASE.ResourceType resource = availableResources[0]; // Default to first available
+                DATABASE.ResourceType resource = availableResources[0];
                 return String.format(" %s: %.1f/sem", resource.getName(), 0.0);
             }
 
@@ -1594,14 +1432,12 @@ public class UI {
                         JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
-
-            // Créer et afficher le dialog avec l'hex
             ProductionDialog dialog = new ProductionDialog(
                     (JFrame) SwingUtilities.getWindowAncestor(this),
                     hexKey, buildingType, building.getBuildName(),
                     hex.getWorkerCountByType(buildingType),
                     economicService,
-                    hex  // ← NOUVEAU paramètre
+                    hex
             );
 
             dialog.setVisible(true);
@@ -1618,7 +1454,6 @@ public class UI {
             dialog.setVisible(true);
 
             if (dialog.isConfirmed()) {
-                // Actualiser l'affichage et les données économiques
                 if (economicService != null) {
                     economicService.calculateInitialData();
                 }

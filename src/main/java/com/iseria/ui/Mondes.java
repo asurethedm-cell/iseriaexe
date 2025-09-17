@@ -2,19 +2,15 @@ package com.iseria.ui;
 
 import com.iseria.domain.*;
 import com.iseria.domain.DATABASE;
-
 import com.iseria.infra.FactionRegistry;
 import com.iseria.service.EconomicDataService;
 import com.iseria.service.LogisticsService;
-
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
 import javax.imageio.ImageIO;
-import javax.swing.text.JTextComponent;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
@@ -28,14 +24,10 @@ import java.awt.geom.AffineTransform;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
-
-
-import static com.iseria.ui.MainMenu.*;
 import static javax.swing.BorderFactory.createLineBorder;
 
 public class Mondes extends JFrame {
 
-    private javax.swing.Timer repaintTimer;
     private BufferedImage mapmonde;
     JLayeredPane layeredPane;
     private double imgWidth, imgHeight;
@@ -65,11 +57,8 @@ public class Mondes extends JFrame {
     private JButton FortLabel = new JButton();
     private JButton SaveButton = new JButton();
     private JButton MoreDetail = new JButton();
-    private JButton PrintGrid = new JButton();
     private JButton Claim = new JButton();
     private int hexMainCap = getHexMainCapFromDATABASE();
-    private int hexAuxCap = 2;
-    private int hexFortCap = 5;
     private static final double ZOOM_MIN = 0.3;
     private static final double ZOOM_MAX = 3.0;
     private JDialog iconMenu;
@@ -80,7 +69,7 @@ public class Mondes extends JFrame {
     public int currentIconMainIndex = 0;
     public int currentIconAuxIndex = 0;
     public int currentIconFortIndex = 0;
-    private final Path2D unitHexagon = new Path2D.Double();;
+    private final Path2D unitHexagon = new Path2D.Double();
     private Map<Integer, ImageIcon> scaledIconsMain = new HashMap<>();
     private Map<Integer, ImageIcon> scaledIconsAux = new HashMap<>();
     private Map<Integer, ImageIcon> scaledIconsFort = new HashMap<>();
@@ -92,11 +81,8 @@ public class Mondes extends JFrame {
     private final ConcurrentHashMap<String, SafeHexDetails> hexCache = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, Color> factionColorCache = new ConcurrentHashMap<>();
     private boolean cacheInitialized = false;
-    private boolean isNearButFar;
-    private boolean isDiscovered;
     public boolean isAdmin = "Admin".equals(Login.currentUser);
     private Faction chosen;
-    String emblemPath = FactionRegistry.getEmblemPathFor(getCurrentFactionId());
     private boolean detailViewOpen = false;
     private final ConcurrentHashMap<String, Float> alphaCache = new ConcurrentHashMap<>();
     private final ReentrantReadWriteLock cacheLock = new ReentrantReadWriteLock();
@@ -105,14 +91,13 @@ public class Mondes extends JFrame {
     Mondes(IAudioService audio, IHexRepository repo, boolean performHeavyInit) {
         this.audio = audio;
         this.repo = repo;
-        setupBasicComponents(); // Votre méthode existante pour unitHexagon
+        setupBasicComponents();
         setupWindowProperties();
         setupBasicPanels();
         Mapmonddemouse();
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                int keyCode = e.getKeyCode();
                 switch (e.getKeyCode()) {
                     case KeyEvent.VK_ESCAPE -> {
                         if (detailViewOpen) closeDetailView();
@@ -156,41 +141,38 @@ public class Mondes extends JFrame {
     }
 
     void Mapmonddemouse()  {
-        MAPMONDE.addMouseWheelListener(new MouseWheelListener() {
-            @Override
-            public void mouseWheelMoved(MouseWheelEvent e) {
-                if (detailsPanel.isVisible() || moredetailsPanel.isVisible()) {
-                    return;
-                }
-                double oldZoom = zoomFactor;
-                int notches = e.getWheelRotation();
-                double zoomStep = 0.1;
-                if (notches < 0) {
-                    zoomFactor += zoomStep;  // Zoom in by adding 5%
-                } else {
-                    zoomFactor -= zoomStep;  // Zoom out by subtracting 5%
-                }
-                zoomFactor = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomFactor));
-                zoomFactor = Math.round(zoomFactor * 100.0) / 100.0;
-
-                double mouseX = e.getX();
-                double mouseY = e.getY();
-                imgX = mouseX - ((mouseX - imgX) * (zoomFactor / oldZoom));
-                imgY = mouseY - ((mouseY - imgY) * (zoomFactor / oldZoom));
-
-                double minX = panelWidth - (imgWidth * zoomFactor);
-                imgX = Math.min(0, Math.max(imgX, minX));
-
-                double minY = panelHeight - (imgHeight * zoomFactor);
-                imgY = Math.min(0, Math.max(imgY, minY));
-                MAPMONDE.repaint();
-
+        MAPMONDE.addMouseWheelListener(e -> {
+            if (detailsPanel.isVisible() || moredetailsPanel.isVisible()) {
+                return;
             }
+            double oldZoom = zoomFactor;
+            int notches = e.getWheelRotation();
+            double zoomStep = 0.1;
+            if (notches < 0) {
+                zoomFactor += zoomStep;  // Zoom in by adding 5%
+            } else {
+                zoomFactor -= zoomStep;  // Zoom out by subtracting 5%
+            }
+            zoomFactor = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, zoomFactor));
+            zoomFactor = Math.round(zoomFactor * 100.0) / 100.0;
+
+            double mouseX = e.getX();
+            double mouseY = e.getY();
+            imgX = mouseX - ((mouseX - imgX) * (zoomFactor / oldZoom));
+            imgY = mouseY - ((mouseY - imgY) * (zoomFactor / oldZoom));
+
+            double minX = panelWidth - (imgWidth * zoomFactor);
+            imgX = Math.min(0, Math.max(imgX, minX));
+
+            double minY = panelHeight - (imgHeight * zoomFactor);
+            imgY = Math.min(0, Math.max(imgY, minY));
+            MAPMONDE.repaint();
+
         });
 
         MAPMONDE.addMouseMotionListener(new MouseMotionAdapter() {
             @Override
-            public void mouseDragged(MouseEvent e) {  //Mapdrag
+            public void mouseDragged(MouseEvent e) {
                 if ((detailsPanel.isVisible() && detailsPanel.getBounds().contains(e.getPoint())) || (moredetailsPanel.isVisible() && moredetailsPanel.getBounds().contains(e.getPoint()))) {
                     return;
                 }
@@ -256,18 +238,13 @@ public class Mondes extends JFrame {
             return;
         }
 
-        // Récupérer toutes les factions de joueurs
         Collection<Faction> allFactions = FactionRegistry.all();
         Set<String> playerFactionIds = allFactions.stream()
                 .filter(Faction::getIsPlayer)
                 .map(Faction::getId)
                 .collect(Collectors.toSet());
-
-        // Appliquer la visibilité
         SafeHexDetails hex = repo.getHexDetails(hexKey);
         Set<String> currentDiscovered = new HashSet<>(hex.getDiscoveredByFaction());
-
-        // Ajouter toutes les factions de joueurs
         currentDiscovered.addAll(playerFactionIds);
         hex.setDiscoveredByFaction(currentDiscovered);
 
@@ -294,13 +271,13 @@ public class Mondes extends JFrame {
             SaveButton.removeActionListener(al);
         }
 
-        //System.out.println(hexKey);
+        /// System.out.println(hexKey);
         SafeHexDetails details = repo.getHexDetails(hexKey);
         currentIconMainIndex = details.getMainBuildingIndex();
         currentIconAuxIndex = details.getAuxBuildingIndex();
         currentIconFortIndex = details.getFortBuildingIndex();
 
-        ImageIcon hexIcon = new ImageIcon(getClass().getResource("/hex4.png"));
+        ImageIcon hexIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/hex4.png")));
 
         JPanel buildingPanel = new JPanel() {
             @Override
@@ -334,12 +311,7 @@ public class Mondes extends JFrame {
         SaveButton.setForeground(Color.BLACK);
         SaveButton.setContentAreaFilled(true);
         SaveButton.setFocusable(false);
-        SaveButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                saveButtonTrigger(e);
-            }
-        });
+        SaveButton.addActionListener(this::saveButtonTrigger);
 
         MoreDetail.setFont(new Font("Oswald", Font.BOLD, 15));
         MoreDetail.setText("More Details");
@@ -350,12 +322,7 @@ public class Mondes extends JFrame {
         MoreDetail.setForeground(Color.BLACK);
         MoreDetail.setContentAreaFilled(true);
         MoreDetail.setFocusable(false);
-        MoreDetail.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                MoreDetaiButtonTrigger(e);
-            }
-        });
+        MoreDetail.addActionListener(this::MoreDetaiButtonTrigger);
 
         Claim.setFont(new Font("Oswald", Font.BOLD, 15));
         Claim.setText("Claim The Hex");
@@ -366,55 +333,30 @@ public class Mondes extends JFrame {
         Claim.setForeground(Color.BLACK);
         Claim.setContentAreaFilled(true);
         Claim.setFocusable(false);
-        Claim.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if ("Admin".equals(Login.currentUser)) {
-                    Collection<Faction> allFactions = FactionRegistry.all();
-                    Faction[] factionArray = allFactions.toArray(new Faction[0]);
-
-                    Faction selectedFaction = (Faction) JOptionPane.showInputDialog(
-                            detailsPanel, "Choisissez la faction :", "Admin Override",
-                            JOptionPane.QUESTION_MESSAGE, null, factionArray, factionArray);
-
-                    if (selectedFaction != null) {
-                        chosen = selectedFaction;
-                        doClaimHex();
-                    }
-                } else {
+        Claim.addActionListener(e -> {
+            if ("Admin".equals(Login.currentUser)) {
+                Collection<Faction> allFactions = FactionRegistry.all();
+                Faction[] factionArray = allFactions.toArray(new Faction[0]);
+                Faction selectedFaction = (Faction) JOptionPane.showInputDialog(
+                        detailsPanel, "Choisissez la faction :", "Admin Override",
+                        JOptionPane.QUESTION_MESSAGE, null, factionArray, factionArray);
+                if (selectedFaction != null) {
+                    chosen = selectedFaction;
                     doClaimHex();
                 }
+            } else {
+                doClaimHex();
             }
         });
 
 
-        ImageIcon closeIcon = new ImageIcon(getClass().getResource("/close.png"));
+        ImageIcon closeIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/close.png")));
         Image scaledImage = closeIcon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         closeIcon = new ImageIcon(scaledImage);
         JButton closeButton = detailedViewButton("X", closeIcon, 770, -10, 50, 50);
-
-
-        MainLabel.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                MainBuidindButtonMenu(e);
-            }
-        });
-
-        AuxLabel.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                AuxilliaryButtonMenu(e);
-            }
-        });
-
-        FortLabel.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                FortificationButtonMenu(e);
-            }
-        });
-
+        MainLabel.addActionListener(this::MainBuidindButtonMenu);
+        AuxLabel.addActionListener(this::AuxilliaryButtonMenu);
+        FortLabel.addActionListener(this::FortificationButtonMenu);
 
         buildingPanel.setLayout(null);
         buildingPanel.setBounds(0, 0, 800, 750);
@@ -425,8 +367,8 @@ public class Mondes extends JFrame {
         title.setForeground(Color.WHITE);
         title.setFont(new Font("Oswald", Font.BOLD, 25));
         title.setBounds(270, 0, 500, 50);
-        buildingPanel.add(title);
 
+        buildingPanel.add(title);
         buildingPanel.add(AuxLabel);
         buildingPanel.add(MainLabel);
         buildingPanel.add(FortLabel);
@@ -447,22 +389,7 @@ public class Mondes extends JFrame {
         moredetailsPanel.removeAll();
 
         JPanel moreBuildingPanel = new JPanel();
-
-        // Boutons de navigation
-        JButton LessDetail = new JButton();
-        LessDetail.setFont(new Font("Oswald", Font.BOLD, 15));
-        LessDetail.setText("Less Details");
-        LessDetail.setBounds(0, 700, 200, 75);
-        LessDetail.setOpaque(true);
-        LessDetail.setBackground(Color.lightGray);
-        LessDetail.setBorderPainted(false);
-        LessDetail.setForeground(Color.BLACK);
-        LessDetail.setContentAreaFilled(true);
-        LessDetail.setFocusable(false);
-        LessDetail.addActionListener(e -> {
-            moredetailsPanel.setVisible(false);
-            detailsPanel.setVisible(true);
-        });
+        JButton LessDetail = getJButton();
 
         JButton adminFowSet = new JButton();
         adminFowSet.setFont(new Font("Oswald", Font.BOLD, 15));
@@ -480,37 +407,10 @@ public class Mondes extends JFrame {
             openFowManagementDialog(hexKey);
         });
 
-        // NOUVEAU: Bouton Logistics
-        JButton LogisticsDetail = new JButton();
-        LogisticsDetail.setFont(new Font("Oswald", Font.BOLD, 15));
-        LogisticsDetail.setText("🚚 Logistics");
-        LogisticsDetail.setBounds(210, 700, 200, 75);
-        LogisticsDetail.setOpaque(true);
-        LogisticsDetail.setBackground(new Color(70, 130, 180)); // Steel blue
-        LogisticsDetail.setBorderPainted(false);
-        LogisticsDetail.setForeground(Color.WHITE);
-        LogisticsDetail.setContentAreaFilled(true);
-        LogisticsDetail.setFocusable(false);
-        LogisticsDetail.addActionListener(e -> {
-            openLogisticsForHex(hexKey);
-        });
+        JButton LogisticsDetail = getButton();
+        JButton ProductionDetail = getProductionDetail();
 
-        // Bouton Production (existant ou nouveau)
-        JButton ProductionDetail = new JButton();
-        ProductionDetail.setFont(new Font("Oswald", Font.BOLD, 15));
-        ProductionDetail.setText("🏭 Production");
-        ProductionDetail.setBounds(420, 700, 200, 75);
-        ProductionDetail.setOpaque(true);
-        ProductionDetail.setBackground(new Color(34, 139, 34)); // Forest green
-        ProductionDetail.setBorderPainted(false);
-        ProductionDetail.setForeground(Color.WHITE);
-        ProductionDetail.setContentAreaFilled(true);
-        ProductionDetail.setFocusable(false);
-        ProductionDetail.addActionListener(e -> {
-            openProductionForHex(hexKey);
-        });
-
-        ImageIcon closeIcon = new ImageIcon(getClass().getResource("/close.png"));
+        ImageIcon closeIcon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/close.png")));
         Image scaledImage = closeIcon.getImage().getScaledInstance(50, 50, Image.SCALE_SMOOTH);
         closeIcon = new ImageIcon(scaledImage);
         JButton closeButton = detailedViewButton("X", closeIcon, 770, -10, 50, 50);
@@ -529,7 +429,6 @@ public class Mondes extends JFrame {
         SafeHexDetails details = repo.getHexDetails(hexKey);
         moredetailsPanel.setBorder(createLineBorder(UIHelpers.getFactionColor(details.getFactionClaim()), 5));
 
-        // Informations de l'hexagone
         JTextArea hexInfoArea = new JTextArea();
         hexInfoArea.setEditable(false);
         hexInfoArea.setOpaque(true);
@@ -537,24 +436,21 @@ public class Mondes extends JFrame {
         hexInfoArea.setForeground(Color.WHITE);
         hexInfoArea.setFont(new Font("Courier New", Font.PLAIN, 12));
 
-        // Remplir les informations
-        StringBuilder info = new StringBuilder();
-        info.append("=== INFORMATIONS HEXAGONE ===\n");
-        info.append("Position: ").append(hexKey).append("\n");
-        info.append("Faction: ").append(details.getFactionClaim()).append("\n");
-        info.append("Population totale: ").append(details.getTotalWorkers()).append("\n\n");
+        String info = "=== INFORMATIONS HEXAGONE ===\n" +
+                "Position: " + hexKey + "\n" +
+                "Faction: " + details.getFactionClaim() + "\n" +
+                "Population totale: " + details.getTotalWorkers() + "\n\n" +
+                "=== BÂTIMENTS ===\n" +
+                "Principal: " + UIHelpers.getBuildingNamesSafe(
+                details.getMainBuildingIndex(), details.getAuxBuildingIndex(), details.getFortBuildingIndex()) +
+                "\n\n" +
+                "=== LOGISTIQUE ===\n" +
+                "Véhicules assignés: " + details.getAssignedVehicles().size() + "\n" +
+                "Routes disponibles: " + (details.getLogisticsData().hasRoad() ? "Oui" : "Non") + "\n" +
+                "Accès maritime: " + (details.getLogisticsData().hasSea() ? "Oui" : "Non") + "\n" +
+                "Accès fluvial: " + (details.getLogisticsData().hasRiver() ? "Oui" : "Non") + "\n";
 
-        info.append("=== BÂTIMENTS ===\n");
-        info.append("Principal: ").append(UIHelpers.getBuildingNamesSafe(
-                details.getMainBuildingIndex(), details.getAuxBuildingIndex(), details.getFortBuildingIndex())).append("\n\n");
-
-        info.append("=== LOGISTIQUE ===\n");
-        info.append("Véhicules assignés: ").append(details.getAssignedVehicles().size()).append("\n");
-        info.append("Routes disponibles: ").append(details.getLogisticsData().hasRoad() ? "Oui" : "Non").append("\n");
-        info.append("Accès maritime: ").append(details.getLogisticsData().hasSea() ? "Oui" : "Non").append("\n");
-        info.append("Accès fluvial: ").append(details.getLogisticsData().hasRiver() ? "Oui" : "Non").append("\n");
-
-        hexInfoArea.setText(info.toString());
+        hexInfoArea.setText(info);
 
         JScrollPane infoScrollPane = new JScrollPane(hexInfoArea);
         infoScrollPane.setBounds(50, 60, 700, 600);
@@ -574,26 +470,66 @@ public class Mondes extends JFrame {
         moredetailsPanel.setVisible(true);
     }
 
+    private JButton getProductionDetail() {
+        JButton ProductionDetail = new JButton();
+        ProductionDetail.setFont(new Font("Oswald", Font.BOLD, 15));
+        ProductionDetail.setText("Production");
+        ProductionDetail.setBounds(420, 700, 200, 75);
+        ProductionDetail.setOpaque(true);
+        ProductionDetail.setBackground(new Color(34, 139, 34));
+        ProductionDetail.setBorderPainted(false);
+        ProductionDetail.setForeground(Color.WHITE);
+        ProductionDetail.setContentAreaFilled(true);
+        ProductionDetail.setFocusable(false);
+        ProductionDetail.addActionListener(e -> openProductionForHex(hexKey));
+        return ProductionDetail;
+    }
+
+    private JButton getButton() {
+        JButton LogisticsDetail = new JButton();
+        LogisticsDetail.setFont(new Font("Oswald", Font.BOLD, 15));
+        LogisticsDetail.setText("Logistics");
+        LogisticsDetail.setBounds(210, 700, 200, 75);
+        LogisticsDetail.setOpaque(true);
+        LogisticsDetail.setBackground(new Color(70, 130, 180)); // Steel blue
+        LogisticsDetail.setBorderPainted(false);
+        LogisticsDetail.setForeground(Color.WHITE);
+        LogisticsDetail.setContentAreaFilled(true);
+        LogisticsDetail.setFocusable(false);
+        LogisticsDetail.addActionListener(e -> openLogisticsForHex(hexKey));
+        return LogisticsDetail;
+    }
+
+    private JButton getJButton() {
+        JButton LessDetail = new JButton();
+        LessDetail.setFont(new Font("Oswald", Font.BOLD, 15));
+        LessDetail.setText("Less Details");
+        LessDetail.setBounds(0, 700, 200, 75);
+        LessDetail.setOpaque(true);
+        LessDetail.setBackground(Color.lightGray);
+        LessDetail.setBorderPainted(false);
+        LessDetail.setForeground(Color.BLACK);
+        LessDetail.setContentAreaFilled(true);
+        LessDetail.setFocusable(false);
+        LessDetail.addActionListener(e -> {
+            moredetailsPanel.setVisible(false);
+            detailsPanel.setVisible(true);
+        });
+        return LessDetail;
+    }
+
     private void openLogisticsForHex(String hexKey) {
         audio.playClick();
-
-        // Créer une nouvelle fenêtre pour la logistique
         JDialog logisticsDialog = new JDialog(this, "Logistique - " + hexKey, true);
         logisticsDialog.setSize(1000, 600);
         logisticsDialog.setLocationRelativeTo(this);
 
-        // Créer le service logistique si nécessaire
         EconomicDataService economicService = MainMenu.getEconomicService();
         LogisticsService logisticsService = economicService.getLogisticsService();
-
         if (logisticsService == null) {
             logisticsService = new LogisticsService(repo);
         }
-
-        // Créer le panel logistique
         LogisticsPanel logisticsPanel = new LogisticsPanel(logisticsService, repo);
-
-        // Sélectionner automatiquement l'hexagone
         logisticsPanel.selectHex(hexKey);
 
         logisticsDialog.add(logisticsPanel);
@@ -603,7 +539,6 @@ public class Mondes extends JFrame {
     private void openProductionForHex(String hexKey) {
         audio.playClick();
 
-        // Ouvrir une fenêtre de détail production pour cet hex
         JDialog productionDialog = new JDialog(this, "Production - " + hexKey, true);
         productionDialog.setSize(800, 500);
         productionDialog.setLocationRelativeTo(this);
@@ -611,7 +546,6 @@ public class Mondes extends JFrame {
         SafeHexDetails details = repo.getHexDetails(hexKey);
         EconomicDataService economicService = MainMenu.getEconomicService();
 
-        // Panel d'informations de production
         JPanel productionPanel = new JPanel(new BorderLayout());
         productionPanel.setBackground(new Color(40, 40, 40));
 
@@ -621,16 +555,13 @@ public class Mondes extends JFrame {
         productionInfo.setForeground(Color.WHITE);
         productionInfo.setFont(new Font("Courier New", Font.PLAIN, 12));
 
-        // Calculer la production de cet hex
         StringBuilder prodInfo = new StringBuilder();
         prodInfo.append("=== PRODUCTION HEXAGONE ").append(hexKey).append(" ===\n\n");
 
-        // Utiliser le service de production
         if (economicService != null) {
             EconomicDataService.ProductionCalculationService prodService =
                     economicService.new ProductionCalculationService();
             Map<String, Double> production = prodService.calculateHexProduction(details);
-
             if (production.isEmpty()) {
                 prodInfo.append("Aucune production active\n");
             } else {
@@ -641,7 +572,6 @@ public class Mondes extends JFrame {
                 }
             }
         }
-
         prodInfo.append("\n=== DÉTAILS BÂTIMENTS ===\n");
         prodInfo.append("Main Building: Index ").append(details.getMainBuildingIndex())
                 .append(" (").append(details.getMainWorkerCount()).append(" workers)\n");
@@ -677,7 +607,7 @@ public class Mondes extends JFrame {
         }
 
         iconMenu = new JDialog(this, finalDialogTitle, true);
-        iconMenu.setSize(800, 700); // Élargi pour accommoder les descriptions
+        iconMenu.setSize(800, 700);
 
         iconPanel = new JPanel();
         iconPanel.setLayout(new BoxLayout(iconPanel, BoxLayout.Y_AXIS));
@@ -686,17 +616,14 @@ public class Mondes extends JFrame {
             final int index = entry.getKey();
             ImageIcon icon = entry.getValue();
 
-            // ✅ CORRECTION : Récupération correcte de la description
             String iconDescription = getBuildingDescription(finalDialogTitle, index);
             String buildingName = getBuildingName(finalDialogTitle, index);
 
-            // Créer un panel horizontal pour chaque élément (icône + texte)
             JPanel itemPanel = new JPanel(new BorderLayout());
             itemPanel.setMaximumSize(new Dimension(780, 120));
             itemPanel.setPreferredSize(new Dimension(780, 120));
             itemPanel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
-            // Panel pour l'icône avec sélection
             JPanel iconContainer = new JPanel(new FlowLayout(FlowLayout.LEFT));
             JLabel iconLabel = new JLabel(icon);
             iconLabel.setPreferredSize(new Dimension(100, 100));
@@ -705,30 +632,24 @@ public class Mondes extends JFrame {
             if (index == selectedIndex) {
                 iconLabel.setBorder(createLineBorder(Color.RED, 3));
             }
-
-            final JPanel currentItemPanel = itemPanel; // Pour la référence dans le listener
             iconLabel.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mouseClicked(MouseEvent e) {
                     selectIcon(iconLabel, index, finalDialogTitle);
-                    // Mettre à jour la sélection visuelle
-                    updateSelectionBorder(iconPanel, iconLabel, index, selectedIndex);
+                    updateSelectionBorder(iconPanel, iconLabel);
                 }
             });
 
             iconContainer.add(iconLabel);
 
-            // Panel pour le texte (nom + description)
             JPanel textPanel = new JPanel();
             textPanel.setLayout(new BoxLayout(textPanel, BoxLayout.Y_AXIS));
             textPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-            // Nom du bâtiment (en gras)
             JLabel nameLabel = new JLabel("<html><b>" + buildingName + "</b></html>");
             nameLabel.setFont(new Font("Arial", Font.BOLD, 14));
             nameLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-            // Description (texte wrappé)
             JLabel descLabel = new JLabel("<html><div style='width: 400px;'>" + iconDescription + "</div></html>");
             descLabel.setFont(new Font("Arial", Font.PLAIN, 12));
             descLabel.setVerticalAlignment(SwingConstants.TOP);
@@ -738,11 +659,9 @@ public class Mondes extends JFrame {
             textPanel.add(Box.createRigidArea(new Dimension(0, 5)));
             textPanel.add(descLabel);
 
-            // Assemblage
             itemPanel.add(iconContainer, BorderLayout.WEST);
             itemPanel.add(textPanel, BorderLayout.CENTER);
 
-            // Séparateur visuel
             itemPanel.setBorder(BorderFactory.createCompoundBorder(
                     BorderFactory.createMatteBorder(0, 0, 1, 0, Color.LIGHT_GRAY),
                     BorderFactory.createEmptyBorder(10, 10, 10, 10)
@@ -750,14 +669,14 @@ public class Mondes extends JFrame {
 
             iconPanel.add(itemPanel);
         }
-
         JScrollPane scrollPane = new JScrollPane(iconPanel,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setPreferredSize(new Dimension(780, 600));
+        UI.configureScrollSpeed(scrollPane, 80,20);
+        UI.styleScrollPane(scrollPane);
         iconMenu.add(scrollPane, BorderLayout.CENTER);
 
-        // Boutons de confirmation
         JPanel buttonPanel = new JPanel();
         JButton confirmButton = new JButton("Confirm");
         JButton cancelButton = new JButton("Cancel");
@@ -772,7 +691,7 @@ public class Mondes extends JFrame {
             }
         });
 
-        cancelButton.addActionListener(e -> cancelSelection(e));
+        cancelButton.addActionListener(this::cancelSelection);
         buttonPanel.add(confirmButton);
         buttonPanel.add(cancelButton);
         iconMenu.add(buttonPanel, BorderLayout.SOUTH);
@@ -789,35 +708,32 @@ public class Mondes extends JFrame {
 
     public void saveHexDetails() {
         if (!isSaving.compareAndSet(false, true)) {
-            System.out.println("⏳ Save already in progress, skipping...");
+            System.out.println("Save already in progress, skipping...");
             return;
         }
 
         if (hexKey == null || hexKey.trim().isEmpty()) {
-            System.err.println("❌ Cannot save - no hex selected");
+            System.err.println("Cannot save - no hex selected");
             isSaving.set(false);
             return;
         }
 
         try {
-            System.out.println("💾 Saving details for " + hexKey);
+            System.out.println("Saving details for " + hexKey);
 
-            // Récupérer les données actuelles depuis le cache
             SafeHexDetails details;
             cacheLock.readLock().lock();
             try {
                 details = hexCache.get(hexKey);
                 if (details == null) {
-                    System.err.println("❌ Hex not found in cache: " + hexKey);
+                    System.err.println(" Hex not found in cache: " + hexKey);
                     return;
                 }
-                // Créer une copie pour éviter les modifications concurrentes
                 details = details.deepCopy();
             } finally {
                 cacheLock.readLock().unlock();
             }
 
-            // Vérifier s'il y a des changements
             boolean mainChanged = details.getMainBuildingIndex() != currentIconMainIndex;
             boolean auxChanged = details.getAuxBuildingIndex() != currentIconAuxIndex;
             boolean fortChanged = details.getFortBuildingIndex() != currentIconFortIndex;
@@ -829,54 +745,40 @@ public class Mondes extends JFrame {
                 System.out.println("📋 No changes detected, skipping save");
                 return;
             }
-
-            // Appliquer les changements
             if (mainChanged) {
                 details.setMainBuildingIndex(currentIconMainIndex);
                 System.out.println("🔧 Main building changed: " + currentIconMainIndex);
             }
-
             if (auxChanged) {
                 details.setAuxBuildingIndex(currentIconAuxIndex);
                 System.out.println("🔧 Aux building changed: " + currentIconAuxIndex);
             }
-
             if (fortChanged) {
                 details.setFortBuildingIndex(currentIconFortIndex);
                 System.out.println("🔧 Fort building changed: " + currentIconFortIndex);
             }
-
             if (claimChanged) {
                 details.setFactionClaim(newFactionClaim);
                 System.out.println("🏴 Faction claim changed: " + newFactionClaim);
-
-                // Auto-découverte
                 Set<String> discovered = details.getDiscoveredByFaction();
                 discovered.add(newFactionClaim);
                 details.setDiscoveredByFaction(discovered);
             }
-
-            // Sauvegarder dans le repository
             repo.updateHexDetails(hexKey, details);
 
-            // Mettre à jour le cache
             cacheLock.writeLock().lock();
             try {
                 hexCache.put(hexKey, details.deepCopy());
-                // Invalidation du cache alpha pour ce changement
                 alphaCache.entrySet().removeIf(entry -> entry.getKey().contains(hexKey.split("_")[1]) ||
                         entry.getKey().contains(hexKey.split("_")[2]));
             } finally {
                 cacheLock.writeLock().unlock();
             }
-
-            System.out.println("✅ Saved successfully: " + details);
-
-            // Rafraîchir l'affichage
+            System.out.println("Saved successfully: " + details);
             SwingUtilities.invokeLater(() -> MAPMONDE.repaint());
 
         } catch (Exception e) {
-            System.err.println("❌ Error saving hex details: " + e.getMessage());
+            System.err.println("Error saving hex details: " + e.getMessage());
             e.printStackTrace();
 
         } finally {
@@ -884,19 +786,11 @@ public class Mondes extends JFrame {
         }
     }
 
-    void MainBuidindButtonMenu(ActionEvent e) {
-        openIconMenu(MainLabel);
-    }
-    void AuxilliaryButtonMenu(ActionEvent e) {
-        openIconMenu(AuxLabel);
-    }
-    void FortificationButtonMenu(ActionEvent e) {
-        openIconMenu(FortLabel);
-    }
+    void MainBuidindButtonMenu(ActionEvent e) {openIconMenu(MainLabel);}
+    void AuxilliaryButtonMenu(ActionEvent e) {openIconMenu(AuxLabel);}
+    void FortificationButtonMenu(ActionEvent e) {openIconMenu(FortLabel);}
 
-    void MoreDetaiButtonTrigger(ActionEvent e) {
-        MoreDetailedView();
-    }
+    void MoreDetaiButtonTrigger(ActionEvent e) {MoreDetailedView();}
     void saveButtonTrigger(ActionEvent e) {
         System.out.println("Save button clicked, label: " + hexKey);
         saveHexDetails();
@@ -908,10 +802,7 @@ public class Mondes extends JFrame {
         targetButton.setSize(origIcon.getIconWidth(), origIcon.getIconHeight());
         targetButton.revalidate();
         targetButton.repaint();
-
-
         iconMenu.dispose();
-
     }
     void confirmAuxSelection(JButton targetButton) {
         System.out.println("Confirming Aux Selection, currentIconAuxIndex: " + currentIconAuxIndex); // Debug print
@@ -920,21 +811,16 @@ public class Mondes extends JFrame {
         targetButton.setSize(selectedIcon.getIconWidth(), selectedIcon.getIconHeight());
         targetButton.revalidate();
         targetButton.repaint();
-
         iconMenu.dispose();
-
     }
+
     void confirmFortSelection(JButton targetButton) {
-
-
         ImageIcon selectedIcon = originalFortIcon.get(currentIconFortIndex);
         targetButton.setIcon(selectedIcon);
         targetButton.setSize(selectedIcon.getIconWidth(), selectedIcon.getIconHeight());
         targetButton.revalidate();
         targetButton.repaint();
-
         iconMenu.dispose();
-
     }
     void cancelSelection(ActionEvent e) {
         iconMenu.dispose();
@@ -987,11 +873,11 @@ public class Mondes extends JFrame {
         }
         return "Bâtiment inconnu";
     }
-    private void updateSelectionBorder(JPanel parentPanel, JLabel selectedLabel, int selectedIndex, int previousIndex) {
+        private void updateSelectionBorder(JPanel parentPanel, JLabel selectedLabel) {
         for (Component component : parentPanel.getComponents()) {
             if (component instanceof JPanel) {
                 JPanel itemPanel = (JPanel) component;
-                Component iconContainer = itemPanel.getComponent(0); // BorderLayout.WEST
+                Component iconContainer = itemPanel.getComponent(0);
                 if (iconContainer instanceof JPanel) {
                     JPanel iconPanel = (JPanel) iconContainer;
                     for (Component icon : iconPanel.getComponents()) {
@@ -1008,31 +894,25 @@ public class Mondes extends JFrame {
             }
         }
     }
-
-    void quittingwithbutton(ActionEvent e) {
+    void quittingwithbutton() {
         audio.playClick();
         audio.fadeOut();
         dispose();
         Login.mondeOpen = false;
     }
-
     void repaintwithbutton(ActionEvent e) {
         alphaCache.clear();
         MAPMONDE.repaint();
     }
-
     void selectIcon(JLabel iconLabel, int index, String buildingType) {
         for (Component comp : iconPanel.getComponents()) {
-            if (comp instanceof JLabel) {
-                JLabel label = (JLabel) comp;
+            if (comp instanceof JLabel label) {
                 label.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
             }
         }
         System.out.println("Clicked on: " + buildingType + " icon with index: " + index);
-
         audio.playClick();
         iconLabel.setBorder(createLineBorder(Color.RED, 2));
-
         if (buildingType.equals("Main Building")) {
             currentIconMainIndex = index;
         } else if (buildingType.equals("Auxiliary Building")) {
@@ -1043,10 +923,8 @@ public class Mondes extends JFrame {
         System.out.println("Updated indices -> Java.Main: " + currentIconMainIndex + ", Aux: " + currentIconAuxIndex + ", Fort: " + currentIconFortIndex);
 
     }
-
     JButton detailedViewButton(String text, ImageIcon icon, int x, int y, int w, int h) {
         JButton button = new JButton(text);
-
         button.setFont(new Font("Oswald", Font.BOLD, 20));
         if (icon != null) {
             button.setIcon(icon);
@@ -1059,26 +937,19 @@ public class Mondes extends JFrame {
         button.setContentAreaFilled(false);
         button.addActionListener(e -> {
             audio.playClick();
-            if (button.getText() == "X") {
+            if (Objects.equals(button.getText(), "X")) {
                 closeDetailView();
-
             }
         });
         return button;
-
-
     }
-
     void setInitialView() {
         String targetHexName = "hex_19_23";
-        // Get pixel position
         int[] position = repo.getHexPosition(targetHexName);
         int targetX = position[0];
         int targetY = position[1];
-        // Center the view on the hex
         imgX = -targetX + (panelWidth / 2);
         imgY = -targetY + (panelHeight / 2);
-        // Ensure the map stays within bounds
         double minX = panelWidth - (imgWidth * zoomFactor);
         double minY = panelHeight - (imgHeight * zoomFactor);
         imgX = Math.max(minX, Math.min(imgX, 0));
@@ -1099,16 +970,14 @@ public class Mondes extends JFrame {
                 if (col < 0 || col >= 100 || row < 0 || row >= 50) continue;
                 if (isPointInHexagon(col, row, x, y)) {
                     labelclick = new Point(col, row);
-                    System.out.println("===========================================");
+                    UIHelpers.logseparator();
                     hexKey = "hex_" + labelclick.x + "_" + labelclick.y;
                     SafeHexDetails details = repo.getHexDetails(hexKey);
                     String currentFactionId = MainMenu.getCurrentFactionId();
-                    isNearButFar = isObscuredHex(col, row, currentFactionId);
                     System.out.println("hex cliqué : " + hexKey);
                     System.out.println("Claim : " + details.getFactionClaim());
                     System.out.println("Distance : " + isObscuredHex(col, row, currentFactionId));
-                    System.out.println("===========================================");
-
+                    UIHelpers.logseparator();
                     return;
                 }
             }
@@ -1153,72 +1022,52 @@ public class Mondes extends JFrame {
     public void initializeCache() {
         cacheLock.writeLock().lock();
         try {
-            System.out.println("🔄 Initializing hex cache...");
-
-            // Charger toutes les données depuis le repository
+            System.out.println("Initializing hex cache...");
             Map<String, SafeHexDetails> allHexes = repo.loadSafeAll();
-
             hexCache.clear();
             factionColorCache.clear();
-
-            // Validation et copie sécurisée
             int validHexes = 0;
             int invalidHexes = 0;
-
             for (Map.Entry<String, SafeHexDetails> entry : allHexes.entrySet()) {
                 String key = entry.getKey();
                 SafeHexDetails details = entry.getValue();
-
-                // Validation stricte
                 if (key == null || key.trim().isEmpty()) {
                     System.err.println("⚠️ Null/empty key detected, skipping");
                     invalidHexes++;
                     continue;
                 }
-
                 if (details == null) {
                     System.err.println("⚠️ Null HexDetails for key: " + key);
                     invalidHexes++;
                     continue;
                 }
-
                 if (!key.equals(details.getHexKey())) {
                     System.err.println("⚠️ Key mismatch: " + key + " != " + details.getHexKey());
                     invalidHexes++;
                     continue;
                 }
-
-                // Copie profonde pour éviter les modifications externes
                 hexCache.put(key, details.deepCopy());
-
-                // Pre-calcul des couleurs de faction
                 String faction = details.getFactionClaim();
                 if (!factionColorCache.containsKey(faction)) {
                     factionColorCache.put(faction, UIHelpers.getFactionColor(faction));
                 }
-
                 validHexes++;
             }
-
-            System.out.println("✅ Cache initialized - Valid: " + validHexes + ", Invalid: " + invalidHexes);
+            System.out.println("Cache initialized - Valid: " + validHexes + ", Invalid: " + invalidHexes);
             cacheInitialized = true;
-
         } catch (Exception e) {
-            System.err.println("❌ Cache initialization failed: " + e.getMessage());
+            System.err.println("Cache initialization failed: " + e.getMessage());
             e.printStackTrace();
             cacheInitialized = false;
-
         } finally {
             cacheLock.writeLock().unlock();
         }
     }
-
     private final Map<String, Image> emblemCache = new HashMap<>();
-
     private int getHexMainCapFromDATABASE() {
         int max = 0;
         for (DATABASE.MainBuilding building : DATABASE.MainBuilding.values()) {
-            String tag = building.toString(); // or building.getTag() if you add a getter
+            String tag = building.toString();
             if (tag.startsWith("Main")) {
                 try {
                     int number = Integer.parseInt(tag.replaceAll("[^0-9]", ""));
@@ -1231,18 +1080,16 @@ public class Mondes extends JFrame {
         }
         return max;
     }
-
     private void doClaimHex() {
         if (hexKey == null) {
             JOptionPane.showMessageDialog(this,
-                    "⚠️ Aucun hexagone sélectionné",
+                    "Aucun hexagone sélectionné",
                     "Erreur", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         SafeHexDetails details = repo.getHexDetails(hexKey);
         String newClaim;
-
         if (isAdmin && chosen != null) {
             newClaim = chosen.getId();
             System.out.println("Admin claimed: " + newClaim);
@@ -1250,19 +1097,29 @@ public class Mondes extends JFrame {
             newClaim = MainMenu.getCurrentFactionId();
         }
 
-        System.out.println("===========================================");
+        UIHelpers.logseparator();
         System.out.println("doClaimHex - hexKey: " + hexKey);
         System.out.println("newClaim: " + newClaim + " || Previous: " + details.getFactionClaim());
-        System.out.println("===========================================");
+        UIHelpers.logseparator();
 
         if (!Objects.equals(details.getFactionClaim(), newClaim)) {
+            ClaimValidationResult validationResult = validateClaimAttempt(details, newClaim);
+            if (!validationResult.isValid()) {
+                JOptionPane.showMessageDialog(this,
+                        validationResult.getErrorMessage(),
+                        "Claim Refusé", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            applyClaimConsequences(details, newClaim, validationResult);
             details.setFactionClaim(newClaim);
             Set<String> discovered = details.getDiscoveredByFaction();
             if (discovered == null) {
                 discovered = new HashSet<>();
             }
             discovered.add(newClaim);
+
             repo.updateHexDetails(hexKey, details.deepCopy());
+
             cacheLock.writeLock().lock();
             try {
                 hexCache.put(hexKey, details.deepCopy());
@@ -1271,16 +1128,25 @@ public class Mondes extends JFrame {
             }
             alphaCache.clear();
             SwingUtilities.invokeLater(() -> MAPMONDE.repaint());
-            // Mise à jour UI si DetailView ouverte
             if (detailViewOpen) {
                 updateClaimIconInUI(newClaim);
             }
+            if (validationResult.hasConsequences()) {
+                JOptionPane.showMessageDialog(this,
+                        "Hexagone conquis !\n" + validationResult.getSuccessMessage(),
+                        "Conquête Réussie", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Hexagone réclamé avec succès !",
+                        "Claim Réussi", JOptionPane.INFORMATION_MESSAGE);
+            }
         } else {
             JOptionPane.showMessageDialog(this,
-                    "⚠️ Hexagone déjà claimé par " + newClaim,
+                    "Hexagone déjà claimé par " + newClaim,
                     "Information", JOptionPane.INFORMATION_MESSAGE);
         }
     }
+
 
     private void updateClaimIconInUI(String newFactionId) {
         try {
@@ -1290,8 +1156,6 @@ public class Mondes extends JFrame {
 
             Image scaledImage = updatedIcon.getImage().getScaledInstance(180, 256, Image.SCALE_SMOOTH);
             claimIconLabel.setIcon(new ImageIcon(scaledImage));
-
-            // Mise à jour des couleurs de bordure
             JPanel buildingPanel = (JPanel) detailsPanel.getComponent(0);
             buildingPanel.setBorder(createLineBorder(UIHelpers.getFactionColor(newFactionId), 5));
 
@@ -1309,7 +1173,6 @@ public class Mondes extends JFrame {
             moredetailsPanel.setVisible(false);
             moredetailsPanel.removeAll();
 
-            // Close any open icon menus
             if (iconMenu != null && iconMenu.isDisplayable()) {
                 iconMenu.dispose();
                 iconMenu = null;
@@ -1320,41 +1183,33 @@ public class Mondes extends JFrame {
             for (ActionListener al : SaveButton.getActionListeners()) {
                 SaveButton.removeActionListener(al);
             }
-
             detailViewOpen = false;
         }
     }
 
     public void preloadAllImages() {
-        SwingWorker<Void, String> imageLoader = new SwingWorker<Void, String>() {
+        SwingWorker<Void, String> imageLoader = new SwingWorker<>() {
             @Override
             protected Void doInBackground() throws Exception {
                 System.out.println("Loading building icons...");
-
-                // Load all icon types in parallel using ExecutorService
                 ExecutorService executor = Executors.newFixedThreadPool(3);
-
                 Future<?> mainTask = executor.submit(() -> loadMainIcons());
                 Future<?> auxTask = executor.submit(() -> loadAuxIcons());
                 Future<?> fortTask = executor.submit(() -> loadFortIcons());
-
                 mainTask.get();
                 auxTask.get();
                 fortTask.get();
-
                 executor.shutdown();
                 System.out.println("Images loaded successfully");
                 return null;
             }
-
         };
-
         imageLoader.execute();
     }
 
     private void renderHexWithFow(Graphics2D g2d, AffineTransform orig,
                                   double cx, double cy, double unitSize,
-                                  String hexKey, SafeHexDetails data, int col, int row) {
+                                  SafeHexDetails data, int col, int row) {
         String viewingFactionId = (isAdmin && currentViewFactionId != null)
                 ? currentViewFactionId
                 : MainMenu.getCurrentFactionId();
@@ -1375,26 +1230,23 @@ public class Mondes extends JFrame {
                 renderHiddenHex(g2d);
             }
             if (alpha < 0.9f) {
-                renderProgressiveHex(g2d, data, alpha);
+                renderProgressiveHex(g2d, alpha);
             } else {
                 renderObscuredHex(g2d);
             }
         }
-
-        // Restore and draw labels
         g2d.setTransform(orig);
         if (isAdmin && currentViewFactionId == null) {
             drawHexLabelNormal(g2d, col, row, cx, cy, unitSize, data);
         } else if (isDiscovered) {
             drawHexLabelNormal(g2d, col, row, cx, cy, unitSize, data);
         } else {
-            // Partially fogged: 0 < alpha < 1
             float alpha = calculateDistanceAlpha(col, row, viewingFactionId);
             if (!Float.isNaN(alpha)) {
                 if (alpha > 0f && alpha < 0.9f) {
-                    drawHexLabelFogged(g2d, col, row, cx, cy, unitSize, alpha);
+                    drawHexLabelFogged(g2d, col, row, cx, cy, alpha);
                 } else {
-                    drawHexLabelObscured(g2d, col, row, cx, cy, unitSize);
+                    drawHexLabelObscured(g2d, col, row, cx, cy);
                 }
             }
         }
@@ -1426,33 +1278,27 @@ public class Mondes extends JFrame {
         return alpha;
     }
 
-    private void renderProgressiveHex(Graphics2D g2d, SafeHexDetails data, float alpha) {
+    private void renderProgressiveHex(Graphics2D g2d, float alpha) {
         g2d.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, alpha));
         g2d.setColor(Color.BLACK);
         g2d.fill(unitHexagon);
-        // Restore composite for further drawing
         g2d.setComposite(AlphaComposite.SrcOver);
-        // Draw the hex border in dark gray
         g2d.setColor(Color.DARK_GRAY);
         g2d.draw(unitHexagon);
     }
 
     private void renderNormalHex(Graphics2D g2d, SafeHexDetails data) {
-        // Remplissage semi-transparent (code existant)
         Color colr = UIHelpers.getFactionColor(data.getFactionClaim());
         if (!"Free".equals(data.getFactionClaim())) {
             g2d.setColor(new Color(colr.getRed(), colr.getGreen(), colr.getBlue(), 64));
             g2d.fill(unitHexagon);
         }
-
-        // Bordure (code existant)
         g2d.setColor(Color.BLACK);
         g2d.draw(unitHexagon);
     }
 
     private void drawHexLabelNormal(Graphics2D g2d, int col, int row,
                                     double cx, double cy, double unitSize, SafeHexDetails data) {
-        // ✅ AJOUTÉ: Police originale
         g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int) (14 * zoomFactor))));
 
         String label = "(" + col + "," + row + ")";
@@ -1473,12 +1319,11 @@ public class Mondes extends JFrame {
     }
 
     private void drawHexLabelFogged(Graphics2D g2d,
-                                    int col, int row, double cx, double cy, double unitSize, float alpha) {
+                                    int col, int row, double cx, double cy, float alpha) {
         String label = "(" + col + "," + row + ")";
         hexLabels.put(new Point(col, row), label);
-        // gray color scaled by (1-alpha) so at 0.5 alpha it's mid‐gray
         int grayLevel = (int) (255 * (1 - alpha));
-        grayLevel = Math.max(50, Math.min(grayLevel, 200));  // clamp to readable range
+        grayLevel = Math.max(50, Math.min(grayLevel, 200));
         Color foggedColor = new Color(grayLevel, grayLevel, grayLevel);
         g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int) (14 * zoomFactor))));
         FontMetrics fm = g2d.getFontMetrics();
@@ -1491,17 +1336,14 @@ public class Mondes extends JFrame {
     }
 
     private void renderObscuredHex(Graphics2D g2d) {
-        // Remplissage noir total
         g2d.setColor(Color.BLACK);
         g2d.fill(unitHexagon);
-
-        // Bordure grise foncée
         g2d.setColor(Color.DARK_GRAY);
         g2d.draw(unitHexagon);
     }
 
     private void drawHexLabelObscured(Graphics2D g2d, int col, int row,
-                                      double cx, double cy, double unitSize) {
+                                      double cx, double cy) {
         g2d.setFont(new Font("Arial", Font.BOLD, Math.max(8, (int) (14 * zoomFactor))));
 
         String label = "???";
@@ -1512,8 +1354,6 @@ public class Mondes extends JFrame {
         int textH = fm.getAscent();
         int tx = (int) (cx - textW / 2.0);
         int ty = (int) (cy + textH / 2.0);
-
-        // Texte blanc sur fond noir
         g2d.setColor(Color.WHITE);
         g2d.drawString(label, tx, ty);
     }
@@ -1534,15 +1374,13 @@ public class Mondes extends JFrame {
             String emblemPath = faction.getEmblemImage();
             Image raw = emblemCache.computeIfAbsent(emblemPath, p -> {
                 try {
-                    return ImageIO.read(getClass().getResource(p));
+                    return ImageIO.read(Objects.requireNonNull(getClass().getResource(p)));
                 } catch (Exception e) {
                     e.printStackTrace();
                     return null;
                 }
             });
-
             if (raw != null) {
-                // Scale and position emblem next to label
                 double hexW = 2 * unitSize;
                 int eW = (int) (hexW * 0.2);
                 double aspect = (double) raw.getHeight(null) / raw.getWidth(null);
@@ -1560,33 +1398,30 @@ public class Mondes extends JFrame {
             if (resourceUrl != null) {
                 ImageIcon originalIcon = new ImageIcon(resourceUrl);
                 originalMainIcon.put(i, originalIcon);
-
                 Image scaled100 = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
                 scaledIconsMain.put(i, new ImageIcon(scaled100));
             }
         }
     }
     public void loadAuxIcons() {
+        int hexAuxCap = 2;
         for (int i = 0; i <= hexAuxCap; i++) {
             URL resourceUrl = getClass().getResource("/hexaux/Aux" + i + ".png");
             if (resourceUrl != null) {
                 ImageIcon originalIcon = new ImageIcon(resourceUrl);
                 originalAuxIcon.put(i, originalIcon);
-
-                // Pre-scale commonly used sizes
                 Image scaled100 = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
                 scaledIconsAux.put(i, new ImageIcon(scaled100));
             }
         }
     }
     public void loadFortIcons() {
+        int hexFortCap = 5;
         for (int i = 0; i <= hexFortCap; i++) {
             URL resourceUrl = getClass().getResource("/hexfort/fort" + i + ".png");
             if (resourceUrl != null) {
                 ImageIcon originalIcon = new ImageIcon(resourceUrl);
                 originalFortIcon.put(i, originalIcon);
-
-                // Pre-scale commonly used sizes
                 Image scaled100 = originalIcon.getImage().getScaledInstance(100, 100, Image.SCALE_SMOOTH);
                 scaledIconsFort.put(i, new ImageIcon(scaled100));
             }
@@ -1620,14 +1455,12 @@ public class Mondes extends JFrame {
                 JOptionPane.PLAIN_MESSAGE
         );
         if (res == JOptionPane.OK_OPTION) {
-            // Appliquer les choix
             discovered.clear();
             for (Map.Entry<String, JCheckBox> entry : map.entrySet()) {
                 if (entry.getValue().isSelected()) {
                     discovered.add(entry.getKey());
                 }
             }
-            // Mettre à jour HexDetails
             hex.setDiscoveredByFaction(discovered);
             repo.updateHexDetails(hexKey, hex);
 
@@ -1662,7 +1495,6 @@ public class Mondes extends JFrame {
             factionViewToggle.setText("View: Normal");
             System.out.println("🔄 [ADMIN] Vue basculée vers: Normal (vue admin)");
         } else {
-            // Vue d'une faction spécifique
             currentViewFactionId = playerFactionList.get(currentFactionViewIndex);
             factionViewToggle.setText("View: " + currentViewFactionId);
             System.out.println("🔄 [ADMIN] Vue basculée vers: " + currentViewFactionId);
@@ -1675,7 +1507,6 @@ public class Mondes extends JFrame {
 
     private boolean isObscuredHex(int col, int row, String factionId) {
         float alpha = calculateDistanceAlpha(col, row, factionId);
-        // alpha NaN signifie “trop loin => pas de bordure, pas d’étiquette”
         return alpha >= 0.9f && alpha <= 1.0f;
     }
 
@@ -1697,7 +1528,6 @@ public class Mondes extends JFrame {
                 JOptionPane.showMessageDialog(MAPMONDE,
                         "🌫️ Exploration.Placeholder",
                         "Zone inconnue", JOptionPane.INFORMATION_MESSAGE);
-                return;
             } else {
                 JOptionPane.showMessageDialog(MAPMONDE,
                         "🌫️ Territoire inexploré\nVous devez d'abord explorer les zones précédentes.",
@@ -1707,7 +1537,6 @@ public class Mondes extends JFrame {
     }
 
     private void setupBasicComponents() {
-        // Création de unitHexagon
         for (int i = 0; i < 6; i++) {
             double angle = Math.toRadians(60 * i);
             double xx = Math.cos(angle);
@@ -1720,14 +1549,10 @@ public class Mondes extends JFrame {
         }
         unitHexagon.closePath();
 
-        // Configuration fenêtre
         setupWindowProperties();
-
-        // Création des panels de base (sans contenu lourd)
         setupBasicPanels();
     }
     private void  setupWindowProperties(){
-        // Récupération des dimensions écran pour centrage
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         int screenWidth = screenSize.width;
         int screenHeight = screenSize.height;
@@ -1736,18 +1561,15 @@ public class Mondes extends JFrame {
         int x = (screenWidth - windowWidth) / 2;
         int y = (screenHeight - windowHeight) / 2;
 
-        // Configuration fenêtre
         setTitle("Carte Du Jeu");
         setSize(windowWidth, windowHeight);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setResizable(false);
         setLocation(x, y);
 
-        // Configuration focus et clavier
         setFocusable(true);
         requestFocusInWindow();
 
-        // Icône de la fenêtre (si nécessaire)
         try {
             ImageIcon Icon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/Icon.png")));
             setIconImage(Icon.getImage());
@@ -1760,7 +1582,6 @@ public class Mondes extends JFrame {
         setContentPane(layeredPane);
         layeredPane.setLayout(null);
 
-        // Chargement des ressources d'images de base
         try {
             mapmonde = ImageIO.read(Objects.requireNonNull(getClass().getResource("/Iseria.png")));
             imgWidth = mapmonde.getWidth();
@@ -1772,7 +1593,6 @@ public class Mondes extends JFrame {
             System.err.println("Erreur chargement ressources images: " + e.getMessage());
         }
 
-        // Calcul des positions initiales
         double horizontalcenter = 6.809;
         double verticalcenter = 1.9826;
         panelWidth = layeredPane.getWidth();
@@ -1780,17 +1600,14 @@ public class Mondes extends JFrame {
         panelHeight = layeredPane.getHeight();
         imgY = (panelHeight - imgHeight) / verticalcenter;
 
-        // Création du panel MAPMONDE (sans le contenu de rendu lourd)
         MAPMONDE = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
-                super.paintComponent(g); // Corrigé: paintComponent au lieu de paintComponents
+                super.paintComponent(g);
 
-                // Le rendu complet sera fait après le chargement
                 if (cacheInitialized) {
                     renderFullMap(g);
                 } else {
-                    // Affichage basique pendant le chargement
                     g.setColor(Color.BLACK);
                     g.fillRect(0, 0, getWidth(), getHeight());
                     g.setColor(Color.WHITE);
@@ -1802,7 +1619,6 @@ public class Mondes extends JFrame {
         MAPMONDE.setBounds(0, 0, getWidth(), getHeight());
         MAPMONDE.setOpaque(false);
 
-        // Configuration des panels de détails (structure de base seulement)
         moredetailsPanel.setLayout(new BorderLayout());
         moredetailsPanel.setBounds(0, 75, 800, 900);
         moredetailsPanel.setOpaque(false);
@@ -1814,27 +1630,21 @@ public class Mondes extends JFrame {
         detailsPanel.setOpaque(true);
         detailsPanel.setVisible(false);
 
-        // Création des boutons de base
         setupBasicButtons();
     }
     private void setupBasicButtons() {
-        // Bouton Quit
         quitButton.setBounds(1450, 800, 80, 30);
         quitButton.addActionListener(e -> {
-            quittingwithbutton(e);
+            quittingwithbutton();
             Login.mondeOpen = false;
         });
 
-        // Bouton Repaint
         repaintButton.setBounds(1450, 750, 80, 30);
         repaintButton.addActionListener(this::repaintwithbutton);
-
-        // Bouton Reset (Admin)
 
         resetButton.setBounds(1450, 700, 80, 30);
         resetButton.addActionListener(e -> repo.clearAllFactionClaims());
 
-        // Bouton de basculement vue faction
         factionViewToggle.setText("View: Normal");
 
         factionViewToggle.setBounds(1450, 650, 130, 30);
@@ -1845,24 +1655,18 @@ public class Mondes extends JFrame {
     private void renderFullMap(Graphics g) {
         Graphics2D g2d = (Graphics2D) g.create();
 
-        // High-quality rendering
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         g2d.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
 
-        // Draw background map
         if (mapmonde != null) {
             int w = (int) (imgWidth * zoomFactor);
             int h = (int) (imgHeight * zoomFactor);
             g2d.drawImage(mapmonde, (int) imgX, (int) imgY, w, h, null);
         }
-
-        // Le reste du rendu hexagonal...
         renderHexagons(g2d);
-
         g2d.dispose();
     }
     private void renderHexagons(Graphics2D g2d){
-
 
         double unitSize = HEX_SIZE * zoomFactor;
         double horiz = 1.5 * unitSize;
@@ -1875,7 +1679,6 @@ public class Mondes extends JFrame {
         int ROWS = 50;
         int COLS = 100;
 
-        // 🆕 MODIFIÉ: Rendu avec FoW
         for (int row = 0; row < ROWS; row++) {
             for (int col = 0; col < COLS; col++) {
                 double cx = imgX + col * horiz;
@@ -1885,15 +1688,13 @@ public class Mondes extends JFrame {
                 SafeHexDetails data = hexCache.get(key);
                 if (data == null) continue;
 
-                // 🆕 NOUVEAU: Rendu avec Fog of War
-                renderHexWithFow(g2d, orig, cx, cy, unitSize, key, data, col, row);
+                renderHexWithFow(g2d, orig, cx, cy, unitSize, data, col, row);
             }
         }
 
         g2d.dispose();
     }
     private void performAllInitialization() {
-        // Tout le code d'initialisation lourde actuellement dans le constructeur
         initializePlayerFactionList();
         repo.addAllHexes(50, 100);
         initializeCache();
@@ -1904,7 +1705,7 @@ public class Mondes extends JFrame {
         finalizeUISetup();
     }
     public void finalizeUISetup() {
-        // Ajout des composants au layeredPane
+
         layeredPane.add(MAPMONDE, Integer.valueOf(1));
         layeredPane.add(detailsPanel, Integer.valueOf(2));
         layeredPane.add(moredetailsPanel, Integer.valueOf(2));
@@ -1928,5 +1729,139 @@ public class Mondes extends JFrame {
             setInitialView();
         });
     }
+
+
+    private static class ClaimValidationResult {
+        private final boolean valid;
+        private final String errorMessage;
+        private final String successMessage;
+        private final boolean hasConsequences;
+        private final boolean requiresDestruction;
+
+        public ClaimValidationResult(boolean valid, String errorMessage) {
+            this.valid = valid;
+            this.errorMessage = errorMessage;
+            this.successMessage = null;
+            this.hasConsequences = false;
+            this.requiresDestruction = false;
+        }
+
+        public ClaimValidationResult(boolean valid, String successMessage, boolean hasConsequences, boolean requiresDestruction) {
+            this.valid = valid;
+            this.errorMessage = null;
+            this.successMessage = successMessage;
+            this.hasConsequences = hasConsequences;
+            this.requiresDestruction = requiresDestruction;
+        }
+
+        public boolean isValid() { return valid; }
+        public String getErrorMessage() { return errorMessage; }
+        public String getSuccessMessage() { return successMessage; }
+        public boolean hasConsequences() { return hasConsequences; }
+        public boolean requiresDestruction() { return requiresDestruction; }
+    }
+    private ClaimValidationResult validateClaimAttempt(SafeHexDetails details, String newClaimerFactionId) {
+        String currentOwner = details.getFactionClaim();
+        Faction ownerFaction = FactionRegistry.getFactionId(currentOwner);
+        if ("Free".equals(currentOwner) || currentOwner == null) {
+            return new ClaimValidationResult(true, "Territoire libre réclamé.", false, false);
+        }
+        boolean currentOwnerIsPlayer = isPlayerFaction(currentOwner);
+        boolean newClaimerIsPlayer = isPlayerFaction(newClaimerFactionId);
+        if (currentOwnerIsPlayer && newClaimerIsPlayer) {
+            boolean hasBuildings = hasAnyBuildings(details);
+
+            if (hasBuildings) {
+                StringBuilder buildingInfo = new StringBuilder();
+                buildingInfo.append("Faction : ").append(ownerFaction).append("\n");
+                buildingInfo.append("Hexagone protégé par les Conventions des Maisonnées\n" + "Déclarez la guerre pour concquérir un hexagone exploité\n");
+
+                if (details.getMainBuildingIndex() > 0) {
+                    String buildingName = getBuildingName("Main Building", details.getMainBuildingIndex());
+                    buildingInfo.append("• Bâtiment Principal: ").append(buildingName).append("\n");
+                }
+                if (details.getAuxBuildingIndex() > 0) {
+                    String buildingName = getBuildingName("Auxiliary Building", details.getAuxBuildingIndex());
+                    buildingInfo.append("• Bâtiment Auxiliaire: ").append(buildingName).append("\n");
+                }
+                if (details.getFortBuildingIndex() > 0) {
+                    String buildingName = getBuildingName("Fortifications", details.getFortBuildingIndex());
+                    buildingInfo.append("• Fortification: ").append(buildingName).append("\n");
+                }
+
+                buildingInfo.append("\nVous devez d'abord détruire la garnison de ces bâtiments pour conquérir cet hexagone.");
+
+                return new ClaimValidationResult(false, buildingInfo.toString());
+            } else {
+                return new ClaimValidationResult(true,
+                        "Territoire de " + ownerFaction.getDisplayName() + " conquis (aucun bâtiment présent).",
+                        true, false);
+            }
+        }
+        if (isAdmin) {
+            return new ClaimValidationResult(true, "Claim administrateur appliqué.", true, false);
+        }
+        if (!currentOwnerIsPlayer && newClaimerIsPlayer) {
+            boolean hasBuildings = hasAnyBuildings(details);
+            if (hasBuildings) {
+                return new ClaimValidationResult(true,
+                        "Territoire Séculaire conquis. Bâtiments détruits lors de la conquête.",
+                        true, true);
+            } else {
+                return new ClaimValidationResult(true,
+                        "Territoire Séculaire réclamé.",
+                        true, false);
+            }
+        }
+        return new ClaimValidationResult(true, "Claim autorisé.", false, false);
+    }
+    private boolean isPlayerFaction(String factionId) {
+        if (factionId == null || "Free".equals(factionId)) {
+            return false;
+        }
+        try {
+            Faction faction = FactionRegistry.getFactionId(factionId);
+            return faction != null && faction.getIsPlayer();
+        } catch (Exception e) {
+            System.err.println("Erreur lors de la vérification du type de faction: " + e.getMessage());
+            return false;
+        }
+    }
+    private boolean hasAnyBuildings(SafeHexDetails details) {
+        return details.getMainBuildingIndex() > 0 ||
+                details.getAuxBuildingIndex() > 0 ||
+                details.getFortBuildingIndex() > 0;
+    }
+    private void applyClaimConsequences(SafeHexDetails details, String newClaimerFactionId, ClaimValidationResult result) {
+        if (result.requiresDestruction()) {
+            System.out.println("Destruction des bâtiments lors de la conquête...");
+            if (details.getMainBuildingIndex() > 0) {
+                System.out.println("Destruction: " + getBuildingName("Main Building", details.getMainBuildingIndex()));
+                details.setMainBuildingIndex(0);
+                details.setMainWorkerCount(0);
+            }
+            if (details.getAuxBuildingIndex() > 0) {
+                System.out.println("Destruction: " + getBuildingName("Auxiliary Building", details.getAuxBuildingIndex()));
+                details.setAuxBuildingIndex(0);
+                details.setAuxWorkerCount(0);
+            }
+            if (details.getFortBuildingIndex() > 0) {
+                System.out.println("Destruction: " + getBuildingName("Fortifications", details.getFortBuildingIndex()));
+                details.setFortBuildingIndex(0);
+                details.setFortWorkerCount(0);
+            }
+        }
+
+        if (result.hasConsequences()) {
+            // TODO ajouter d'autres effets:
+            // - Perte de moral pour la faction perdante
+            // - Bonus de moral pour la faction conquérante
+            // - Modifications économiques
+            // - Événements spéciaux
+
+            System.out.println("Conséquences appliquées pour le claim de " + newClaimerFactionId);
+        }
+    }
+
 }
 

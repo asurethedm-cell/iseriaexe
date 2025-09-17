@@ -9,14 +9,13 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionListener;
-import java.awt.event.InputEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Path2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -27,240 +26,10 @@ import static com.iseria.ui.UI.HexSnapshotCache.mapBackground;
 public class UIHelpers  extends JScrollPane{
 
     public static Map<String, JLabel> hexImageLabels = new HashMap<>();
-    public static double  moralSum;
-    public static <T extends DATABASE.JobBuilding> int addBuildingSection(
-            String hexKeyLocal, String label, int buildingIndex, T[] buildingEnum,
-            JPanel panel, GridBagConstraints gbc, int row, SafeHexDetails hd, IHexRepository repo) {
 
-        T selectedBuilding = buildingEnum[buildingIndex];
-        String buildingName = DATABASE.getBuildNameFromJobBuilding(selectedBuilding);
-
-
-        JLabel hexImageLabel = hexImageLabels.computeIfAbsent(hexKeyLocal, key -> {
-            BufferedImage hexSnapshot = UI.HexSnapshotCache.getHexSnapshot(key, repo);
-            JLabel hexLabel = new JLabel();
-            if (hexSnapshot != null) {
-                hexLabel.setIcon(new ImageIcon(hexSnapshot));
-            }
-            hexLabel.setPreferredSize(new Dimension(100, 100));
-            return hexLabel;
-        });
-
-        // Ajouter l'image seulement pour la première section (Main Building)
-        if (label.equals("Main Building")) {
-            gbc.gridx = 0; gbc.gridy = row;
-            gbc.gridheight = 3; // S'étend sur les 3 rangées
-            panel.add(hexImageLabel, gbc);
-            gbc.gridheight = 1; // Reset
-        }
-
-        // Le nom de l'hex à côté
-        gbc.gridx =1; gbc.gridy = row;
-        panel.add(new JLabel(label + ":"), gbc);
-
-        JButton buildingButton = new JButton(buildingName);
-        buildingButton.setPreferredSize(new Dimension(100, 20));
-        gbc.gridx++;
-        panel.add(buildingButton, gbc);
-
-        // Worker list (existing)
-        java.util.List<String> savedWorkers = hd.getWorkers(label.toLowerCase());
-        DefaultListModel<String> listModel = new DefaultListModel<>();
-        savedWorkers.forEach(listModel::addElement);
-
-        JList<String> workerList = new JList<>(listModel);
-        workerList.setCellRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(
-                    JList<?> list, Object value, int index,
-                    boolean isSelected, boolean cellHasFocus) {
-                JLabel label = (JLabel) super.getListCellRendererComponent(
-                        list, value, index, isSelected, cellHasFocus);
-                if (isSelected) {
-                    label.setBorder(BorderFactory.createLineBorder(Color.BLACK, 1));
-                } else {
-                    label.setBorder(null);
-                }
-                return label;
-            }
-        });
-
-        workerList.setOpaque(true);
-        JScrollPane scrollPane = new JScrollPane(workerList);
-        scrollPane.getViewport().setOpaque(true);
-        scrollPane.setPreferredSize(new Dimension(220, 19));
-        gbc.gridx++;
-        panel.add(scrollPane, gbc);
-
-        int currentWorkerCount = hd.getWorkerCountByType(label);
-        JLabel personnelLabel = new JLabel("Personnel: " + currentWorkerCount);
-        personnelLabel.setFont(new Font("Arial", Font.BOLD, 12));
-        personnelLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        personnelLabel.setPreferredSize(new Dimension(100, 20));
-        personnelLabel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
-
-
-
-        gbc.gridx++;
-        panel.add(personnelLabel, gbc);
-
-        JButton validateButton = new JButton("Valider");
-        validateButton.setPreferredSize(new Dimension(100, 20));
-        gbc.gridx++;
-        panel.add(validateButton, gbc);
-
-        buildingButton.addActionListener(e -> {
-            System.out.println("---- [BUILDING BUTTON CLICKED] ----");
-            System.out.println("Enum: " + selectedBuilding);
-            System.out.println("Tag: " + selectedBuilding.getTag());
-            System.out.println("Name: " + DATABASE.getBuildNameFromJobBuilding(selectedBuilding));
-
-            listModel.clear();
-            Set<String> jobsForBuilding = DATABASE.getJobsForBuilding(selectedBuilding);
-
-            if (jobsForBuilding.isEmpty()) {
-                System.out.println("No specific jobs found for this building, using category fallback");
-                String buildingType = selectedBuilding.getBuildName().toLowerCase();
-                if (buildingType.contains("mine")) {
-                    listModel.addElement("Compagnie de Mineur (Récolte)");
-                } else if (buildingType.contains("ferme") || buildingType.contains("légume") || buildingType.contains("céréale")) {
-                    listModel.addElement("Fermier (serf) (Récolte)");
-                    listModel.addElement("Fermier (libre) (Récolte)");
-                } else if (buildingType.contains("observatoire")) {
-                    listModel.addElement("Astrologiste (Autre)");
-                } else {
-                    listModel.addElement("Aucun Travailleur");
-
-                }
-            } else {
-                System.out.println("Found " + jobsForBuilding.size() + " specific jobs for this building:");
-                for (String jobName : jobsForBuilding) {
-                    String category = findJobCategory(jobName);
-                    listModel.addElement(jobName + " (" + category + ")");
-                    System.out.println(" - " + jobName + " (" + category + ")");
-                }
-            }
-
-            System.out.println("Total jobs displayed: " + listModel.getSize());
-            System.out.println("-----------------------------------");
-        });
-
-        validateButton.addActionListener(e -> {
-
-            JFrame parentFrame = (JFrame) SwingUtilities.getWindowAncestor(panel);
-            UI.WorkerSelectionDialog dialog = new UI.WorkerSelectionDialog(
-                    parentFrame, label, buildingName, currentWorkerCount);
-            if (" ".equals(scrollPane.getViewport()) || "Aucun Travailleur".equals(scrollPane.getViewport()))
-            {
-                // do nothing if there isnt any worker
-            } else {
-                dialog.setVisible(true);
-
-                if (dialog.isConfirmed()) {
-                    int newCount = dialog.getSelectedCount();
-                    hd.setWorkerCountByType(label, newCount);
-                    repo.updateHexDetails(hexKeyLocal, hd);
-
-                    // Mettre à jour l'affichage
-                    personnelLabel.setText("Personnel: " + newCount);
-                    panel.revalidate();
-                    panel.repaint();
-                }
-                int result = JOptionPane.showConfirmDialog(
-                        panel,
-                        "Confirmer l'affectation du travailleur ?",
-                        "Confirmation",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.QUESTION_MESSAGE
-                );
-
-                if (result == JOptionPane.YES_OPTION) {
-                    java.util.List<String> selected = workerList.getSelectedValuesList();
-                    int firstVisibleIndex = workerList.getFirstVisibleIndex();
-                    int lastVisibleIndex = workerList.getLastVisibleIndex();
-                    java.util.List<String> visibleItems = new ArrayList<>();
-
-                    if (firstVisibleIndex != -1 && lastVisibleIndex != -1) {
-                        for (int i = firstVisibleIndex; i <= lastVisibleIndex; i++) {
-                            visibleItems.add(listModel.getElementAt(i));
-                        }
-                    }
-
-                    SafeHexDetails details = repo.getHexDetails(hexKeyLocal);
-                    String hexKey = details.getHexKey();
-
-                    java.util.List<String> workerSelected = selected.isEmpty() ? visibleItems : selected;
-
-                    details.setWorkers(label.toLowerCase(), workerSelected);
-                    details.lockSlot(label);
-
-                    System.out.println("Selected: " + selected);
-                    System.out.println("ScrollSelected: " + visibleItems);
-                    System.out.println("Final Selection: " + workerSelected);
-
-                    repo.updateHexDetails(hexKey, details);
-
-                    // Disable controls
-                    workerList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-                    workerList.setFocusable(false);
-                    workerList.setSelectionModel(new DefaultListSelectionModel() {
-                        @Override public void setSelectionInterval(int index0, int index1) {}
-                    });
-
-                    scrollPane.addMouseWheelListener(InputEvent::consume);
-                    scrollPane.setWheelScrollingEnabled(false);
-                    scrollPane.getVerticalScrollBar().setEnabled(false);
-                    scrollPane.getHorizontalScrollBar().setEnabled(false);
-
-                    validateButton.setEnabled(false);
-                    buildingButton.setEnabled(false);
-                    workerList.setFocusable(false);
-
-                    Login.waitNextTurn = true;
-                    panel.revalidate();
-                    panel.repaint();
-                }}
-        });
-
-        boolean shouldLock =  hd.isSlotLocked(label); //TODO enable the following later on ||Login.waitNextTurn
-        if (shouldLock) {
-            validateButton.setEnabled(false);
-            buildingButton.setEnabled(false);
-            workerList.setFocusable(false);
-            workerList.setSelectionModel(new DefaultListSelectionModel() {
-                @Override public void setSelectionInterval(int i0, int i1) {}
-            });
-            scrollPane.addMouseWheelListener(InputEvent::consume);
-            scrollPane.setWheelScrollingEnabled(false);
-            scrollPane.getVerticalScrollBar().setEnabled(false);
-            scrollPane.getHorizontalScrollBar().setEnabled(false);
-            workerList.setBackground(new Color(114, 114, 114, 250));
-        }
-
-        return row + 1;
-    }
-    public static JLabel makeCell(String text, Color bg) {
-        JLabel label = new JLabel(text, SwingConstants.CENTER);
-        label.setFont(new Font("Bahnschrift", Font.BOLD, 15));
-        label.setOpaque(true);
-        label.setBackground(bg);
-        label.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        return label;
-    }
-    public static JLabel createMoralResultLabel(String text) {
-        JLabel label = new JLabel(text);
-        label.setMinimumSize(new Dimension(600, 40));
-        label.setFont(new Font("Oswald", Font.PLAIN, 10));
-        label.setHorizontalAlignment(SwingConstants.LEFT);
-        label.setVerticalAlignment(SwingConstants.CENTER);
-        label.setOpaque(true);
-        if (!text.isEmpty()){label.setBackground(Color.lightGray);}
-        label.setBorder(BorderFactory.createLineBorder(Color.BLACK));
-        return label;
-    }
     public static BufferedImage loadImage(String path) {
         try {
-            return ImageIO.read(UI.class.getResource(path));
+            return ImageIO.read(Objects.requireNonNull(UI.class.getResource(path)));
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -422,7 +191,7 @@ public class UIHelpers  extends JScrollPane{
 
                         // Add popup to the target parent
                         if (targetParent instanceof JLayeredPane) {
-                            ((JLayeredPane) targetParent).add(popup, JLayeredPane.POPUP_LAYER);
+                            targetParent.add(popup, JLayeredPane.POPUP_LAYER);
                         } else {
                             targetParent.add(popup, 0); // Add at index 0 for visibility
                         }
@@ -465,15 +234,7 @@ public class UIHelpers  extends JScrollPane{
         label.setForeground(Color.DARK_GRAY);
         return label;
     }
-    private static String findJobCategory(String jobName) {
-        if (jobName == null) return "Autre";
 
-        return Arrays.stream(DATABASE.Workers.values())
-                .filter(worker -> worker.getJobName().equalsIgnoreCase(jobName))
-                .map(DATABASE.Workers::getCategory)
-                .findFirst()
-                .orElse("Autre");
-    }
     private static void showPopulationSummaryDetails(WorkDetailsPopup popup,
                                                      IHexRepository repo,
                                                      String factionName,
@@ -493,30 +254,20 @@ public class UIHelpers  extends JScrollPane{
         sb.append("</ul></body></html>");
         popup.showDetails(sb.toString(), anchorLabel);
     }
-    private static JLayeredPane getParentLayeredPane(Component component) {
-        Container parent = component.getParent();
-        while (parent != null) {
-            if (parent instanceof JLayeredPane) {
-                return (JLayeredPane) parent;
-            }
-            parent = parent.getParent();
-        }
-        return null;
-    }
+
     private static BufferedImage createHexagonalSnapshot(String hexKey, IHexRepository repo) {
         if (mapBackground == null) return null;
 
         Rectangle r = Mondes.getHexPixelBounds(hexKey, repo);
         BufferedImage square = mapBackground.getSubimage(
-                clamp(r.x, 0, mapBackground.getWidth()  - r.width),
-                clamp(r.y, 0, mapBackground.getHeight() - r.height),
+                clamp(r.x, mapBackground.getWidth()  - r.width),
+                clamp(r.y, mapBackground.getHeight() - r.height),
                 r.width, r.height  );
-
 
         BufferedImage hexImage = new BufferedImage(r.width, r.height  , BufferedImage.TYPE_INT_ARGB);
         Graphics2D g2d = hexImage.createGraphics();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        Path2D hexPath = createHexagonPath( r.width/2, r.height  /2,  r.width+r.height/2 - 2);
+        Path2D hexPath = createHexagonPath( (double) r.width /2, (double) r.height /2,  r.width+ (double) r.height /2 - 2);
         g2d.setClip(hexPath);
         g2d.drawImage(square, 0, 0, null);
         g2d.setClip(null);
@@ -542,29 +293,26 @@ public class UIHelpers  extends JScrollPane{
         hexagon.closePath();
         return hexagon;
     }
-    private static int clamp(int v, int min, int max) {
-        return Math.max(min, Math.min(v, max));
-    }
-    public static void preloadHexSnapshots(Map<String, HexDetails> hexGrid, IHexRepository repo) {
+    private static int clamp(int v, int max) { return Math.max(0, Math.min(v, max)); }
+    public static void preloadHexSnapshots(Map<String, SafeHexDetails> hexGrid, IHexRepository repo) {
         CompletableFuture.runAsync(() -> {
             for (String hexKey : hexGrid.keySet()) {
                 UI.HexSnapshotCache.getHexSnapshot(hexKey, repo);
             }
         });
     }
-    public static UI.EnhancedProductionPanel createEnhancedProductionPanel(Map<String, SafeHexDetails> hexGrid,
-                                                                           String factionName, IHexRepository repo, EconomicDataService economicService) {
-        return new UI.EnhancedProductionPanel(hexGrid, factionName, repo, economicService);
+    public static UI.ProductionPanel createEnhancedProductionPanel(Map<String, SafeHexDetails> hexGrid,
+                                                                   String factionName, IHexRepository repo,
+                                                                   EconomicDataService economicService) {
+        return new UI.ProductionPanel(hexGrid, factionName, repo, economicService);
     }
     public static EconomicDataService initializeEconomicService(IHexRepository repo, String factionName) {
         economicService = new EconomicDataService(repo, factionName);
         return economicService;
     }
     public static void connectMoralPanelToEconomicService(UI.MoralPanelResult result, EconomicDataService economicService) {
-        // Connect moral panel to update instability in economic service
         for (JComboBox<DATABASE.MoralAction> dropdown : result.dropdownMap.values()) {
             dropdown.addActionListener(e -> {
-                // Calculate total instability from all selections
                 int totalInstability = 0;
                 for (JComboBox<DATABASE.MoralAction> cb : result.dropdownMap.values()) {
                     DATABASE.MoralAction selected = (DATABASE.MoralAction) cb.getSelectedItem();
@@ -577,13 +325,13 @@ public class UIHelpers  extends JScrollPane{
         }
     }
     public static String getBuildingNamesSafe(int mainIdx, int auxIdx, int fortIdx) {
-        String mainName = getEnumNameSafely(DATABASE.MainBuilding.values(), mainIdx, "None");
-        String auxName = getEnumNameSafely(DATABASE.AuxBuilding.values(), auxIdx, "None");
-        String fortName = getEnumNameSafely(DATABASE.FortBuilding.values(), fortIdx, "None");
+        String mainName = getEnumNameSafely(DATABASE.MainBuilding.values(), mainIdx);
+        String auxName = getEnumNameSafely(DATABASE.AuxBuilding.values(), auxIdx);
+        String fortName = getEnumNameSafely(DATABASE.FortBuilding.values(), fortIdx);
 
         return String.format("Main: %s | Aux: %s | Fort: %s", mainName, auxName, fortName);
     }
-    private static <T extends Enum<T>> String getEnumNameSafely(T[] enumValues, int index, String defaultValue) {
+    private static <T extends Enum<T>> String getEnumNameSafely(T[] enumValues, int index) {
         try {
             if (index > 0 && index < enumValues.length) {
                 T enumInstance = enumValues[index];
@@ -595,27 +343,21 @@ public class UIHelpers  extends JScrollPane{
                 } else if (enumInstance instanceof DATABASE.FortBuilding) {
                     return ((DATABASE.FortBuilding) enumInstance).getBuildName();
                 }
-
-                // Fallback to enum constant name if no getter available
                 return enumInstance.name();
             }
         } catch (Exception e) {
             System.err.println("Error getting enum name for index " + index + ": " + e.getMessage());
         }
-        return defaultValue;
+        return "None";
     }
     private static Container findBestParentForPopup(Component component) {
         Container parent = component.getParent();
-
-        // First, try to find a JLayeredPane (best option)
         while (parent != null) {
             if (parent instanceof JLayeredPane) {
                 return parent;
             }
             parent = parent.getParent();
         }
-
-        // If no JLayeredPane found, use the root pane
         parent = component.getParent();
         while (parent != null) {
             if (parent instanceof JRootPane) {
@@ -626,8 +368,6 @@ public class UIHelpers  extends JScrollPane{
             }
             parent = parent.getParent();
         }
-
-        // Last resort: return the immediate parent
         return component.getParent();
     }
     public static DATABASE.JobBuilding getBuildingFromHex(SafeHexDetails hex, String buildingType) {
@@ -670,6 +410,11 @@ public class UIHelpers  extends JScrollPane{
         }
         return 1.0;
     }
+
+    public static void logseparator() {
+        System.out.println("=================================");
+    }
+
     public double calculateEstimatedProduction(DATABASE.JobBuilding building,
                                                 DATABASE.ResourceType resource,
                                                 int workers) {
@@ -695,7 +440,7 @@ public class UIHelpers  extends JScrollPane{
             return analyzeImageForWater(hexSnapshot);
         } catch (Exception e) {
             System.err.println("Erreur lors de l'analyse d'eau pour " + hexKey + ": " + e.getMessage());
-            return false; // Fallback conservateur
+            return false;
         }
     }
     private static boolean analyzeImageForWater(BufferedImage image) {
@@ -704,7 +449,6 @@ public class UIHelpers  extends JScrollPane{
         int waterPixelCount = 0;
         int validPixelCount = 0;
 
-        // Image de debug (optionnel)
         BufferedImage debugImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         Graphics2D debugG2d = debugImage.createGraphics();
 
@@ -713,7 +457,6 @@ public class UIHelpers  extends JScrollPane{
                 int argb = image.getRGB(x, y);
                 int alpha = (argb >> 24) & 0xFF;
 
-                // Seuil de transparence plus permissif
                 if (alpha < 32) {
                     debugG2d.setColor(Color.BLACK); // Pixels transparents en noir
                     debugG2d.fillRect(x, y, 1, 1);
@@ -725,24 +468,20 @@ public class UIHelpers  extends JScrollPane{
 
                 if (isWaterColorImproved(pixelColor)) {
                     waterPixelCount++;
-                    debugG2d.setColor(Color.RED); // Eau détectée en rouge
+                    debugG2d.setColor(Color.RED);
                 } else {
-                    debugG2d.setColor(pixelColor); // Couleur originale
+                    debugG2d.setColor(pixelColor);
                 }
                 debugG2d.fillRect(x, y, 1, 1);
             }
         }
-
         debugG2d.dispose();
-
-        /* Sauvegarder l'image de debug
         try {
             ImageIO.write(debugImage, "png", new File("water_detection_debug.png"));
             System.out.println("Debug image saved: water_detection_debug.png");
         } catch (IOException e) {
             e.printStackTrace();
-        }*/
-
+        }
         if (validPixelCount == 0) return false;
 
         double waterPercentage = (double) waterPixelCount / validPixelCount;
@@ -762,17 +501,14 @@ public class UIHelpers  extends JScrollPane{
         float saturation = hsv[1]; // 0-1
         float value = hsv[2]; // 0-1
 
-        // Eau : teintes bleues/cyan (180-240°) avec saturation et luminosité décentes
+        // Eau : teintes bleues/cyan (180-240°)
         if (hue >= 180 && hue <= 240 && saturation > 0.3 && value > 0.3) {
             return true;
         }
 
-        // Détection RGB spécifique pour votre image (eau turquoise/bleue claire)
-        // Ajustez ces valeurs selon votre image spécifique
+        // Détection RGB spécifique pour eau turquoise/bleue claire
         if (b > r + 20 && b > g && b > 80 && b < 220) return true; // Bleu dominant
-        if (b > 100 && g > 100 && r < 150 && (b + g) > 1.5 * r) return true; // Cyan/turquoise
-
-        return false;
+        return b > 100 && g > 100 && r < 150 && (b + g) > 1.5 * r; // Cyan/turquoise
     }
 
 }

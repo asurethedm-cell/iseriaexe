@@ -14,8 +14,6 @@ public class LogisticsPanel extends JPanel {
     private LogisticsService logisticsService;
     private IHexRepository hexRepository;
     private String selectedHexKey;
-
-    // UI Components
     private JComboBox<String> hexCombo;
     private DefaultListModel<String> vehicleListModel;
     private JList<String> vehicleList;
@@ -36,26 +34,22 @@ public class LogisticsPanel extends JPanel {
         setOpaque(false);
         setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.WHITE, 2),
-                "🚚 Gestion Logistique",
+                "Gestion Logistique",
                 0, 0,
                 new Font("Arial", Font.BOLD, 18),
                 Color.WHITE));
 
-        // Panel principal avec fond semi-transparent
         JPanel mainPanel = new JPanel(new BorderLayout());
         mainPanel.setOpaque(true);
         mainPanel.setBackground(new Color(0, 0, 0, 150));
         mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        // Panel de sélection hex
         JPanel hexSelectionPanel = createHexSelectionPanel();
         mainPanel.add(hexSelectionPanel, BorderLayout.NORTH);
 
-        // Panel central avec informations logistiques
         JPanel centerPanel = createCenterPanel();
         mainPanel.add(centerPanel, BorderLayout.CENTER);
 
-        // Panel de contrôles
         JPanel controlPanel = createControlPanel();
         mainPanel.add(controlPanel, BorderLayout.SOUTH);
 
@@ -66,7 +60,7 @@ public class LogisticsPanel extends JPanel {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panel.setOpaque(false);
 
-        JLabel label = new JLabel("🎯 Hexagone sélectionné:");
+        JLabel label = new JLabel("Hexagone sélectionné:");
         label.setFont(new Font("Arial", Font.BOLD, 14));
         label.setForeground(Color.WHITE);
         panel.add(label);
@@ -87,13 +81,10 @@ public class LogisticsPanel extends JPanel {
         panel.setOpaque(false);
         panel.setBorder(BorderFactory.createEmptyBorder(20, 0, 20, 0));
 
-        // Section véhicules
         panel.add(createVehicleManagementPanel());
 
-        // Section entrepôt
         panel.add(createWarehouseInfoPanel());
 
-        // Section temps de transport
         panel.add(createTransportTimesPanel());
 
         return panel;
@@ -101,14 +92,14 @@ public class LogisticsPanel extends JPanel {
 
     private JPanel createVehicleManagementPanel() {
         String factionId = MainMenu.getCurrentFactionId();
-        Faction faction = FactionRegistry.getFactionId(factionId);  // ou via votre service
+        Faction faction = FactionRegistry.getFactionId(factionId);
         Color factionColor = faction != null
                 ? faction.getFactionColor()
                 : Color.CYAN;
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(factionColor, 1),
-                "🚗 Véhicules Assignés",
+                "Véhicules Assignés",
                 0, 0,
                 new Font("Arial", Font.BOLD, 14),
                 Color.WHITE));
@@ -144,7 +135,7 @@ public class LogisticsPanel extends JPanel {
         JPanel panel = new JPanel(new GridLayout(4, 2, 5, 10));
         panel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.ORANGE, 1),
-                "📦 Entrepôt le Plus Proche",
+                "Entrepôt le Plus Proche",
                 0, 0,
                 new Font("Arial", Font.BOLD, 14),
                 Color.ORANGE));
@@ -153,9 +144,9 @@ public class LogisticsPanel extends JPanel {
         panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
         // Labels d'information
-        addWarehouseInfoRow(panel, "📍 Localisation:", warehouseLocationLabel = createInfoLabel("-"));
-        addWarehouseInfoRow(panel, "📏 Capacité:", warehouseCapacityLabel = createInfoLabel("-"));
-        addWarehouseInfoRow(panel, "📊 Utilisation:", warehouseUsageLabel = createInfoLabel("-"));
+        addWarehouseInfoRow(panel, "Localisation:", warehouseLocationLabel = createInfoLabel());
+        addWarehouseInfoRow(panel, "Capacité:", warehouseCapacityLabel = createInfoLabel());
+        addWarehouseInfoRow(panel, "Utilisation:", warehouseUsageLabel = createInfoLabel());
 
         return panel;
     }
@@ -168,8 +159,8 @@ public class LogisticsPanel extends JPanel {
         parent.add(valueLabel);
     }
 
-    private JLabel createInfoLabel(String text) {
-        JLabel label = new JLabel(text);
+    private JLabel createInfoLabel() {
+        JLabel label = new JLabel("-");
         label.setFont(new Font("Arial", Font.PLAIN, 12));
         label.setForeground(Color.LIGHT_GRAY);
         return label;
@@ -178,14 +169,14 @@ public class LogisticsPanel extends JPanel {
     private JPanel createTransportTimesPanel() {
 
         String factionId = MainMenu.getCurrentFactionId();
-        Faction faction = FactionRegistry.getFactionId(factionId);  // ou via votre service
+        Faction faction = FactionRegistry.getFactionId(factionId);
         Color factionColor = faction != null
                 ? faction.getFactionColor()
                 : Color.MAGENTA;
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(factionColor, 1),
-                "⏱️ Temps de Transport",
+                "Temps de Transport",
                 0, 0,
                 new Font("Arial", Font.BOLD, 14),
                 Color.WHITE));
@@ -208,25 +199,23 @@ public class LogisticsPanel extends JPanel {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         panel.setOpaque(false);
 
-        JButton refreshButton = createStyledButton("🔄 Actualiser", Color.BLUE);
+        JButton refreshButton = createStyledButton("Actualiser", Color.BLUE);
         refreshButton.addActionListener(e -> {
-            System.out.println("🔄 Actualisation manuelle des données logistiques...");
-
-            // Recharger toutes les données
+            System.out.println("Actualisation manuelle des données logistiques...");
             refreshData();
 
-            // Feedback utilisateur
             JOptionPane.showMessageDialog(this,
-                    "✅ Données logistiques actualisées!\n" +
-                            "• Liste des hexagones rechargée\n" +
-                            "• Véhicules mis à jour\n" +
-                            "• Entrepôts recalculés",
+                    """
+                            Données logistiques actualisées!
+                            • Liste des hexagones rechargée
+                            • Véhicules mis à jour
+                            • Entrepôts recalculés""",
                     "Actualisation réussie",
                     JOptionPane.INFORMATION_MESSAGE);
         });
         panel.add(refreshButton);
 
-        JButton networkButton = createStyledButton("🗺️ Réseau", Color.DARK_GRAY);
+        JButton networkButton = createStyledButton("Réseau", Color.DARK_GRAY);
         networkButton.addActionListener(e -> showTransportNetwork());
         panel.add(networkButton);
 
@@ -244,14 +233,12 @@ public class LogisticsPanel extends JPanel {
     }
 
     private void loadInitialData() {
-        // Charger seulement les hexagones de la faction du joueur
         hexCombo.removeAllItems();
         hexCombo.addItem("-- Sélectionner --");
 
-        // ✅ NOUVEAU: Obtenir la faction du joueur connecté
         String currentFactionId = MainMenu.getCurrentFactionId();
         if (currentFactionId == null) {
-            System.err.println("❌ Impossible d'obtenir la faction du joueur connecté dans LogisticsPanel!");
+            System.err.println("Impossible d'obtenir la faction du joueur connecté dans LogisticsPanel!");
             return;
         }
 
@@ -263,7 +250,6 @@ public class LogisticsPanel extends JPanel {
             SafeHexDetails details = entry.getValue();
 
             if (hexKey != null && details != null) {
-                // ✅ NOUVEAU: Vérifier si l'hexagone appartient à la faction du joueur
                 if (currentFactionId.equals(details.getFactionClaim())) {
                     hexCombo.addItem(hexKey);
                     playerHexCount++;
@@ -271,13 +257,13 @@ public class LogisticsPanel extends JPanel {
             }
         }
 
-        System.out.println("🎯 LogisticsPanel: " + playerHexCount + " hexagones chargés pour la faction " + currentFactionId);
+        System.out.println("LogisticsPanel: " + playerHexCount + " hexagones chargés pour la faction " + currentFactionId);
     }
 
     private void showAddVehicleDialog(ActionEvent e) {
         if (selectedHexKey == null || selectedHexKey.equals("-- Sélectionner --")) {
             JOptionPane.showMessageDialog(this,
-                    "⚠️ Sélectionnez d'abord un hexagone",
+                    "Sélectionnez d'abord un hexagone",
                     "Sélection requise",
                     JOptionPane.WARNING_MESSAGE);
             return;
@@ -287,7 +273,7 @@ public class LogisticsPanel extends JPanel {
         TransportVehicle.VehicleType selected = (TransportVehicle.VehicleType)
                 JOptionPane.showInputDialog(
                         this,
-                        "🚚 Choisissez le type de véhicule:",
+                        "Choisissez le type de véhicule:",
                         "Ajouter Véhicule",
                         JOptionPane.QUESTION_MESSAGE,
                         null,
@@ -300,12 +286,12 @@ public class LogisticsPanel extends JPanel {
             if (logisticsService.assignVehicle(selectedHexKey, vehicle)) {
                 updateLogisticsDisplay();
                 JOptionPane.showMessageDialog(this,
-                        "✅ Véhicule " + selected.name() + " ajouté avec succès!",
+                        "Véhicule " + selected.name() + " ajouté avec succès!",
                         "Succès",
                         JOptionPane.INFORMATION_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(this,
-                        "❌ Impossible d'assigner le véhicule",
+                        "Impossible d'assigner le véhicule",
                         "Erreur",
                         JOptionPane.ERROR_MESSAGE);
             }
@@ -316,7 +302,7 @@ public class LogisticsPanel extends JPanel {
         String selectedVehicle = vehicleList.getSelectedValue();
         if (selectedVehicle == null) {
             JOptionPane.showMessageDialog(this,
-                    "⚠️ Sélectionnez d'abord un véhicule à retirer",
+                    "Sélectionnez d'abord un véhicule à retirer",
                     "Sélection requise",
                     JOptionPane.WARNING_MESSAGE);
             return;
@@ -328,18 +314,17 @@ public class LogisticsPanel extends JPanel {
                 JOptionPane.YES_NO_OPTION);
 
         if (result == JOptionPane.YES_OPTION) {
-            // ✅ SIMPLIFIÉ: Utiliser seulement le service et le repository
             boolean removed = logisticsService.removeVehicleFromHex(selectedHexKey, selectedVehicle);
 
             if (removed) {
                 updateLogisticsDisplay();
                 JOptionPane.showMessageDialog(this,
-                        "✅ Véhicule retiré avec succès!",
+                        "Véhicule retiré avec succès!",
                         "Succès",
                         JOptionPane.INFORMATION_MESSAGE);
             } else {
                 JOptionPane.showMessageDialog(this,
-                        "❌ Erreur lors du retrait du véhicule",
+                        "Erreur lors du retrait du véhicule",
                         "Erreur",
                         JOptionPane.ERROR_MESSAGE);
             }
@@ -352,15 +337,14 @@ public class LogisticsPanel extends JPanel {
             return;
         }
 
-        // ✅ CORRECTION: Toujours récupérer des données fraîches
         SafeHexDetails hex = hexRepository.getHexDetails(selectedHexKey);
         if (hex != null) {
-            updateVehicleList(hex);
+            updateVehicleList();
             updateWarehouseInfo();
             updateTransportTimes();
         } else {
             clearDisplay();
-            System.err.println("❌ Hex non trouvé: " + selectedHexKey);
+            System.err.println("Hex non trouvé: " + selectedHexKey);
         }
     }
 
@@ -372,10 +356,9 @@ public class LogisticsPanel extends JPanel {
         transportTimesArea.setText("");
     }
 
-    private void updateVehicleList(SafeHexDetails hex) {
+    private void updateVehicleList() {
         vehicleListModel.clear();
 
-        // ✅ TOUJOURS récupérer depuis HexDetails via repository
         SafeHexDetails freshHex = hexRepository.getHexDetails(selectedHexKey);
         if (freshHex == null) {
             vehicleListModel.addElement("Hex non trouvé");
@@ -426,25 +409,22 @@ public class LogisticsPanel extends JPanel {
         sb.append("=== TEMPS DE TRANSPORT ===\n");
         sb.append("Depuis: ").append(selectedHexKey).append("\n\n");
 
-        // 🆕 Récupérer les ressources réellement produites
         List<ProducedResource> producedResources = getProducedResources(selectedHexKey);
 
         if (producedResources.isEmpty()) {
-            sb.append("⚠️ Aucune ressource produite dans cet hexagone\n");
+            sb.append("Aucune ressource produite dans cet hexagone\n");
             sb.append("Veuillez configurer la production dans l'onglet Production\n\n");
 
             // Fallback vers ressources par défaut pour tests
-            sb.append("📋 Exemples avec ressources standard:\n");
+            sb.append("Exemples avec ressources standard:\n");
             sb.append("─".repeat(40)).append("\n");
             calculateDefaultTransportTimes(sb);
         } else {
-            sb.append("📦 Ressources produites localement:\n");
+            sb.append("Ressources produites localement:\n");
             for (ProducedResource resource : producedResources) {
                 sb.append("• ").append(resource).append("\n");
             }
             sb.append("\n");
-
-            // Calculer temps pour les vraies ressources
             calculateRealTransportTimes(sb, producedResources);
         }
 
@@ -454,17 +434,17 @@ public class LogisticsPanel extends JPanel {
         Map<String, StorageWarehouse> warehouses = logisticsService.getWarehouses();
 
         if (warehouses.isEmpty()) {
-            sb.append("⚠️ Aucun entrepôt configuré\n");
+            sb.append("Aucun entrepôt configuré\n");
             return;
         }
 
-        sb.append("🎯 Temps de transport vers les entrepôts:\n");
+        sb.append("Temps de transport vers les entrepôts:\n");
         sb.append("─".repeat(50)).append("\n");
 
         for (StorageWarehouse warehouse : warehouses.values()) {
             String destination = warehouse.getHexKey();
             if (!destination.equals(selectedHexKey)) {
-                sb.append(String.format("📍 Vers %s:\n", destination));
+                sb.append(String.format("Vers %s:\n", destination));
 
                 for (ProducedResource resource : producedResources) {
                     // Calculer pour une semaine de production
@@ -497,10 +477,8 @@ public class LogisticsPanel extends JPanel {
             sb.append("Aucun entrepôt configuré\n");
             return;
         }
-
-        // Ressources de test avec quantités réalistes
         String[] testResources = {"no ressources produced"};
-        double[] testQuantities = {0.0}; // Production hebdomadaire typique
+        double[] testQuantities = {0.0};
 
         for (StorageWarehouse warehouse : warehouses.values()) {
             String destination = warehouse.getHexKey();
@@ -510,7 +488,6 @@ public class LogisticsPanel extends JPanel {
                 for (int i = 0; i < testResources.length; i++) {
                     int transportTime = logisticsService.calculateTransportTime(
                             selectedHexKey, destination, testResources[i], testQuantities[i]);
-                    int joursParTours = 7;
                     if (transportTime < Integer.MAX_VALUE) {
                         sb.append(String.format("  %s (%.0f): 0 tours\n",
                                 testResources[i], testQuantities[i]));
@@ -523,7 +500,6 @@ public class LogisticsPanel extends JPanel {
         }
     }
     private void showTransportNetwork() {
-        // Afficher les informations du réseau de transport dans une nouvelle fenêtre
         JDialog networkDialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
                 "Réseau de Transport", true);
         networkDialog.setSize(600, 400);
@@ -550,21 +526,16 @@ public class LogisticsPanel extends JPanel {
         for (StorageWarehouse warehouse : warehouses.values()) {
             networkInfo.append(warehouse.getHexKey()).append(": Capacité ").append(warehouse.getMaxCapacity()).append("\n");
         }
-
         networkArea.setText(networkInfo.toString());
-
         JScrollPane scrollPane = new JScrollPane(networkArea);
         networkDialog.add(scrollPane);
 
-        // Imprimer aussi dans la console pour debug
         logisticsService.printTransportNetwork();
 
         networkDialog.setVisible(true);
     }
-
-    // Méthode publique pour actualiser depuis l'extérieur
     public void refreshData() {
-        System.out.println("🔄 Rafraîchissement des données logistics...");
+        System.out.println("Rafraîchissement des données logistics...");
 
         // Recharger la liste des hexagones
         loadInitialData();
@@ -591,10 +562,9 @@ public class LogisticsPanel extends JPanel {
         // Rafraîchir l'affichage
         updateLogisticsDisplay();
 
-        System.out.println("✅ Rafraîchissement terminé");
+        System.out.println("Rafraîchissement terminé");
     }
 
-    // Méthode pour sélectionner un hex spécifique (pour l'intégration Mondes)
     public void selectHex(String hexKey) {
         hexCombo.setSelectedItem(hexKey);
         selectedHexKey = hexKey;
@@ -606,58 +576,41 @@ public class LogisticsPanel extends JPanel {
         try {
             SafeHexDetails hex = hexRepository.getHexDetails(hexKey);
             if (hex == null) return producedResources;
-
-            // Vérifier production du bâtiment principal
             String mainResourceType = hex.getSelectedResourceType("main");
             double mainProduction = hex.getSelectedResourceProduction("main");
             if (mainResourceType != null && mainProduction > 0) {
                 producedResources.add(new ProducedResource(
                         mainResourceType, mainProduction, "Main Building"));
             }
-
-            // Vérifier production du bâtiment auxiliaire
             String auxResourceType = hex.getSelectedResourceType("aux");
             double auxProduction = hex.getSelectedResourceProduction("aux");
             if (auxResourceType != null && auxProduction > 0) {
                 producedResources.add(new ProducedResource(
                         auxResourceType, auxProduction, "Auxiliary Building"));
             }
-
-            // Vérifier production du bâtiment de fortification
             String fortResourceType = hex.getSelectedResourceType("fort");
             double fortProduction = hex.getSelectedResourceProduction("fort");
             if (fortResourceType != null && fortProduction > 0) {
                 producedResources.add(new ProducedResource(
                         fortResourceType, fortProduction, "Fort Building"));
             }
-
-            // Vérifier production d'élevage si disponible
             if (hex.getLivestockFarm() != null) {
-                // Ajouter logique pour récupérer production élevage
-                // selon votre implémentation
+               //TODO Ajouter logique pour récupérer production élevage
+
             }
 
         } catch (Exception e) {
-            System.err.println("❌ Erreur lors de la récupération des ressources produites: " + e.getMessage());
+            System.err.println("Erreur lors de la récupération des ressources produites: " + e.getMessage());
         }
 
         return producedResources;
     }
 
-    private static class ProducedResource {
-        final String resourceType;
-        final double weeklyProduction;
-        final String source;
-
-        ProducedResource(String resourceType, double weeklyProduction, String source) {
-            this.resourceType = resourceType;
-            this.weeklyProduction = weeklyProduction;
-            this.source = source;
-        }
+    private record ProducedResource(String resourceType, double weeklyProduction, String source) {
 
         @Override
-        public String toString() {
-            return String.format("%s (%.1f/sem, %s)", resourceType, weeklyProduction, source);
+            public String toString() {
+                return String.format("%s (%.1f/sem, %s)", resourceType, weeklyProduction, source);
+            }
         }
-    }
 }

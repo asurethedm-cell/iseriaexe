@@ -3,36 +3,26 @@ package com.iseria.ui;
 import com.iseria.infra.AppConfig;
 import com.iseria.service.MarketDataService;
 import com.iseria.service.MarketDataService.MarketResourceData;
-import com.iseria.service.EconomicDataService;
-import com.iseria.domain.DATABASE;
-
 import javax.swing.*;
 import javax.swing.event.TableModelEvent;
 import javax.swing.table.*;
 import java.awt.*;
-import java.awt.event.*;
-import java.util.Map;
-import java.util.Properties;
-
+//TODO working emote detection
 public class MarketAdminPanel extends JFrame {
     private final MarketDataService marketService = MarketDataService.getInstance();
-    private final EconomicDataService economicService;
     private JTable table;
     private DefaultTableModel model;
     private Timer autoSaveTimer;
     private TableRowSorter<DefaultTableModel> sorter;
-    public MarketAdminPanel(EconomicDataService ecoService) {
-        this.economicService = ecoService;
+    public MarketAdminPanel() {
         setTitle("Market Admin Panel");
         setSize(1200, 800);
         setDefaultCloseOperation(HIDE_ON_CLOSE);
-
         initTable();
         initControls();
         loadData();
         startAutoSave();
     }
-
     private void initTable() {
         String[] cols = { "Icon", "Resource", "Category", "Base Price", "Current Price", "Change %", "Trend" };
         model = new DefaultTableModel(cols, 0) {
@@ -40,24 +30,14 @@ public class MarketAdminPanel extends JFrame {
             @Override public Class<?> getColumnClass(int col) {
                 return switch (col) {
                     case 3, 4 -> Double.class;
-                    case 5    -> String.class;
                     default   -> String.class;
                 };
             }
         };
-
         table = new JTable(model);
-
-        // Enhanced emoji font detection with multiple fallbacks
         Font emojiFont = createEmojiFont();
-
-        // Apply emoji font to Icon column with enhanced renderer
         table.getColumnModel().getColumn(0).setCellRenderer(new EmojiTableCellRenderer(emojiFont));
-
-        // Apply same emoji font to Trend column
         table.getColumnModel().getColumn(6).setCellRenderer(new EmojiTableCellRenderer(emojiFont));
-
-        // Percentage renderer (color coding) - unchanged
         table.getColumnModel().getColumn(5).setCellRenderer(new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable tbl, Object value,
@@ -73,29 +53,34 @@ public class MarketAdminPanel extends JFrame {
                 return this;
             }
         });
-
-        // Enable sorting and other configurations
         sorter = new TableRowSorter<>(model);
         table.setRowSorter(sorter);
         table.putClientProperty("terminateEditOnFocusLost", Boolean.TRUE);
         table.getTableHeader().setReorderingAllowed(true);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-
         table.getModel().addTableModelListener(e -> {
             if (e.getType() == TableModelEvent.UPDATE && e.getColumn() == 4) {
                 updatePrice(e.getFirstRow());
                 marketService.saveToFile();
             }
         });
-
         add(new JScrollPane(table), BorderLayout.CENTER);
     }
-
-    // Enhanced font creation with multiple fallbacks
     private Font createEmojiFont() {
         String os = System.getProperty("os.name").toLowerCase();
+        String[] fontNames = getStrings(os);
+        for (String fontName : fontNames) {
+            Font font = new Font(fontName, Font.PLAIN, 18);
+            if (font.getFamily().equals(fontName)) {
+                System.out.println("Using emoji font: " + fontName);
+                return font;
+            }
+        }
+        System.out.println("No emoji font found, using default Dialog");
+        return new Font("Dialog", Font.PLAIN, 18);
+    }
+    private static String[] getStrings(String os) {
         String[] fontNames;
-
         if (os.contains("mac")) {
             fontNames = new String[]{
                     "Apple Color Emoji", "Apple Symbols", "Helvetica", "Dialog"
@@ -105,33 +90,18 @@ public class MarketAdminPanel extends JFrame {
                     "Segoe UI Emoji", "Segoe UI Symbol", "Segoe UI", "Dialog"
             };
         } else {
-            // Linux and others
             fontNames = new String[]{
                     "Noto Color Emoji", "Noto Emoji", "DejaVu Sans", "Dialog"
             };
         }
-
-        // Try each font until we find one that's available
-        for (String fontName : fontNames) {
-            Font font = new Font(fontName, Font.PLAIN, 18);
-            if (font.getFamily().equals(fontName)) {
-                System.out.println("Using emoji font: " + fontName);
-                return font;
-            }
-        }
-
-        System.out.println("No emoji font found, using default Dialog");
-        return new Font("Dialog", Font.PLAIN, 18);
+        return fontNames;
     }
-
-    // Custom renderer for emoji cells
     private static class EmojiTableCellRenderer extends DefaultTableCellRenderer {
         private final Font emojiFont;
 
         public EmojiTableCellRenderer(Font emojiFont) {
             this.emojiFont = emojiFont;
         }
-
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
                                                        boolean isSelected, boolean hasFocus, int row, int column) {
@@ -139,10 +109,7 @@ public class MarketAdminPanel extends JFrame {
 
             setHorizontalAlignment(SwingConstants.CENTER);
             setFont(emojiFont);
-
-            // Enable anti-aliasing for better emoji rendering
             putClientProperty("html.disable", Boolean.FALSE);
-
             return this;
         }
     }
@@ -150,23 +117,21 @@ public class MarketAdminPanel extends JFrame {
     private void initControls() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
 
-        JButton resetBtn = new JButton("🔄 Reset Prices");
+        JButton resetBtn = new JButton("Reset Prices");
         resetBtn.addActionListener(e -> confirmReset());
         panel.add(resetBtn);
 
-        JButton crashBtn = new JButton("💥 Crash");
+        JButton crashBtn = new JButton("Crash");
         crashBtn.addActionListener(e -> applyMarketEvent(-0.3));
         panel.add(crashBtn);
 
-        JButton boomBtn = new JButton("🚀 Boom");
+        JButton boomBtn = new JButton("Boom");
         boomBtn.addActionListener(e -> applyMarketEvent(+0.4));
         panel.add(boomBtn);
-
-        // ✅ ADD REFRESH BUTTON
-        JButton refreshBtn = new JButton("🔄 Refresh Data");
+        JButton refreshBtn = new JButton("Refresh Data");
         refreshBtn.addActionListener(e -> {
             loadData();
-            JOptionPane.showMessageDialog(this, "✅ Market data refreshed!",
+            JOptionPane.showMessageDialog(this, "Market data refreshed!",
                     "Refresh Complete", JOptionPane.INFORMATION_MESSAGE);
         });
         panel.add(refreshBtn);
@@ -179,29 +144,23 @@ public class MarketAdminPanel extends JFrame {
 
         for (MarketResourceData d : marketService.getAllMarketData().values()) {
             double change = d.getChangePercent();
-            String trend = change > 5 ? "⬆️" : change < -5 ? "⬇️" : "➡️";
-
-            // ✅ USE WORKING EMOJI METHOD instead of DATABASE.ResourceType.getIconForResource
+            String trend = change > 5 ? "⬆" : change < -5 ? "⬇" : "➡";
             String emoji = getResourceIcon(d.category);
 
             model.addRow(new Object[]{
-                    emoji,                                    // ✅ Fixed emoji display
+                    emoji,
                     d.name,
                     d.category,
                     d.basePrice,
                     d.currentPrice,
-                    String.format("%.1f%%", change),        // Keep as formatted string
+                    String.format("%.1f%%", change),
                     trend
             });
         }
-
-        // ✅ REFRESH SORTING after data load
         if (sorter != null) {
             sorter.allRowsChanged();
         }
     }
-
-    // ✅ ADD THE WORKING EMOJI METHOD from MainMenu.java
     private String getResourceIcon(String category) {
         return switch (category.toLowerCase()) {
             case "joyaux", "joyaux taillé" -> "💎";
@@ -221,12 +180,10 @@ public class MarketAdminPanel extends JFrame {
     }
 
     private void updatePrice(int row) {
-        // CONVERT MODEL ROW TO VIEW ROW (important for sorting)
         int modelRow = table.convertRowIndexToModel(row);
         String name = (String) model.getValueAt(modelRow, 1);
         double oldPrice = marketService.getCurrentPrice(name);
         double newPrice = (Double) model.getValueAt(modelRow, 4);
-
         try {
             validatePrice(newPrice);
             marketService.updatePrice(name, newPrice);
@@ -238,12 +195,10 @@ public class MarketAdminPanel extends JFrame {
             model.setValueAt(oldPrice, modelRow, 4);
         }
     }
-
     private void validatePrice(double p) {
         if (p < 0) throw new IllegalArgumentException("Price cannot be negative.");
         if (p > 1_000_000) throw new IllegalArgumentException("Price too high.");
     }
-
     private void confirmReset() {
         int ans = JOptionPane.showConfirmDialog(this,
                 "Reset all prices to base?", "Confirm", JOptionPane.YES_NO_OPTION);
@@ -253,7 +208,6 @@ public class MarketAdminPanel extends JFrame {
             loadData();
         }
     }
-
     private void applyMarketEvent(double avgChange) {
         marketService.getAllMarketData().values().forEach(d -> {
             double newP = d.currentPrice * (1 + avgChange);
@@ -261,10 +215,9 @@ public class MarketAdminPanel extends JFrame {
         });
         loadData();
         JOptionPane.showMessageDialog(this,
-                avgChange < 0 ? "💥 Market Crash!" : "🚀 Market Boom!",
+                avgChange < 0 ? "Market Crash!" : "Market Boom!",
                 "Event", JOptionPane.INFORMATION_MESSAGE);
     }
-
     private void startAutoSave() {
         int interval = Integer.parseInt(
                 AppConfig.get("market.auto.save.interval", "300000"));
@@ -274,8 +227,6 @@ public class MarketAdminPanel extends JFrame {
         });
         autoSaveTimer.start();
     }
-
-    // CLEANUP ON CLOSE
     @Override
     public void dispose() {
         if (autoSaveTimer != null) {

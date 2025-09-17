@@ -3,15 +3,12 @@ package com.iseria.ui;
 import com.iseria.domain.DATABASE;
 import com.iseria.domain.Faction;
 import com.iseria.domain.Rumor;
-import com.iseria.service.RumorPersistenceService;
 import com.iseria.service.RumorService;
 import com.iseria.infra.FactionRegistry;
 import com.iseria.service.RumorServiceImpl;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.List;
@@ -29,7 +26,7 @@ public class AdminRumorManagementPanel extends JFrame {
     }
 
     private void initializeAdminPanel() {
-        setTitle("🛡️ Administration des Rumeurs - Panel Admin");
+        setTitle("Administration des Rumeurs - Panel Admin");
         setSize(1200, 800);
         setLocationRelativeTo(null);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -59,7 +56,7 @@ public class AdminRumorManagementPanel extends JFrame {
         headerPanel.setBackground(new Color(30, 30, 30));
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JLabel titleLabel = new JLabel("🛡️ Panel Administrateur - Gestion des Rumeurs");
+        JLabel titleLabel = new JLabel("Panel Administrateur - Gestion des Rumeurs");
         titleLabel.setFont(new Font("Arial", Font.BOLD, 20));
         titleLabel.setForeground(Color.WHITE);
         headerPanel.add(titleLabel);
@@ -88,15 +85,12 @@ public class AdminRumorManagementPanel extends JFrame {
     }
 
     private void createFactionTab(String factionName) {
-        // Panel principal pour cette faction
         JPanel factionMainPanel = new JPanel(new BorderLayout());
         factionMainPanel.setBackground(new Color(50, 50, 50));
 
-        // Header de faction avec contrôles
         JPanel factionHeader = createFactionHeader(factionName);
         factionMainPanel.add(factionHeader, BorderLayout.NORTH);
 
-        // Panel d'affichage des rumeurs
         RumorDisplayPanel rumorPanel = new RumorDisplayPanel();
         rumorPanel.setBackground(new Color(60, 60, 60));
         rumorPanel.setEditCallback(this::showEditRumorDialog);
@@ -108,15 +102,12 @@ public class AdminRumorManagementPanel extends JFrame {
         UI.configureScrollSpeed(scrollPane,20,80);
         factionMainPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Stocker les références
         factionPanels.put(factionName, rumorPanel);
         factionScrollPanes.put(factionName, scrollPane);
 
-        // Charger les rumeurs de cette faction
         refreshFactionRumors(factionName);
 
-        // Ajouter l'onglet
-        tabbedPane.addTab("📜 " + factionName, factionMainPanel);
+        tabbedPane.addTab(" " + factionName, factionMainPanel);
     }
 
     private JPanel createFactionHeader(String factionName) {
@@ -124,23 +115,18 @@ public class AdminRumorManagementPanel extends JFrame {
         headerPanel.setBackground(new Color(40, 40, 40));
         headerPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Titre de faction
         JLabel factionLabel = new JLabel("Faction: " + factionName);
         factionLabel.setFont(new Font("Arial", Font.BOLD, 16));
         factionLabel.setForeground(Color.WHITE);
         headerPanel.add(factionLabel);
-
         headerPanel.add(Box.createHorizontalStrut(20));
 
-        // Bouton créer nouvelle rumeur
-        JButton createRumorBtn = createStyledButton("➕ Nouvelle Rumeur", new Color(34, 139, 34));
+        JButton createRumorBtn = createStyledButton("Nouvelle Rumeur", new Color(34, 139, 34));
         createRumorBtn.addActionListener(e -> showCreateRumorDialog(factionName));
         headerPanel.add(createRumorBtn);
-
         headerPanel.add(Box.createHorizontalStrut(10));
 
-        // Bouton rafraîchir
-        JButton refreshBtn = createStyledButton("🔄 Actualiser", new Color(70, 130, 180));
+        JButton refreshBtn = createStyledButton("Actualiser", new Color(70, 130, 180));
         refreshBtn.addActionListener(e -> refreshFactionRumors(factionName));
         headerPanel.add(refreshBtn);
 
@@ -157,7 +143,6 @@ public class AdminRumorManagementPanel extends JFrame {
         JScrollPane scrollPane = new JScrollPane(rumorPanel);
         allRumorsPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Charger toutes les rumeurs
         List<Rumor> allRumors = rumorService.getAllRumors()
                 .stream()
                 .sorted(Comparator.comparing(Rumor::getDate).reversed())
@@ -165,7 +150,7 @@ public class AdminRumorManagementPanel extends JFrame {
 
         rumorPanel.displayRumors(allRumors);
 
-        tabbedPane.addTab("📚 Toutes", allRumorsPanel);
+        tabbedPane.addTab("Toutes", allRumorsPanel);
     }
 
     private void createPendingRumorsTab() {
@@ -181,7 +166,7 @@ public class AdminRumorManagementPanel extends JFrame {
         pendingLabel.setForeground(Color.YELLOW);
         pendingHeader.add(pendingLabel);
 
-        JButton approveAllBtn = createStyledButton("✅ Tout Approuver", new Color(34, 139, 34));
+        JButton approveAllBtn = createStyledButton("Tout Approuver", new Color(34, 139, 34));
         approveAllBtn.addActionListener(e -> approveAllPendingRumors());
         pendingHeader.add(Box.createHorizontalStrut(20));
         pendingHeader.add(approveAllBtn);
@@ -198,7 +183,7 @@ public class AdminRumorManagementPanel extends JFrame {
         List<Rumor> pendingRumors = rumorService.getPendingRumors();
         rumorPanel.displayRumors(pendingRumors);
 
-        tabbedPane.addTab("⏳ En Attente (" + pendingRumors.size() + ")", pendingPanel);
+        tabbedPane.addTab("En Attente (" + pendingRumors.size() + ")", pendingPanel);
     }
 
     private JPanel createGlobalControlPanel() {
@@ -206,22 +191,19 @@ public class AdminRumorManagementPanel extends JFrame {
         controlPanel.setBackground(new Color(30, 30, 30));
         controlPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // Bouton actualiser tout
-        JButton refreshAllBtn = createStyledButton("🔄 Actualiser Tout", new Color(70, 130, 180));
+        JButton refreshAllBtn = createStyledButton("Actualiser Tout", new Color(70, 130, 180));
         refreshAllBtn.addActionListener(e -> refreshAllTabs());
         controlPanel.add(refreshAllBtn);
 
         controlPanel.add(Box.createHorizontalStrut(20));
 
-        // Bouton export
-        JButton exportBtn = createStyledButton("💾 Exporter", new Color(128, 0, 128));
+        JButton exportBtn = createStyledButton("Exporter", new Color(128, 0, 128));
         exportBtn.addActionListener(e -> exportAllRumors());
         controlPanel.add(exportBtn);
 
         controlPanel.add(Box.createHorizontalStrut(20));
 
-        // Bouton fermer
-        JButton closeBtn = createStyledButton("❌ Fermer", new Color(220, 20, 60));
+        JButton closeBtn = createStyledButton("Fermer", new Color(220, 20, 60));
         closeBtn.addActionListener(e -> dispose());
         controlPanel.add(closeBtn);
 
@@ -250,35 +232,30 @@ public class AdminRumorManagementPanel extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Type
         gbc.gridx = 0; gbc.gridy = 0;
         mainPanel.add(new JLabel("Type:"), gbc);
         JComboBox<String> typeCombo = new JComboBox<>(new String[]{"Reçue", "Propagé"});
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         mainPanel.add(typeCombo, gbc);
 
-        // Nom
         gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
         mainPanel.add(new JLabel("Nom:"), gbc);
         JTextField nameField = new JTextField(30);
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         mainPanel.add(nameField, gbc);
 
-        // **NOUVEAU - Date avec JSpinner**
         gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE;
         mainPanel.add(new JLabel("Date:"), gbc);
 
-        // Créer le JSpinner avec DateEditor pour date + heure
         SpinnerDateModel dateModel = new SpinnerDateModel();
         JSpinner dateSpinner = new JSpinner(dateModel);
         JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "dd/MM/yyyy HH:mm");
         dateSpinner.setEditor(dateEditor);
-        dateSpinner.setValue(new java.util.Date()); // Date actuelle par défaut
+        dateSpinner.setValue(new java.util.Date());
 
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         mainPanel.add(dateSpinner, gbc);
 
-        // Contenu
         gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE;
         mainPanel.add(new JLabel("Contenu:"), gbc);
         JTextArea contentArea = new JTextArea(8, 30);
@@ -288,7 +265,6 @@ public class AdminRumorManagementPanel extends JFrame {
         gbc.gridx = 1; gbc.fill = GridBagConstraints.BOTH; gbc.weightx = 1.0; gbc.weighty = 1.0;
         mainPanel.add(contentScroll, gbc);
 
-        // Boutons
         JPanel buttonPanel = new JPanel(new FlowLayout());
         JButton createBtn = new JButton("Créer");
         JButton cancelBtn = new JButton("Annuler");
@@ -305,19 +281,15 @@ public class AdminRumorManagementPanel extends JFrame {
             }
 
             try {
-                // Convertir java.util.Date vers LocalDateTime
                 java.time.LocalDateTime dateTime = java.time.LocalDateTime.ofInstant(
                         selectedDate.toInstant(),
                         java.time.ZoneId.systemDefault()
                 );
 
-                // ✅ SOLUTION : Créer la rumeur complète en une seule fois
                 Rumor newRumor = new Rumor(type, name, content, dateTime);
-                newRumor.setId(((RumorServiceImpl) rumorService).getNextId()); // Vous devrez ajouter cette méthode
+                newRumor.setId(((RumorServiceImpl) rumorService).getNextId());
                 newRumor.setStatus(DATABASE.RumorStatus.APPROVED);
-                newRumor.setAuthorFactionId(factionName); // ✨ Définir AVANT la sauvegarde
-
-                // Sauvegarder une seule fois
+                newRumor.setAuthorFactionId(factionName);
                 rumorService.saveRumor(newRumor);
 
                 JOptionPane.showMessageDialog(createDialog, "Rumeur créée avec succès!", "Succès", JOptionPane.INFORMATION_MESSAGE);
@@ -325,7 +297,6 @@ public class AdminRumorManagementPanel extends JFrame {
                 refreshFactionRumors(factionName);
 
             } catch (Exception ex) {
-                // ✅ SOLUTION : Afficher les vraies erreurs
                 System.err.println("Erreur création rumeur: " + ex.getMessage());
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(createDialog,
@@ -406,7 +377,7 @@ public class AdminRumorManagementPanel extends JFrame {
                 allRumors.size(), approved, pending, rejected);
     }
     private void showEditRumorDialog(Rumor rumor) {
-        JDialog editDialog = new JDialog(this, "✏️ Éditer Rumeur - ID: " + rumor.getId(), true);
+        JDialog editDialog = new JDialog(this, "Éditer Rumeur - ID: " + rumor.getId(), true);
         editDialog.setSize(650, 500);
         editDialog.setLocationRelativeTo(this);
 
@@ -416,7 +387,6 @@ public class AdminRumorManagementPanel extends JFrame {
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Type (modifiable)
         gbc.gridx = 0; gbc.gridy = 0;
         mainPanel.add(new JLabel("Type:"), gbc);
         JComboBox<String> typeCombo = new JComboBox<>(new String[]{"Reçue", "Propagé", "Militaire", "Social"});
@@ -424,14 +394,12 @@ public class AdminRumorManagementPanel extends JFrame {
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         mainPanel.add(typeCombo, gbc);
 
-        // Nom (modifiable)
         gbc.gridx = 0; gbc.gridy = 1; gbc.fill = GridBagConstraints.NONE;
         mainPanel.add(new JLabel("Nom:"), gbc);
         JTextField nameField = new JTextField(rumor.getName(), 30);
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         mainPanel.add(nameField, gbc);
 
-        // ✅ NOUVEAU : Date modifiable
         gbc.gridx = 0; gbc.gridy = 2; gbc.fill = GridBagConstraints.NONE;
         mainPanel.add(new JLabel("Date:"), gbc);
 
@@ -440,7 +408,6 @@ public class AdminRumorManagementPanel extends JFrame {
         JSpinner.DateEditor dateEditor = new JSpinner.DateEditor(dateSpinner, "dd/MM/yyyy HH:mm");
         dateSpinner.setEditor(dateEditor);
 
-        // Convertir LocalDateTime vers Date pour le spinner
         java.util.Date currentDate = java.util.Date.from(
                 rumor.getDate().atZone(java.time.ZoneId.systemDefault()).toInstant()
         );
@@ -449,11 +416,9 @@ public class AdminRumorManagementPanel extends JFrame {
         gbc.gridx = 1; gbc.fill = GridBagConstraints.HORIZONTAL;
         mainPanel.add(dateSpinner, gbc);
 
-        // ✅ NOUVEAU : Faction modifiable
         gbc.gridx = 0; gbc.gridy = 3; gbc.fill = GridBagConstraints.NONE;
         mainPanel.add(new JLabel("Faction:"), gbc);
 
-        // Récupérer toutes les factions disponibles
         Collection<Faction> allFactions = FactionRegistry.all();
         String[] factionNames = allFactions.stream()
                 .filter(Faction::getIsPlayer)
@@ -489,17 +454,15 @@ public class AdminRumorManagementPanel extends JFrame {
 
         // Boutons
         JPanel buttonPanel = new JPanel(new FlowLayout());
-        JButton saveBtn = new JButton("💾 Sauvegarder");
-        JButton cancelBtn = new JButton("❌ Annuler");
+        JButton saveBtn = new JButton("Sauvegarder");
+        JButton cancelBtn = new JButton("Annuler");
 
         saveBtn.addActionListener(e -> {
             try {
-                // ✅ MISE À JOUR : Appliquer les modifications
                 rumor.setType((String) typeCombo.getSelectedItem());
                 rumor.setName(nameField.getText().trim());
                 rumor.setContent(contentArea.getText().trim());
 
-                // Convertir Date vers LocalDateTime
                 java.util.Date selectedDate = (java.util.Date) dateSpinner.getValue();
                 LocalDateTime newDateTime = LocalDateTime.ofInstant(
                         selectedDate.toInstant(),
@@ -507,7 +470,6 @@ public class AdminRumorManagementPanel extends JFrame {
                 );
                 rumor.setDate(newDateTime);
 
-                // Changer la faction
                 rumor.setAuthorFactionId((String) factionCombo.getSelectedItem());
 
                 // Validation
@@ -517,15 +479,11 @@ public class AdminRumorManagementPanel extends JFrame {
                     return;
                 }
 
-                // ✅ SAUVEGARDER les modifications
                 rumorService.saveRumor(rumor);
-
                 JOptionPane.showMessageDialog(editDialog,
                         "Rumeur mise à jour avec succès!", "Succès", JOptionPane.INFORMATION_MESSAGE);
 
                 editDialog.dispose();
-
-                // ✅ ACTUALISER l'affichage
                 refreshAllTabs();
 
             } catch (Exception ex) {

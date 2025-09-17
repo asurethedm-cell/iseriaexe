@@ -2,10 +2,7 @@ package com.iseria.ui;
 
 import com.iseria.domain.IAudioService;
 
-import com.iseria.domain.IDataProvider;
 import com.iseria.domain.IHexRepository;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -14,10 +11,10 @@ import javax.swing.SwingWorker;
 import javax.swing.SwingUtilities;
 import java.awt.image.BufferedImage;
 import java.util.List;
+import java.util.Objects;
 
 
 public class LoadingWindow extends JWindow {
-    private static final Logger log = LogManager.getLogger(LoadingWindow.class);
     private JLabel statusLabel;
     private final IHexRepository repo;
     private final IAudioService audio;
@@ -67,17 +64,15 @@ public class LoadingWindow extends JWindow {
     public static LoadingWindow splash;
     public static void showSplash(IHexRepository repo, IAudioService audio) {
             try {
-                BufferedImage img = ImageIO.read(LoadingWindow.class.getResource("/RessourceGen/bg_loading.jpg"));
+                BufferedImage img = ImageIO.read(Objects.requireNonNull(LoadingWindow.class.getResource("/RessourceGen/bg_loading.jpg")));
                 splash = new LoadingWindow(img, repo, audio);
                 splash.setVisible(true);
             } catch (Exception e) {
-            e.printStackTrace(); e.getMessage();
             System.out.println();
-            System.out.println("fallback: launch directly if image fails");
+            System.out.println("caught Exception e");
         }
     }
     class ExtendedLoadingWorker extends SwingWorker<Void, String> {
-
 
         @Override
         protected Void doInBackground() throws Exception {

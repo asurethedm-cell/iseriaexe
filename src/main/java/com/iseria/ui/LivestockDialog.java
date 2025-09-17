@@ -4,7 +4,7 @@ import com.iseria.domain.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.util.Map;
+
 
 public class LivestockDialog extends JDialog {
     private SafeHexDetails hex;
@@ -30,13 +30,11 @@ public class LivestockDialog extends JDialog {
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(10, 10, 10, 10);
 
-        // TITRE
         JLabel titleLabel = new JLabel("Élevage - Hexagone: " + hex.getHexKey());
         titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
         gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
         mainPanel.add(titleLabel, gbc);
 
-        // SÉLECTION DU TYPE D'ANIMAL
         gbc.gridwidth = 1; gbc.gridy++;
         JLabel animalLabel = new JLabel("Type d'Animal:");
         animalLabel.setFont(new Font("Arial", Font.BOLD, 12));
@@ -48,7 +46,6 @@ public class LivestockDialog extends JDialog {
         gbc.gridx = 1;
         mainPanel.add(animalTypeCombo, gbc);
 
-        // NOMBRE D'ANIMAUX
         gbc.gridy++; gbc.gridx = 0;
         JLabel countLabel = new JLabel("Nombre d'animaux:");
         mainPanel.add(countLabel, gbc);
@@ -58,7 +55,6 @@ public class LivestockDialog extends JDialog {
         gbc.gridx = 1;
         mainPanel.add(animalCountSpinner, gbc);
 
-        // ALIMENTATION PAR SEMAINE
         gbc.gridy++; gbc.gridx = 0;
         JLabel feedLabel = new JLabel("Nourriture/semaine (SdN):");
         mainPanel.add(feedLabel, gbc);
@@ -68,7 +64,6 @@ public class LivestockDialog extends JDialog {
         gbc.gridx = 1;
         mainPanel.add(feedingSpinner, gbc);
 
-        // DÉTAILS
         gbc.gridy++; gbc.gridx = 0; gbc.gridwidth = 2;
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 1.0; gbc.weighty = 1.0;
@@ -80,7 +75,6 @@ public class LivestockDialog extends JDialog {
         scrollPane.setBorder(BorderFactory.createTitledBorder("Détails de l'Élevage"));
         mainPanel.add(scrollPane, gbc);
 
-        // BOUTONS
         gbc.gridy++; gbc.fill = GridBagConstraints.NONE;
         gbc.weightx = 0; gbc.weighty = 0;
         JPanel buttonPanel = new JPanel(new FlowLayout());
@@ -106,7 +100,6 @@ public class LivestockDialog extends JDialog {
     private void onAnimalTypeChanged(ActionEvent e) {
         selectedAnimalType = (DATABASE.LivestockData) animalTypeCombo.getSelectedItem();
         if (selectedAnimalType != null) {
-            // Ajuster les limites du spinner selon l'animal
             SpinnerNumberModel model = (SpinnerNumberModel) feedingSpinner.getModel();
             model.setMinimum(selectedAnimalType.getBesoinMin());
             model.setMaximum(selectedAnimalType.getBesoinMax());

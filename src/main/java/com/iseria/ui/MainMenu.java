@@ -5,9 +5,7 @@ import com.iseria.domain.DATABASE;
 import com.iseria.service.*;
 import com.iseria.infra.FactionRegistry;
 import com.iseria.service.MarketDataService;
-import com.iseria.ui.MarketAdminPanel;
 
-import javax.sound.sampled.*;
 import javax.swing.*;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -24,8 +22,8 @@ import java.io.*;
 import java.net.URL;
 import java.util.Comparator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 import static com.iseria.ui.LoadingWindow.splash;
 
@@ -60,12 +58,9 @@ public class MainMenu extends JFrame implements ActionListener {
     ImageIcon MuteIconOFF;
     ImageIcon ButtonCadreSign;
     private BufferedImage overlayImg;
-    private static Clip clip;
     private final CardLayout cardLayout;
     private final JPanel cardPanel;
     private final File notesFile;
-    private static boolean isFading = false;
-    public static FloatControl volumeControl;
     public static boolean isFactionMenuOpen = false;
     public        boolean prodIsShowed;
     public        boolean ecoIsShowed;
@@ -73,20 +68,17 @@ public class MainMenu extends JFrame implements ActionListener {
 
     static CardLayout generalCardLayout = new CardLayout();
     static JPanel generalPanel = new JPanel(generalCardLayout);
-    static JScrollPane productionPanel;
     static JLayeredPane factionLayeredPane = new JLayeredPane();
     static JPanel factionContentPanel = new JPanel(new CardLayout());
 
     public static Faction currentUserFaction;
     private final IAudioService audio;
-    private final IHexRepository repo;
-    private UI.EnhancedProductionPanel enhancedProductionPanelInstance;
+    private UI.ProductionPanel enhancedProductionPanelInstance;
 
     public static EconomicDataService economicService;
 
     MainMenu(IAudioService audio, IHexRepository repo) {
         this.audio = audio;
-        this.repo = repo;
 
 //================================================INITIAL=============================================================\\
         ToolTipManager.sharedInstance().setInitialDelay(100);
@@ -105,14 +97,14 @@ public class MainMenu extends JFrame implements ActionListener {
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         this.setResizable(false);
 
-        ImageIcon Icon = new ImageIcon(getClass().getResource("/Icon.png"));
+        ImageIcon Icon = new ImageIcon(Objects.requireNonNull(getClass().getResource("/Icon.png")));
         this.setIconImage(Icon.getImage());
         if (Icon.getImageLoadStatus() == MediaTracker.ERRORED) {
             System.out.println("Erreur lors du chargement de l'icône.");
         }
 
         try {
-            overlayImg = ImageIO.read(MainMenu.class.getClassLoader().getResource("RessourceGen/ButtonMenuG2.png"));
+            overlayImg = ImageIO.read(Objects.requireNonNull(MainMenu.class.getClassLoader().getResource("RessourceGen/ButtonMenuG2.png")));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -121,7 +113,7 @@ public class MainMenu extends JFrame implements ActionListener {
         cardPanel = new JPanel(cardLayout);
         cardPanel.setBounds(0, 0, getWidth(), getHeight());
         cardPanel.setOpaque(false);
-        ButtonCadreSign = resizeIcon(new ImageIcon(getClass().getResource("/RessourceGen/ButtonSign.png")),
+        ButtonCadreSign = resizeIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/RessourceGen/ButtonSign.png"))),
                 250, 150);
 
 
@@ -195,7 +187,7 @@ public class MainMenu extends JFrame implements ActionListener {
 
 
                 MoralDataService moralService = new EnumMoralDataService();
-                UI.MoralPanelResult result = UI.createModernMoralPanel(moralService, currentUserFaction, Login.currentUser);
+                UI.MoralPanelResult result = UI.createModernMoralPanel(moralService, currentUserFaction);
 
                 JPanel miscellaneousPanel = new JPanel(new GridBagLayout());
                 miscellaneousPanel.setPreferredSize(new Dimension(1000, 1200));
@@ -220,7 +212,7 @@ public class MainMenu extends JFrame implements ActionListener {
                 JScrollPane rumorScrollPane = new JScrollPane(rumorDisplayPanel);
                 rumorScrollPane.setPreferredSize(new Dimension(980, 300));
                 UI.styleScrollPane(rumorScrollPane);
-                configureScrollSpeed(rumorScrollPane,20,80);
+                UI.configureScrollSpeed(rumorScrollPane,20,80);
                 rumorScrollPane.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.white, 2),
                 "📜 Rumeurs circulants chez : " + currentUserFaction.getDisplayName(),
@@ -262,7 +254,7 @@ public class MainMenu extends JFrame implements ActionListener {
         JScrollPane economyScrollPane = new JScrollPane(combinedEcoPanel);
         economyScrollPane.setOpaque(false);
         UI.styleScrollPane(economyScrollPane);
-        configureScrollSpeed(economyScrollPane,20,80);
+        UI.configureScrollSpeed(economyScrollPane,20,80);
         economyScrollPane.getViewport().setOpaque(false);
 
 //====================================================================================================================\\
@@ -280,7 +272,7 @@ public class MainMenu extends JFrame implements ActionListener {
         LogisticsPanel logisticsPanel = new LogisticsPanel(logisticsService, repo);
         JScrollPane logisticsScrollPane = new JScrollPane(logisticsPanel);
         UI.styleScrollPane(logisticsScrollPane);
-        configureScrollSpeed(logisticsScrollPane,20,80);
+        UI.configureScrollSpeed(logisticsScrollPane,20,80);
         logisticsScrollPane.setOpaque(false);
         logisticsScrollPane.getViewport().setOpaque(false);
 
@@ -427,9 +419,7 @@ public class MainMenu extends JFrame implements ActionListener {
                         Mute.setVisible(true);
                 });
                 Menu1.addActionListener(e -> {
-                    if(Login.mondeOpen){
-                       /* do nothing if window already open*/}
-                    else{
+                if(!Login.mondeOpen){
                 cardLayout.show(cardPanel, "Menu1");
                 Menu5.setVisible(true);
                 factionMenu1.setVisible(false);
@@ -500,34 +490,25 @@ public class MainMenu extends JFrame implements ActionListener {
 
                 factionMenu1.addActionListener(e -> {
                     audio.playClick();
-                    factionContentPanel.getLayout();
                     factionCardLayout.show(factionContentPanel, "General"); factionMenu1.setVisible(false); factionMenu1_1.setVisible(true);
 
                 });
                 factionMenu1_1.addActionListener(e -> {
                     audio.playClick(); factionMenu1.setVisible(true);
-                    factionContentPanel.getLayout();
                     factionCardLayout.show(factionContentPanel, "Market");
                 });
                 factionMenu1_1A.addActionListener(e -> {
                 audio.playClick(); factionMenu1.setVisible(true);
-                factionContentPanel.getLayout();
                 factionCardLayout.show(factionContentPanel, "Market");
                 openMarketAdminPanel();
                 });
-
-
-
 
                 factionMenu2.addActionListener(e -> audio.playClick());
                 factionMenu3.addActionListener(e -> audio.playClick());
                 factionMenu4.addActionListener(e -> audio.playClick());
 
-
-
-
-                MuteIconON = resizeIcon(new ImageIcon(getClass().getResource("/MuteIconON.png")), 50, 50);
-                MuteIconOFF = resizeIcon(new ImageIcon(getClass().getResource("/MuteIconOFF.png")), 50, 50);
+                MuteIconON = resizeIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/MuteIconON.png"))), 50, 50);
+                MuteIconOFF = resizeIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/MuteIconOFF.png"))), 50, 50);
                 Mute.setFocusable(false);
                 Mute.setIcon(MuteIconOFF);
                 Mute.setSelectedIcon(MuteIconON);
@@ -572,7 +553,6 @@ public class MainMenu extends JFrame implements ActionListener {
                 layeredPane.revalidate();
                 layeredPane.repaint();
 
-                // Resize listener
                 this.addComponentListener(new ComponentAdapter() {
                     @Override
                     public void componentResized(ComponentEvent e) {
@@ -586,7 +566,6 @@ public class MainMenu extends JFrame implements ActionListener {
                 String saveDirPath = documentsPath + File.separator + "Iseria_Divers";
                 String notesFilename = "notes_" + user + ".txt";
                 File saveDir = new File(saveDirPath);
-                if (!saveDir.exists()) saveDir.mkdirs();
                 notesFile = new File(saveDir, notesFilename);
                 loadNotes(myNoteArea);
                 setupAutoSave(myNoteArea);
@@ -648,14 +627,12 @@ public class MainMenu extends JFrame implements ActionListener {
         volumeSliderName.setBounds((int) (frameWidth * 0.05), (int) (frameHeight * 0.83), 100, 25);
 
     }
-    public static Faction getCurrentUserFaction() {
-        return currentUserFaction;
-    }
     public static String getCurrentFactionId() {
         return currentUserFaction != null ? currentUserFaction.getId() : "Free";
     }
     public void actionPerformed(ActionEvent e) {
         if (e.getSource() == Mute) {
+            boolean isFading = false;
             if (!isFading) {
                 if (Mute.isSelected()) {
                     System.out.println("sound off");
@@ -704,38 +681,11 @@ public class MainMenu extends JFrame implements ActionListener {
     public static EconomicDataService getEconomicService() {
         return economicService;
     }
-    public static void refreshAllEconomicData() {
-        if (economicService != null) {
-            economicService.calculateInitialData();
-        }
-    }
 
-    public static String getEconomicSummary() {
-        if (economicService == null) return "Service non initialisé";
-
-        EconomicDataService.EconomicData data = economicService.getEconomicData();
-        StringBuilder summary = new StringBuilder();
-
-        summary.append("=== RÉSUMÉ ÉCONOMIQUE ===\n");
-        summary.append(String.format("Trésorerie: %.2f Po\n", data.tresorerie));
-        summary.append(String.format("Population: %d\n", data.populationTotale));
-        summary.append(String.format("Instabilité: %.1f%%\n", data.instabilite));
-        summary.append(String.format("Agressivité: %.0f\n", data.agressivite));
-
-        summary.append("\n=== PRODUCTION HEBDOMADAIRE ===\n");
-        for (Map.Entry<String, Double> entry : data.productionRessources.entrySet()) {
-            if (entry.getValue() > 0) {
-                summary.append(String.format("%s: %.1f\n", entry.getKey(), entry.getValue()));
-            }
-        }
-
-        return summary.toString();
-    }
     private JPanel createMarketPanel() {
         JPanel marketPanel = new JPanel(new BorderLayout());
         marketPanel.setOpaque(false);
 
-        // Title section
         JPanel titlePanel = new JPanel(new BorderLayout());
         titlePanel.setOpaque(false);
         titlePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
@@ -745,11 +695,9 @@ public class MainMenu extends JFrame implements ActionListener {
         titleLabel.setForeground(Color.WHITE);
         titlePanel.add(titleLabel, BorderLayout.CENTER);
 
-        // Market summary from service
         JLabel summaryLabel = createMarketSummaryLabel();
         titlePanel.add(summaryLabel, BorderLayout.SOUTH);
 
-        // Main content with live data
         JPanel contentPanel = new JPanel(new GridBagLayout());
         contentPanel.setOpaque(false);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
@@ -758,19 +706,16 @@ public class MainMenu extends JFrame implements ActionListener {
         gbc.insets = new Insets(15, 15, 15, 15);
         gbc.fill = GridBagConstraints.BOTH;
 
-        // Trending Resources Section (using service)
         JPanel trendingPanel = createTrendingResourcesSection();
         gbc.gridx = 0; gbc.gridy = 0;
         gbc.weightx = 1.0; gbc.weighty = 0.3;
         contentPanel.add(trendingPanel, gbc);
 
-        // Live Price Grid (using service)
         JPanel priceGridPanel = createLivePriceGrid();
         gbc.gridx = 0; gbc.gridy = 1;
         gbc.weightx = 1.0; gbc.weighty = 0.5;
         contentPanel.add(priceGridPanel, gbc);
 
-        // Market Controls
         JPanel controlPanel = createMarketControlSection();
         gbc.gridx = 0; gbc.gridy = 2;
         gbc.weightx = 1.0; gbc.weighty = 0.2;
@@ -778,8 +723,6 @@ public class MainMenu extends JFrame implements ActionListener {
 
         marketPanel.add(titlePanel, BorderLayout.NORTH);
         marketPanel.add(contentPanel, BorderLayout.CENTER);
-
-        // Start auto-refresh timer
         startMarketRefreshTimer(marketPanel);
 
         return marketPanel;
@@ -788,7 +731,7 @@ public class MainMenu extends JFrame implements ActionListener {
         audio.playClick();
         SwingUtilities.invokeLater(() -> {
             try {
-                MarketAdminPanel adminPanel = new MarketAdminPanel(economicService);
+                MarketAdminPanel adminPanel = new MarketAdminPanel();
                 adminPanel.setVisible(true);
             } catch (Exception e) {
                 JOptionPane.showMessageDialog(this,
@@ -799,13 +742,12 @@ public class MainMenu extends JFrame implements ActionListener {
     }
     private void refreshMarketData() {
         audio.playClick();
-        // Implement market data refresh logic
         MarketDataService marketService = MarketDataService.getInstance();
         marketService.forceRefresh();
         updateMarketDisplay();
     }
     private void updateMarketDisplay() {
-        // Update market summary and resource prices in the UI
+        // TODO Update market summary and resource prices in the UI
         SwingUtilities.invokeLater(() -> {
             // Implementation would update the market panel labels
             // This would be called periodically or on refresh
@@ -837,18 +779,15 @@ public class MainMenu extends JFrame implements ActionListener {
         trendingGrid.setOpaque(false);
         trendingGrid.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // Get trending resources from service
         MarketDataService marketService = MarketDataService.getInstance();
         java.util.List<MarketDataService.MarketResourceData> trending = marketService.getTrendingResources();
 
-        // Display top 5 trending
         for (int i = 0; i < Math.min(5, trending.size()); i++) {
             MarketDataService.MarketResourceData resource = trending.get(i);
             JPanel trendCard = createTrendingResourceCard(resource);
             trendingGrid.add(trendCard);
         }
 
-        // Fill empty slots if less than 5
         while (trendingGrid.getComponentCount() < 5) {
             JPanel emptyCard = createEmptyTrendCard();
             trendingGrid.add(emptyCard);
@@ -863,24 +802,28 @@ public class MainMenu extends JFrame implements ActionListener {
         card.setBackground(new Color(40, 40, 40, 200));
         card.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
 
-        // Resource icon
         JLabel iconLabel = new JLabel(DATABASE.ResourceType.getIconForResource(resource.category), SwingConstants.CENTER);
         iconLabel.setFont(new Font("Arial", Font.PLAIN, 20));
         card.add(iconLabel, BorderLayout.NORTH);
 
-        // Resource name
         JLabel nameLabel = new JLabel(resource.name, SwingConstants.CENTER);
         nameLabel.setFont(new Font("Arial", Font.BOLD, 10));
         nameLabel.setForeground(Color.WHITE);
         card.add(nameLabel, BorderLayout.CENTER);
 
-        // Price change
+        JLabel changeLabel = getJLabel(resource);
+
+        card.add(changeLabel, BorderLayout.SOUTH);
+        return card;
+
+    }
+
+    private static JLabel getJLabel(MarketDataService.MarketResourceData resource) {
         double changePercent = resource.getChangePercent();
         String changeText = String.format("%+.1f%%", changePercent);
         JLabel changeLabel = new JLabel(changeText, SwingConstants.CENTER);
         changeLabel.setFont(new Font("Arial", Font.BOLD, 11));
 
-        // Color based on change
         if (changePercent > 0) {
             changeLabel.setForeground(Color.GREEN);
         } else if (changePercent < 0) {
@@ -888,11 +831,9 @@ public class MainMenu extends JFrame implements ActionListener {
         } else {
             changeLabel.setForeground(Color.YELLOW);
         }
-
-        card.add(changeLabel, BorderLayout.SOUTH);
-        return card;
-
+        return changeLabel;
     }
+
     private JPanel createEmptyTrendCard() {
         JPanel card = new JPanel(new BorderLayout());
         card.setOpaque(true);
@@ -916,41 +857,33 @@ public class MainMenu extends JFrame implements ActionListener {
         panel.setOpaque(true);
         panel.setBackground(new Color(0, 0, 0, 150));
 
-        // Get all market data from service
         MarketDataService marketService = MarketDataService.getInstance();
         Map<String, MarketDataService.MarketResourceData> allMarketData = marketService.getAllMarketData();
 
-        // Create scrollable grid
         JPanel gridPanel = new JPanel();
         int resourceCount = allMarketData.size();
-        int cols = 3; // 4 columns
+        int cols = 3;
         int rows = (int) Math.ceil((double) resourceCount / cols);
         gridPanel.setLayout(new GridLayout(rows, cols, 10, 10));
         gridPanel.setOpaque(false);
         gridPanel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // Sort resources by category for better organization
         java.util.List<MarketDataService.MarketResourceData> sortedResources = allMarketData.values().stream()
-                .sorted((a, b) -> {
-                    int categoryCompare = a.category.compareTo(b.category);
-                    return categoryCompare != 0 ? categoryCompare : a.name.compareTo(b.name);
-                })
-                .collect(java.util.stream.Collectors.toList());
+                .sorted(Comparator.comparing((MarketDataService.MarketResourceData a) -> a.category).thenComparing(a -> a.name))
+                .toList();
 
-        // Create price cards
         for (MarketDataService.MarketResourceData resource : sortedResources) {
             JPanel priceCard = createLivePriceCard(resource);
             gridPanel.add(priceCard);
         }
 
-        // Add scroll pane for many resources
         JScrollPane scrollPane = new JScrollPane(gridPanel);
         scrollPane.setOpaque(false);
         scrollPane.getViewport().setOpaque(false);
         scrollPane.setPreferredSize(new Dimension(0, 300));
         scrollPane.setBorder(null);
         UI.styleScrollPane(scrollPane);
-        configureScrollSpeed(scrollPane, 20, 80);
+        UI.configureScrollSpeed(scrollPane, 20, 80);
         panel.add(scrollPane, BorderLayout.CENTER);
         return panel;
     }
@@ -960,30 +893,34 @@ public class MainMenu extends JFrame implements ActionListener {
         card.setBackground(new Color(50, 50, 50, 200));
         card.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
 
-        // Resource info panel
         JPanel infoPanel = new JPanel(new GridLayout(3, 1, 2, 2));
         infoPanel.setOpaque(false);
 
-        // Icon and name
         JLabel nameLabel = new JLabel(DATABASE.ResourceType.getIconForResource(resource.category) + " " + resource.name, SwingConstants.CENTER);
         nameLabel.setFont(new Font("Arial", Font.BOLD, 11));
         nameLabel.setForeground(Color.WHITE);
         infoPanel.add(nameLabel);
 
-        // Current price
         JLabel priceLabel = new JLabel(String.format("%.1f Po", resource.currentPrice), SwingConstants.CENTER);
         priceLabel.setFont(new Font("Arial", Font.PLAIN, 10));
         priceLabel.setForeground(Color.CYAN);
         infoPanel.add(priceLabel);
 
-        // Change percentage with trend
+        JLabel changeLabel = getLabel(resource);
+
+        infoPanel.add(changeLabel);
+        card.add(infoPanel, BorderLayout.CENTER);
+
+        return card;
+    }
+
+    private JLabel getLabel(MarketDataService.MarketResourceData resource) {
         double changePercent = resource.getChangePercent();
         String trendIcon = getTrendIcon(resource.trend);
         String changeText = String.format("%s %+.1f%%", trendIcon, changePercent);
         JLabel changeLabel = new JLabel(changeText, SwingConstants.CENTER);
         changeLabel.setFont(new Font("Arial", Font.PLAIN, 9));
 
-        // Color coding
         if (changePercent > 5) {
             changeLabel.setForeground(Color.GREEN);
         } else if (changePercent < -5) {
@@ -991,12 +928,9 @@ public class MainMenu extends JFrame implements ActionListener {
         } else {
             changeLabel.setForeground(Color.LIGHT_GRAY);
         }
-
-        infoPanel.add(changeLabel);
-        card.add(infoPanel, BorderLayout.CENTER);
-
-        return card;
+        return changeLabel;
     }
+
     private String getTrendIcon(String trend) {
         return switch (trend) {
             case "UP" -> "📈";
@@ -1031,8 +965,7 @@ public class MainMenu extends JFrame implements ActionListener {
         // Recursively update panels that contain market data
         Component[] components = panel.getComponents();
         for (Component component : components) {
-            if (component instanceof JLabel) {
-                JLabel label = (JLabel) component;
+            if (component instanceof JLabel label) {
                 String text = label.getText();
                 if (text != null && text.contains("Market:")) {
                     // Update market summary
@@ -1056,17 +989,14 @@ public class MainMenu extends JFrame implements ActionListener {
         panel.setOpaque(true);
         panel.setBackground(new Color(0, 0, 0, 150));
 
-        // Admin Panel Button (only for admins)
         if ("Admin".equals(Login.currentUser)) {
             JButton adminBtn = createMarketButton("🏪 Market Admin Panel", new Color(33, 150, 243), e -> openMarketAdminPanel());
             panel.add(adminBtn);
         }
 
-        // Refresh Button (for all users)
         JButton refreshBtn = createMarketButton("🔄 Refresh Market Data", new Color(76, 175, 80), e -> refreshMarketData());
         panel.add(refreshBtn);
 
-        // Market Report Button
         JButton reportBtn = createMarketButton("📊 Market Report", new Color(156, 39, 176), e -> showMarketReport());
         panel.add(reportBtn);
 
@@ -1113,12 +1043,7 @@ public class MainMenu extends JFrame implements ActionListener {
         JOptionPane.showMessageDialog(this, scrollPane,
                 "📊 Live Market Report", JOptionPane.INFORMATION_MESSAGE);
     }
-    private void configureScrollSpeed(JScrollPane scrollPane, int unitIncrement, int blockIncrement) {
-        scrollPane.getVerticalScrollBar().setUnitIncrement(unitIncrement);
-        scrollPane.getHorizontalScrollBar().setUnitIncrement(unitIncrement);
-        scrollPane.getVerticalScrollBar().setBlockIncrement(blockIncrement);
-        scrollPane.getHorizontalScrollBar().setBlockIncrement(blockIncrement);
-    }
+
     private JPanel createAdminRumorAccessPanel() {
         JPanel adminPanel = new JPanel(new BorderLayout());
         adminPanel.setOpaque(false);
@@ -1129,7 +1054,6 @@ public class MainMenu extends JFrame implements ActionListener {
                 new Font("Arial", Font.BOLD, 16),
                 Color.RED));
 
-        // Message d'accueil admin
         JLabel adminWelcome = new JLabel(
                 "<html><center>" +
                         "<h2>🛡️ Mode Administrateur Activé</h2>" +
@@ -1139,11 +1063,9 @@ public class MainMenu extends JFrame implements ActionListener {
         adminWelcome.setForeground(Color.BLACK);
         adminPanel.add(adminWelcome, BorderLayout.CENTER);
 
-        // Panel de boutons admin
         JPanel buttonPanel = new JPanel(new FlowLayout());
         buttonPanel.setOpaque(false);
 
-        // Bouton ouvrir panel de gestion
         JButton openAdminBtn = new JButton("🗂️ Ouvrir Panel de Gestion");
         openAdminBtn.setFont(new Font("Arial", Font.BOLD, 14));
         openAdminBtn.setBackground(new Color(220, 20, 60));
@@ -1151,7 +1073,6 @@ public class MainMenu extends JFrame implements ActionListener {
         openAdminBtn.setPreferredSize(new Dimension(250, 40));
         openAdminBtn.addActionListener(e -> openAdminRumorPanel());
 
-        // Bouton stats rapides
         JButton quickStatsBtn = new JButton("📊 Statistiques");
         quickStatsBtn.setFont(new Font("Arial", Font.BOLD, 14));
         quickStatsBtn.setBackground(new Color(70, 130, 180));
@@ -1174,39 +1095,17 @@ public class MainMenu extends JFrame implements ActionListener {
         AdminRumorManagementPanel adminPanel = new AdminRumorManagementPanel(rumorService);
         adminPanel.setVisible(true);
     }
-
-    // TODO (À ajouter dans le menu ou comme bouton)
-    private void exportEconomicData() {
-        String summary = getEconomicSummary();
-
-        JTextArea textArea = new JTextArea(summary);
-        textArea.setRows(20);
-        textArea.setColumns(50);
-        textArea.setEditable(false);
-        textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
-
-        JScrollPane scrollPane = new JScrollPane(textArea);
-        UI.styleScrollPane(scrollPane);
-        JOptionPane.showMessageDialog(
-                this,
-                scrollPane,
-                "📊 Résumé Économique - " + currentUserFaction.getDisplayName(),
-                JOptionPane.INFORMATION_MESSAGE
-        );
-    }
-
 }
 
 class EmblemPrinting extends JPanel {
 
     public BufferedImage FactionEmblem;
 
-    // Constructor to load the image
     public EmblemPrinting(String imagePath) {
 
         try {
             URL imageUrl = getClass().getResource(imagePath);
-            System.out.println("Emblem Image URL: " + imageUrl); // Check if the URL is valid
+            System.out.println("Emblem Image URL: " + imageUrl);
             if (imageUrl != null) {
                 FactionEmblem = ImageIO.read(imageUrl);
             } else {

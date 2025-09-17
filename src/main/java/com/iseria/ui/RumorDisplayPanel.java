@@ -13,8 +13,6 @@ public class RumorDisplayPanel extends JPanel {
 
     public RumorDisplayPanel() {
         setLayout(new BorderLayout());
-
-        // Container pour les rumeurs avec scroll
         rumorContainer = new JPanel();
         rumorContainer.setLayout(new BoxLayout(rumorContainer, BoxLayout.Y_AXIS));
         rumorContainer.setBackground(new Color(50, 50, 50, 250));
@@ -37,10 +35,7 @@ public class RumorDisplayPanel extends JPanel {
             rumorContainer.add(rumorPanel);
             rumorContainer.add(Box.createVerticalStrut(10)); // Espacement
         }
-
-        // Ajouter un espace flexible à la fin
         rumorContainer.add(Box.createVerticalGlue());
-
         rumorContainer.revalidate();
         rumorContainer.repaint();
     }
@@ -53,8 +48,6 @@ public class RumorDisplayPanel extends JPanel {
                 BorderFactory.createLineBorder(Color.GRAY, 1),
                 BorderFactory.createEmptyBorder(10, 10, 10, 10)
         ));
-
-        // Header : Type + Nom + Boutons Admin
         JPanel headerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         headerPanel.setOpaque(false);
         JLabel typeLabel = new JLabel("[ " + rumor.getType() + " ]");
@@ -69,14 +62,12 @@ public class RumorDisplayPanel extends JPanel {
         headerPanel.add(typeLabel);
         headerPanel.add(nameLabel);
 
-        // Content
         JTextArea contentArea = new JTextArea(rumor.getContent());
         contentArea.setWrapStyleWord(true);
         contentArea.setLineWrap(true);
         contentArea.setEditable(false);
         contentArea.setOpaque(false);
 
-        // Footer : Date + Faction
         JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         footerPanel.setBackground(new Color(50, 50, 50, 150));
         footerPanel.setOpaque(false);
@@ -85,7 +76,7 @@ public class RumorDisplayPanel extends JPanel {
         dateLabel.setFont(new Font("Arial", Font.ITALIC, 10));
         dateLabel.setForeground(Color.GRAY);
 
-        JLabel factionLabel = new JLabel("🏛️ " + rumor.getAuthorFactionId());
+        JLabel factionLabel = new JLabel(" " + rumor.getAuthorFactionId());
         factionLabel.setOpaque(false);
         factionLabel.setFont(new Font("Arial", Font.ITALIC, 10));
         factionLabel.setForeground(Color.BLUE);
@@ -101,10 +92,7 @@ public class RumorDisplayPanel extends JPanel {
         return rumorPanel;
     }
 
-    // ✅ NOUVELLE MÉTHODE : Interface d'édition
     private void showEditRumorDialog(Rumor rumor) {
-        // Cette méthode sera définie dans AdminRumorManagementPanel
-        // ou accessible via une interface callback
         if (editCallback != null) {
             editCallback.editRumor(rumor);
         }

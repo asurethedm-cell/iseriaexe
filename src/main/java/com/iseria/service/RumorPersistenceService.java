@@ -13,9 +13,9 @@ public class RumorPersistenceService {
         try (ObjectOutputStream oos = new ObjectOutputStream(
                 new FileOutputStream(RUMORS_FILE))) {
             oos.writeObject(rumors);
-            System.out.println("✅ Sauvegarde réussie: " + rumors.size() + " rumeurs");
+            System.out.println("Sauvegarde réussie: " + rumors.size() + " rumeurs");
         } catch (IOException e) {
-            System.err.println("❌ Erreur sauvegarde: " + e.getMessage());
+            System.err.println("Erreur sauvegarde: " + e.getMessage());
             throw new RuntimeException("Échec sauvegarde des rumeurs", e);
         }
     }
@@ -25,13 +25,13 @@ public class RumorPersistenceService {
         try (ObjectInputStream ois = new ObjectInputStream(
                 new FileInputStream(RUMORS_FILE))) {
             List<Rumor> loaded = (List<Rumor>) ois.readObject();
-            System.out.println("✅ Chargement réussi: " + loaded.size() + " rumeurs");
+            System.out.println("Chargement réussi: " + loaded.size() + " rumeurs");
             return loaded;
         } catch (FileNotFoundException e) {
-            System.out.println("ℹ️ Aucun fichier de sauvegarde trouvé");
-            return new ArrayList<>(); // ✨ Retourner liste vide au lieu d'exception
+            System.out.println("Aucun fichier de sauvegarde trouvé");
+            return new ArrayList<>();
         } catch (IOException | ClassNotFoundException e) {
-            System.err.println("❌ Erreur chargement: " + e.getMessage());
+            System.err.println("Erreur chargement: " + e.getMessage());
             throw new RuntimeException("Échec chargement des rumeurs", e);
         }
     }

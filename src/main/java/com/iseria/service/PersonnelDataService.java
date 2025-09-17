@@ -1,9 +1,8 @@
 package com.iseria.service;
 
 import com.iseria.domain.*;
-import com.iseria.ui.PersonnelRecruitmentPanel;
-
-import javax.swing.*;
+import com.iseria.ui.Login;
+import com.iseria.ui.MainMenu;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.io.*;
@@ -11,6 +10,30 @@ import java.util.stream.Collectors;
 
 public class PersonnelDataService {
 
+    // **STRUCTURES DE DONNÉES INTÉGRÉES**
+    private static class PersonnelSaveData implements Serializable {
+        @Serial
+        private static final long serialVersionUID = 2L;
+        public Map<String, List<SavedPersonnel>> factionPersonnel = new HashMap<>();
+
+        private static class SavedPersonnel implements Serializable {
+            @Serial
+            private static final long serialVersionUID = 2L;
+            public String personnelId;
+            public String workerTypeName;
+            public String name;
+            public String assignedBuilding;
+            public String assignedHex;
+            public double currentSalary;
+            public double foodConsumption;
+            public boolean isAssigned;
+            public long hireDate;
+
+            public SavedPersonnel() {}
+        }
+    }
+
+    // **CLASSE HIREDPERSONNEL (RUNTIME)**
     public static class HiredPersonnel {
         public final String personnelId;
         public final DATABASE.Workers workerType;
@@ -20,7 +43,7 @@ public class PersonnelDataService {
         public final double currentSalary;
         public final double foodConsumption;
         public final boolean isAssigned;
-        public final long hireDate; // **NOUVEAU**
+        public final long hireDate;
 
         public HiredPersonnel(String personnelId, DATABASE.Workers workerType, String name,
                               String assignedBuilding, String assignedHex, double currentSalary,
@@ -37,34 +60,27 @@ public class PersonnelDataService {
         }
     }
 
-    private final Map<String, List<HiredPersonnel>> factionPersonnel = new HashMap<>();
-    private final List<PersonnelObserver> observers = new CopyOnWriteArrayList<>();
-    private final String saveFilePath;
-    private EconomicDataService economicService;
-    private PersonnelDataService PersonnelsaveService;
-
     public interface PersonnelObserver {
         void onPersonnelHired(HiredPersonnel personnel);
         void onPersonnelFired(String personnelId);
         void onPersonnelAssigned(String personnelId, String hexKey, String buildingType);
     }
-    public void setEconomicDataService(EconomicDataService economicService) {
-        this.economicService = economicService;
-    }
+
+    private final String saveDirectory;
+    private final Map<String, List<HiredPersonnel>> factionPersonnel = new HashMap<>();
+    private final List<PersonnelObserver> observers = new CopyOnWriteArrayList<>();
+    private EconomicDataService economicService;
+
     public PersonnelDataService(String saveDirectory) {
-        this.saveFilePath = saveDirectory + "/personnel_data.json";
+        this.saveDirectory = saveDirectory;
         loadPersonnelData();
     }
 
-    // **MÉTHODES DE RECRUTEMENT**
-    public List<DATABASE.Workers> getAvailableWorkersForRecruitment(String factionId) {
-        return Arrays.stream(DATABASE.Workers.values())
-                .filter(worker -> !worker.isFactionSpecific() ||
-                        worker.getWorkerFactionId().equals(factionId))
-                .collect(Collectors.toList());
+    public void setEconomicDataService(EconomicDataService economicService) {
+        this.economicService = economicService;
     }
 
-    public boolean hirePersonnel(String factionId, DATABASE.Workers workerType, int quantity) {
+    public void hirePersonnel(String factionId, DATABASE.Workers workerType, int quantity) {
         List<HiredPersonnel> personnelList = factionPersonnel.computeIfAbsent(factionId, k -> new ArrayList<>());
 
         double totalCost = workerType.getCurrentSalary() * quantity;
@@ -72,20 +88,19 @@ public class PersonnelDataService {
         if (economicService != null) {
             EconomicDataService.EconomicData economicData = economicService.getEconomicData();
             if (economicData.tresorerie < totalCost) {
-                PersonnelRecruitmentPanel.noFunds = true;
-                return false;
+                System.out.println("Budget insuffisant pour recruter " + quantity + " " + workerType.getJobName());
+                return;
             }
             economicData.tresorerie -= totalCost;
         }
 
-        // Créer le personnel
         for (int i = 0; i < quantity; i++) {
             String personnelId = UUID.randomUUID().toString();
             String generatedName = generateWorkerName(workerType);
 
             HiredPersonnel newPersonnel = new HiredPersonnel(
                     personnelId, workerType, generatedName,
-                    null, null, // Non assigné au début
+                    null, null,
                     workerType.getCurrentSalary(),
                     workerType.getCurrentFoodConsumption(),
                     false,
@@ -97,45 +112,22 @@ public class PersonnelDataService {
         }
 
         if (economicService != null) {
-            economicService.getEconomicData().populationTotale += quantity;
-            double additionalFoodConsumption = workerType.getCurrentFoodConsumption() * quantity;
-            economicService.getEconomicData().consommationNourriture += additionalFoodConsumption;
-            String category = workerType.getCategory();
-            double currentCategorySalary = economicService.getEconomicData().salaires.getOrDefault(category, 0.0);
-            economicService.getEconomicData().salaires.put(category, currentCategorySalary + totalCost);
-            String jobName = workerType.getJobName();
-            int currentCount = economicService.getEconomicData().jobCounts.getOrDefault(jobName, 0);
-            economicService.getEconomicData().jobCounts.put(jobName, currentCount + quantity);
-            economicService.getEconomicData().calculateFaim();
-            economicService.getEconomicData().depenses = economicService.getEconomicData().salaires.values()
-                    .stream().mapToDouble(Double::doubleValue).sum();
+            updateEconomicData(workerType, quantity, totalCost);
         }
 
         savePersonnelData();
-        return true;
     }
 
     public boolean assignPersonnelToBuilding(String personnelId, String hexKey,
                                              String buildingType, DATABASE.JobBuilding building) {
         HiredPersonnel personnel = findPersonnelById(personnelId);
-        if (personnel == null || personnel.isAssigned) {
-            return false;
-        }
+        if (personnel == null || personnel.isAssigned) return false;
 
-        // Vérifier compatibilité
-        if (!canJobWorkInBuilding(personnel.workerType.getJobName(), building)) {
-            return false;
-        }
+        if (!canJobWorkInBuilding(personnel.workerType.getJobName(), building)) return false;
+        if (getAssignedCountForBuilding(hexKey, buildingType) >= building.getMaxWorker()) return false;
 
-        // Vérifier capacité maximale
-        if (getAssignedCountForBuilding(hexKey, buildingType) >= building.getMaxWorker()) {
-            return false;
-        }
-
-        // **EFFECTUER L'ASSIGNATION**
         updatePersonnelAssignment(personnelId, hexKey, buildingType, true);
 
-        // **INTÉGRATION ÉCONOMIQUE**
         if (economicService != null) {
             economicService.updateWorkerCount(hexKey, buildingType,
                     getAssignedCountForBuilding(hexKey, buildingType));
@@ -145,84 +137,22 @@ public class PersonnelDataService {
         savePersonnelData();
         return true;
     }
-    public boolean reassignPersonnel(String personnelId, String newHexKey, String newBuildingType,
-                                     DATABASE.JobBuilding newBuilding) {
+
+    public void unassignPersonnel(String personnelId) {
         HiredPersonnel personnel = findPersonnelById(personnelId);
-        if (personnel == null || !personnel.isAssigned) {
-            return false;
-        }
-
-        // Désassigner de l'ancienne position
-        String oldHex = personnel.assignedHex;
-        String oldBuilding = personnel.assignedBuilding;
-
-        unassignPersonnel(personnelId);
-
-        // Assigner à la nouvelle position
-        boolean success = assignPersonnelToBuilding(personnelId, newHexKey, newBuildingType, newBuilding);
-
-        if (success) {
-            System.out.println(String.format("Personnel %s reassigné de %s:%s vers %s:%s",
-                    personnel.name, oldHex, oldBuilding, newHexKey, newBuildingType));
-        } else {
-            // Rollback - reassigner à l'ancienne position
-            // (implementation spécifique selon vos besoins)
-        }
-
-        return success;
-    }
-    public boolean unassignPersonnel(String personnelId) {
-        HiredPersonnel personnel = findPersonnelById(personnelId);
-        if (personnel == null || !personnel.isAssigned) {
-            return false;
-        }
+        if (personnel == null || !personnel.isAssigned) return;
 
         String oldHex = personnel.assignedHex;
         String oldBuildingType = personnel.assignedBuilding;
 
-        // Effectuer la désassignation
         updatePersonnelAssignment(personnelId, null, null, false);
 
-        // **INTÉGRATION ÉCONOMIQUE**
         if (economicService != null && oldHex != null && oldBuildingType != null) {
             economicService.updateWorkerCount(oldHex, oldBuildingType,
                     getAssignedCountForBuilding(oldHex, oldBuildingType));
         }
 
         savePersonnelData();
-        return true;
-    }
-    private boolean canJobWorkInBuilding(String jobName, DATABASE.JobBuilding building) {
-        // Logique de compatibilité métier-bâtiment
-        if (building instanceof DATABASE.MainBuilding) {
-            return Arrays.asList("Fermier libre", "Bûcheron", "Compagnie de Mineur").contains(jobName);
-        } else if (building instanceof DATABASE.AuxBuilding) {
-            return Arrays.asList("Artisan", "Meunier", "Cuisinier").contains(jobName);
-        } else if (building instanceof DATABASE.FortBuilding) {
-            return Arrays.asList("Garde", "Archer").contains(jobName);
-        }
-        return false;
-    }
-
-    private void updatePersonnelAssignment(String personnelId, String hexKey,
-                                           String buildingType, boolean assigned) {
-        // Trouver et modifier le personnel (nécessite refactorisation pour rendre mutable)
-        for (List<HiredPersonnel> personnelList : factionPersonnel.values()) {
-            for (int i = 0; i < personnelList.size(); i++) {
-                HiredPersonnel p = personnelList.get(i);
-                if (p.personnelId.equals(personnelId)) {
-                    // Créer nouvelle instance avec assignation mise à jour
-                    HiredPersonnel updated = new HiredPersonnel(
-                            p.personnelId, p.workerType, p.name,
-                            assigned ? buildingType : null,
-                            assigned ? hexKey : null,
-                            p.currentSalary, p.foodConsumption, assigned, p.hireDate
-                    );
-                    personnelList.set(i, updated);
-                    return;
-                }
-            }
-        }
     }
 
     public boolean firePersonnel(String personnelId) {
@@ -234,7 +164,10 @@ public class PersonnelDataService {
         savePersonnelData();
         return true;
     }
-    // **MÉTHODES DE REQUÊTE**
+
+    public List<DATABASE.Workers> getAvailableWorkersForRecruitment(String factionId) {
+        return Arrays.stream(DATABASE.Workers.values()).collect(Collectors.toList());
+    }
 
     public List<HiredPersonnel> getFactionPersonnel(String factionId) {
         return new ArrayList<>(factionPersonnel.getOrDefault(factionId, Collections.emptyList()));
@@ -261,16 +194,151 @@ public class PersonnelDataService {
                 .count();
     }
 
-    // **MÉTHODES PRIVÉES**
-    private String generateWorkerName(DATABASE.Workers workerType) {
-        String[] firstNames = {"Jean", "Marie", "Pierre", "Anne", "Louis", "Élise", "Henri", "Claire"};
-        String[] lastNames = {"Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois"};
+    private void savePersonnelData() {
+        try {
+            String user = Login.currentUser;
+            String factionId = MainMenu.getCurrentFactionId();
+            String fileName = "personnel_" + factionId + ".dat";
+            String tempFileName = fileName + ".tmp";
 
-        Random random = new Random();
-        String firstName = firstNames[random.nextInt(firstNames.length)];
-        String lastName = lastNames[random.nextInt(lastNames.length)];
+            PersonnelSaveData saveData = new PersonnelSaveData();
 
-        return firstName + " " + lastName;
+            for (var entry : factionPersonnel.entrySet()) {
+                List<PersonnelSaveData.SavedPersonnel> savedList = new ArrayList<>();
+                for (HiredPersonnel p : entry.getValue()) {
+                    PersonnelSaveData.SavedPersonnel saved = new PersonnelSaveData.SavedPersonnel();
+                    saved.personnelId = p.personnelId;
+                    saved.workerTypeName = p.workerType.getJobName();
+                    saved.name = p.name;
+                    saved.assignedBuilding = p.assignedBuilding;
+                    saved.assignedHex = p.assignedHex;
+                    saved.currentSalary = p.currentSalary;
+                    saved.foodConsumption = p.foodConsumption;
+                    saved.isAssigned = p.isAssigned;
+                    saved.hireDate = p.hireDate;
+                    savedList.add(saved);
+                }
+                saveData.factionPersonnel.put(entry.getKey(), savedList);
+            }
+
+
+            try (FileOutputStream fos = new FileOutputStream(fileName);
+                 ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+                oos.writeObject(saveData);
+                oos.flush();
+                fos.getChannel().force(true);
+                System.out.println("Personnel data saved: " + fileName);
+            }
+        } catch (Exception e) {
+            System.err.println("Erreur sauvegarde personnel: " + e.getMessage());
+        }
+    }
+
+    private void loadPersonnelData() {
+        try {
+            String user = Login.currentUser;
+            String factionId = MainMenu.getCurrentFactionId();
+            String fileName = "personnel_" + factionId + ".dat";
+            File file = new File(fileName);
+
+            if (!file.exists() || file.length() == 0) {
+                PersonnelSaveData empty = new PersonnelSaveData();
+                savePersonnelDataDirect(fileName, empty);
+                System.out.println("PersonnelDataService: fichier créé: " + fileName);
+                return;
+            }
+
+            try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(fileName))) {
+                PersonnelSaveData saveData = (PersonnelSaveData) ois.readObject();
+
+                for (var entry : saveData.factionPersonnel.entrySet()) {
+                    List<HiredPersonnel> personnelList = new ArrayList<>();
+                    for (PersonnelSaveData.SavedPersonnel saved : entry.getValue()) {
+                        DATABASE.Workers worker = DATABASE.Workers.getByName(saved.workerTypeName);
+                        if (worker != null) {
+                            HiredPersonnel personnel = new HiredPersonnel(
+                                    saved.personnelId, worker, saved.name,
+                                    saved.assignedBuilding, saved.assignedHex,
+                                    saved.currentSalary, saved.foodConsumption,
+                                    saved.isAssigned, saved.hireDate
+                            );
+                            personnelList.add(personnel);
+                        }
+                    }
+                    factionPersonnel.put(entry.getKey(), personnelList);
+                }
+
+                System.out.println("PersonnelDataService: données chargées depuis " + fileName);
+
+            } catch (Exception e) {
+                System.err.println("Fichier corrompu, suppression: " + fileName);
+                file.delete();
+                factionPersonnel.clear();
+            }
+
+        } catch (Exception e) {
+            System.err.println("Erreur chargement personnel: " + e.getMessage());
+            factionPersonnel.clear();
+        }
+    }
+
+    private void savePersonnelDataDirect(String fileName, PersonnelSaveData data) {
+        try (FileOutputStream fos = new FileOutputStream(fileName);
+             ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+            oos.writeObject(data);
+            oos.flush();
+            fos.getChannel().force(true); // force l’écriture sur disque
+            System.out.println("Personnel data saved: " + fileName);
+        } catch (IOException e) {
+            System.err.println("Erreur sauvegarde personnel: " + e.getMessage());
+        }}
+
+    // **MÉTHODES HELPER**
+    private void updateEconomicData(DATABASE.Workers workerType, int quantity, double totalCost) {
+        EconomicDataService.EconomicData economicData = economicService.getEconomicData();
+
+        economicData.populationTotale += quantity;
+        economicData.consommationNourriture += workerType.getCurrentFoodConsumption() * quantity;
+
+        String category = workerType.getCategory();
+        double currentCategorySalary = economicData.salaires.getOrDefault(category, 0.0);
+        economicData.salaires.put(category, currentCategorySalary + totalCost);
+
+        String jobName = workerType.getJobName();
+        int currentCount = economicData.jobCounts.getOrDefault(jobName, 0);
+        economicData.jobCounts.put(jobName, currentCount + quantity);
+
+        economicData.calculateFaim();
+        economicData.depenses = economicData.salaires.values().stream().mapToDouble(Double::doubleValue).sum();
+    }
+
+    private boolean canJobWorkInBuilding(String jobName, DATABASE.JobBuilding building) {
+        if (building instanceof DATABASE.MainBuilding) {
+            return Arrays.asList("Fermier libre", "Bûcheron", "Compagnie de Mineur").contains(jobName);
+        } else if (building instanceof DATABASE.AuxBuilding) {
+            return Arrays.asList("Artisan", "Meunier", "Cuisinier").contains(jobName);
+        } else if (building instanceof DATABASE.FortBuilding) {
+            return Arrays.asList("Garde", "Archer").contains(jobName);
+        }
+        return false;
+    }
+
+    private void updatePersonnelAssignment(String personnelId, String hexKey, String buildingType, boolean assigned) {
+        for (List<HiredPersonnel> personnelList : factionPersonnel.values()) {
+            for (int i = 0; i < personnelList.size(); i++) {
+                HiredPersonnel p = personnelList.get(i);
+                if (p.personnelId.equals(personnelId)) {
+                    HiredPersonnel updated = new HiredPersonnel(
+                            p.personnelId, p.workerType, p.name,
+                            assigned ? buildingType : null,
+                            assigned ? hexKey : null,
+                            p.currentSalary, p.foodConsumption, assigned, p.hireDate
+                    );
+                    personnelList.set(i, updated);
+                    return;
+                }
+            }
+        }
     }
 
     private HiredPersonnel findPersonnelById(String personnelId) {
@@ -281,25 +349,15 @@ public class PersonnelDataService {
                 .orElse(null);
     }
 
-    // **SAUVEGARDE ET CHARGEMENT**
-    private void savePersonnelData() {
-        try (FileWriter writer = new FileWriter(saveFilePath)) {
-            // Implémentation JSON simple ou utilisation de Jackson/Gson
-            // Sauvegarder factionPersonnel dans le fichier
-        } catch (IOException e) {
-            System.err.println("Erreur lors de la sauvegarde du personnel: " + e.getMessage());
-        }
-    }
+    private String generateWorkerName(DATABASE.Workers workerType) {
+        String[] firstNames = {"Jean", "Marie", "Pierre", "Anne", "Louis", "Élise", "Henri", "Claire"};
+        String[] lastNames = {"Martin", "Bernard", "Thomas", "Petit", "Robert", "Richard", "Durand", "Dubois"};
 
-    private void loadPersonnelData() {
-        File file = new File(saveFilePath);
-        if (!file.exists()) return;
+        Random random = new Random();
+        String firstName = firstNames[random.nextInt(firstNames.length)];
+        String lastName = lastNames[random.nextInt(lastNames.length)];
 
-        try (FileReader reader = new FileReader(file)) {
-            // Charger les données depuis le fichier JSON
-        } catch (IOException e) {
-            System.err.println("Erreur lors du chargement du personnel: " + e.getMessage());
-        }
+        return firstName + " " + lastName;
     }
 
     // **OBSERVATEURS**

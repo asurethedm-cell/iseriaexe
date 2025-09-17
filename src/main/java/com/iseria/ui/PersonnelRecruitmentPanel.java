@@ -167,7 +167,6 @@ public class PersonnelRecruitmentPanel extends JPanel implements PersonnelDataSe
         }
     }
 
-    // **CLASSES INTERNES POUR LES BOUTONS DANS LES TABLES**
     private static class ButtonRenderer extends JButton implements TableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,
@@ -221,7 +220,6 @@ public class PersonnelRecruitmentPanel extends JPanel implements PersonnelDataSe
                         int quantity = Integer.parseInt(quantityStr);
                         if (quantity > 0) {
                             personnelService.hirePersonnel(currentFaction, selectedWorker, quantity);
-
                             if(noFunds){
                                 JOptionPane.showMessageDialog(PersonnelRecruitmentPanel.this,
                                 "Budget MENSUEL INSUFFISANT pour recruter " + quantity + " " + selectedWorker.getJobName(),

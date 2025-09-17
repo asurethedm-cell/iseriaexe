@@ -973,7 +973,18 @@ public class DATABASE {
         public double getBaseFoodConsumption() { return bFC; }
         public String getCategory() { return category; }
         public String getJobName() { return jobName; }
-        public Set<JobBuilding> getWorkBuildings() { return workBuildings; }
+        public static Workers getByName(String name) {
+            if (name == null) return null;
+            for (Workers w : values()) {
+                if (w.jobName.equalsIgnoreCase(name)) {
+                    return w;
+                }
+            }
+            return null;
+    }
+
+
+    public Set<JobBuilding> getWorkBuildings() { return workBuildings; }
         public boolean isFactionSpecific() { return isFactionSpecific; }
         public String getWorkerFactionId() { return factionId; }
     }

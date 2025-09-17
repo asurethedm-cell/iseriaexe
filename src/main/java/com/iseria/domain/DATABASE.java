@@ -233,8 +233,8 @@ public class DATABASE {
             MAIN_10_2("Main20", "Entrepôt Tier 2",0,100,0,100,0,0,0,2,"Permet stocker et d’accéder aux Ressources."),
 
             MAIN_11_0("Main21","Ferme de Légume",10,0,0,0,0,0,0,0,"Permet de récolter de la nourriture sous forme de Légumes"),
-            MAIN_11_1("Main22", "Ferme de Légume Tier 1", 20,45,0,5,10,0,0,1,"Permet de récolter de la nourriture sous forme de Légumes"),
-            MAIN_11_2("Main23", "Ferme de Légume Tier 2",30,10,0,100,50,25,0,2,"Permet de récolter de la nourriture sous forme de Légumes"),
+            MAIN_11_1("Main22", "Ferme de Légume Tier 1", 100,45,0,5,10,0,0,1,"Permet de récolter de la nourriture sous forme de Légumes"),
+            MAIN_11_2("Main23", "Ferme de Légume Tier 2",500,10,0,100,50,25,0,2,"Permet de récolter de la nourriture sous forme de Légumes"),
 
             MAIN_12_0("Main24","Mine",10,0,0,0,0,0,0,0,"Permet de récolter du Minerais ou des Pierres Précieuse"),
             MAIN_12_1("Main25","Mine Tier 1", 10,45,5,0,10,0,0,1,"Permet de récolter du Minerais ou des Pierres Précieuse"),
@@ -873,7 +873,7 @@ public class DATABASE {
         MESSAGER("Diplomatie","Messager",3,1,Set.of(MainBuilding.MAIN_25_0)),
 
 
-        APPRENTIS("Etude",  "Apprentis",1.5,1,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
+        APPRENTIS("Etude",  "Apprentis",1.5,1, Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
         COPISTES("Etude",   "Professeur",5,1,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
         MAGE("Etude", "Mage", 0,2,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),
         PRIEST("Etude", "Prêtre", 0,2,Set.of(MainBuilding.MAIN_1_0, MainBuilding.MAIN_25_0)),

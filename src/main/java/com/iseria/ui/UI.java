@@ -31,7 +31,7 @@ import static com.iseria.ui.UIHelpers.*;
 public class UI {
 
     private static MoralSaveService moralSaveService = new MoralSaveService();
-    private static PersonnelDataService personnelService;
+
 
     public static JPanel createGeneralInfoPanel(JTextArea myNoteArea) {
         JPanel gIP = new JPanel(new GridBagLayout());
@@ -1152,6 +1152,7 @@ public class UI {
     public static class ProductionPanel extends JScrollPane
             implements EconomicDataService.EconomicDataObserver {
         private JPanel contentPanel;
+        private static PersonnelDataService personnelService;
         private Map<String, SafeHexDetails> hexGrid;
         private String factionName;
         private IHexRepository repository;
@@ -1160,13 +1161,13 @@ public class UI {
         private Map<String, JPanel> hexPanels = new HashMap<>();
         private boolean showHexPreview = true;
         public ProductionPanel(Map<String, SafeHexDetails> hexGrid, String factionName,
-                               IHexRepository repo, EconomicDataService economicService) {
+                               IHexRepository repo, EconomicDataService economicService, PersonnelDataService personnelService) {
             super();
             this.hexGrid = hexGrid;
             this.factionName = factionName;
             this.repository = repo;
             this.economicService = economicService;
-
+            this.personnelService = personnelService;
             economicService.addObserver(this);
             workDetailsPopup = new WorkDetailsPopup();
 
@@ -1216,7 +1217,7 @@ public class UI {
 
                 if (factionName.equals(hex.getFactionClaim())) {
 
-                    JPanel hexPanel = createEnhancedHexPanel(entry.getKey(), hex, this.repository);
+                    JPanel hexPanel = createEnhancedHexPanel(entry.getKey(), hex, this.repository, personnelService);
                     hexPanels.put(entry.getKey(), hexPanel);
                     contentPanel.add(hexPanel);
                     contentPanel.add(Box.createVerticalStrut(5));
@@ -1241,7 +1242,7 @@ public class UI {
 
             return panel;
         }
-        private JPanel createEnhancedHexPanel(String hexKey, SafeHexDetails hex, IHexRepository repo) {
+        private JPanel createEnhancedHexPanel(String hexKey, SafeHexDetails hex, IHexRepository repo, PersonnelDataService personnelService) {
             JPanel panel = new JPanel(new GridBagLayout());
             panel.setBorder(BorderFactory.createTitledBorder(hexKey));
             panel.setOpaque(false);
@@ -1264,7 +1265,7 @@ public class UI {
             for (int i = 0; i < buildingTypes.length; i++) {
                 gbc.gridx = i;
                 if (!showHexPreview) gbc.gridy = 0;
-                JPanel buildingPanel = createBuildingProductionPanel(hexKey, hex, buildingTypes[i], buildingLabels[i]);
+                JPanel buildingPanel = createBuildingProductionPanel(hexKey, hex, buildingTypes[i], buildingLabels[i], personnelService);
                 panel.add(buildingPanel, gbc);
             }
 
@@ -1300,7 +1301,7 @@ public class UI {
             return preview;
         }
         private JPanel createBuildingProductionPanel(String hexKey, SafeHexDetails hex,
-                                                     String buildingType, String label) {
+                                                     String buildingType, String label, PersonnelDataService personnelService) {
             JPanel panel = new JPanel(new GridBagLayout());
             panel.setBorder(BorderFactory.createTitledBorder(label));
             panel.setBackground(new Color(211, 211, 211, 128));
@@ -1354,7 +1355,7 @@ public class UI {
 
             gbc.gridy = 3;
             JButton configButton = new JButton("Config");
-            configButton.addActionListener(e -> openProductionDialog(hexKey, hex, buildingType, label));
+            configButton.addActionListener(e -> openProductionDialog(hexKey, hex, buildingType, label, personnelService));
             panel.add(configButton, gbc);
 
             gbc.gridy = 3; gbc.gridx++;
@@ -1421,7 +1422,7 @@ public class UI {
 
             return details.toString();
         }
-        private void openProductionDialog(String hexKey, SafeHexDetails hex, String buildingType, String buildingLabel) {
+        private void openProductionDialog(String hexKey, SafeHexDetails hex, String buildingType, String buildingLabel, PersonnelDataService personnelService) {
             DATABASE.JobBuilding building = UIHelpers.getBuildingFromHex(hex, buildingType);
 
             if (building == null || building.getBuildName().contains("Free Slot")) {

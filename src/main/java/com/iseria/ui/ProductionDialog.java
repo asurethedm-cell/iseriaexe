@@ -16,6 +16,7 @@ import java.util.stream.Collectors;
 
 public class ProductionDialog extends JDialog {
     private final PersonnelDataService personnelService;
+    private final List<PersonnelDataService.HiredPersonnel> availableWorkers;
     private String hexKey;
     private String buildingType;
     private String buildingName;
@@ -29,6 +30,10 @@ public class ProductionDialog extends JDialog {
     private int selectedWorkerCount = 0;
     private DATABASE.JobBuilding building;
     private SafeHexDetails hex;
+    private int maxWorkersAllowed;
+    private JTable workersTable;
+    private DefaultTableModel workersTableModel;
+
 
     private Map<String, Double> currentTurnSalaries = new HashMap<>();
     private Map<DATABASE.ResourceType, Double> resourceModifiers = new HashMap<>();
@@ -47,16 +52,19 @@ public class ProductionDialog extends JDialog {
         this.economicService = economicService;
         this.personnelService = personnelService;
 
+        this.maxWorkersAllowed = building.getMaxWorker();
+        this.availableWorkers = getAvailableWorkersForBuilding();
+        initializeDialog();
         initializeIntegratedData();
 
-        initializeDialog();
+
     }
 
     private void initializeDialog() {  setSize(1200, 800);
 
         JTabbedPane tabbedPane = new JTabbedPane();
 
-        tabbedPane.addTab("Production", createResourceInfoPanel());
+        tabbedPane.addTab("Production", prodTab());
 
         if (personnelService != null) {
             tabbedPane.addTab("Personnel", createPersonnelAssignmentPanel());
@@ -86,7 +94,7 @@ public class ProductionDialog extends JDialog {
             tableModel.addRow(new Object[]{
                     personnel.name,
                     personnel.workerType.getJobName(),
-                    String.format("%.1f Po", personnel.currentSalary),
+                    String.format("%.2f Po", personnel.currentSalary),
                     "85%", // TODO: Calcul performance réelle
                     "Gérer"
             });
@@ -111,6 +119,7 @@ public class ProductionDialog extends JDialog {
 
         return panel;
     }
+
     private void showReassignmentDialog() {
         ReassignmentDialog dialog = new ReassignmentDialog((JFrame) SwingUtilities.getWindowAncestor(this), personnelService, hexKey, buildingType);
         dialog.setVisible(true);
@@ -167,7 +176,35 @@ public class ProductionDialog extends JDialog {
         return panel;
     }
     private void confirm(ActionEvent e) {
-        selectedWorkerCount = (Integer) workerSpinner.getValue();
+        selectedWorkerCount = getSelectedWorkers().size();
+
+        if (selectedWorkerCount == 0) {
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Aucun travailleur sélectionné. Continuer sans assignation ?",
+                    "Confirmation", JOptionPane.YES_NO_OPTION);
+            if (confirm != JOptionPane.YES_OPTION) return;
+        }
+
+        // **ASSIGNER LES TRAVAILLEURS SÉLECTIONNÉS**
+        List<PersonnelDataService.HiredPersonnel> selectedWorkers = getSelectedWorkers();
+        boolean allAssigned = true;
+
+        for (PersonnelDataService.HiredPersonnel worker : selectedWorkers) {
+            boolean assigned = personnelService.assignPersonnelToBuilding(
+                    worker.personnelId, hexKey, buildingType, building);
+            if (!assigned) {
+                allAssigned = false;
+                System.err.println("Échec de l'assignation pour: " + worker.name);
+            }
+        }
+
+        if (!allAssigned) {
+            JOptionPane.showMessageDialog(this,
+                    "Certains travailleurs n'ont pas pu être assignés.",
+                    "Avertissement", JOptionPane.WARNING_MESSAGE);
+        }
+
+
         DATABASE.ResourceType selectedResourceType = (DATABASE.ResourceType) resourceTypeCombo.getSelectedItem();
         double selectedResourceProduction = (Double) resourceProductionSpinner.getValue();
         confirmed = true;
@@ -335,7 +372,8 @@ public class ProductionDialog extends JDialog {
     }
     private void updateProductionDetails() {
         StringBuilder details = new StringBuilder();
-        int newWorkers = (Integer) workerSpinner.getValue();
+
+        int newWorkers = getSelectedWorkers().size();
         DATABASE.ResourceType resourceType = (DATABASE.ResourceType) resourceTypeCombo.getSelectedItem();
         double production = (Double) resourceProductionSpinner.getValue();
 
@@ -428,7 +466,274 @@ public class ProductionDialog extends JDialog {
 
         return panel;
     }
+    private JPanel prodTab(){
+        setSize(800, 700);
+        JPanel mainPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
 
+        JLabel titleLabel = new JLabel("Configuration: " + buildingName);
+        titleLabel.setFont(new Font("Arial", Font.BOLD, 16));
+        gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 2;
+        mainPanel.add(titleLabel, gbc);
+
+        gbc.gridwidth = 1; gbc.gridy++;
+        JLabel workerLabel = new JLabel("Personnel:");
+        workerLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        gbc.gridx = 0;
+        mainPanel.add(workerLabel, gbc);
+
+        JPanel workerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        gbc.gridy++;
+        gbc.gridx = 0; gbc.gridwidth = 5;
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0; gbc.weighty = 1;
+        JPanel workerSelectionPanel = createAvailableWorkersPanel();
+        mainPanel.add(workerSelectionPanel, gbc);
+
+
+        gbc.gridx = 1;
+        mainPanel.add(workerPanel, gbc);
+        gbc.gridx = 2;
+
+        gbc.gridy++; gbc.gridx = 0;
+        JLabel resourceLabel = new JLabel("Production Ressource:");
+        resourceLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        mainPanel.add(resourceLabel, gbc);
+
+        JPanel resourcePanel = new JPanel(new GridBagLayout());
+        GridBagConstraints rgbc = new GridBagConstraints();
+        rgbc.insets = new Insets(2, 5, 2, 5);
+
+        rgbc.gridx = 0; rgbc.gridy = 0;
+        resourcePanel.add(new JLabel("Type:"), rgbc);
+
+        resourceTypeCombo = new JComboBox<>();
+        resourceTypeCombo.addItem(null);
+
+        List<DATABASE.ResourceType> availableResources = getResourceTypesForBuilding();
+        for (DATABASE.ResourceType resource : availableResources) {
+            resourceTypeCombo.addItem(resource);
+        }
+
+        resourceTypeCombo.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof DATABASE.ResourceType resource) {
+                    setText(resource.getIcon() + " " + resource.getName());
+                } else if (value == null) {
+                    setText("Aucune");
+                }
+                return this;
+            }
+        });
+
+        resourceTypeCombo.addActionListener(e -> updateProductionDetails());
+        rgbc.gridx = 1;
+        resourcePanel.add(resourceTypeCombo, rgbc);
+
+        rgbc.gridx = 0; rgbc.gridy = 1;
+        resourcePanel.add(new JLabel("Quantité/sem:"), rgbc);
+
+        resourceProductionSpinner = new JSpinner(new SpinnerNumberModel(0.0, 0.0, 1000.0, 0.1));
+        resourceProductionSpinner.setPreferredSize(new Dimension(100, 25));
+        resourceProductionSpinner.addChangeListener(e -> updateProductionDetails());
+        rgbc.gridx = 1;
+        resourcePanel.add(resourceProductionSpinner, rgbc);
+
+        rgbc.gridx = 0; rgbc.gridy = 2;
+        double efficiency = UIHelpers.getBuildingEfficiency(building) * 100;
+        resourcePanel.add(new JLabel(String.format("Efficacité bâtiment: %.0f%%", efficiency)));
+
+        JLabel efficiencyLabel = new JLabel("100%");
+        efficiencyLabel.setToolTipText("Efficacité de production basée sur les workers et le bâtiment");
+        rgbc.gridx = 1;
+        resourcePanel.add(efficiencyLabel, rgbc);
+
+        gbc.gridx = 1;
+        mainPanel.add(resourcePanel, gbc);
+
+        gbc.gridy++; gbc.gridx = 0; gbc.gridwidth = 1;
+        JLabel infoLabel = new JLabel("Informations Ressource:");
+        infoLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        mainPanel.add(infoLabel, gbc);
+
+        gbc.gridy++;
+        JPanel infoResourcePanel = createResourceInfoPanel();
+        JScrollPane infoResourcescrollPane = new JScrollPane(infoResourcePanel);
+        infoResourcescrollPane.setPreferredSize(new Dimension(300, 200)); // adjust as needed
+        infoResourcescrollPane.setBorder(BorderFactory.createEmptyBorder());
+        UI.styleScrollPane(infoResourcescrollPane);
+        UI.configureScrollSpeed(infoResourcescrollPane, 20,80);
+        gbc.fill = GridBagConstraints.BOTH;
+        gbc.weightx = 1.0;
+        gbc.weighty = 1.0;
+        mainPanel.add(infoResourcescrollPane, gbc);
+
+        gbc.gridy = 3 ; gbc.gridx = 1; gbc.gridwidth = 2;
+        JLabel detailsLabel = new JLabel("Résumé Production:");
+        detailsLabel.setFont(new Font("Arial", Font.BOLD, 12));
+        mainPanel.add(detailsLabel, gbc);
+
+        gbc.gridy++; gbc.fill = GridBagConstraints.BOTH; gbc.weightx = 1.0; gbc.weighty = 1.0;
+        detailsArea = new JTextArea(8, 50);
+        detailsArea.setEditable(false);
+        detailsArea.setBackground(new Color(245, 245, 245));
+        detailsArea.setFont(new Font("Monospaced", Font.PLAIN, 11));
+
+        JScrollPane scrollPane = new JScrollPane(detailsArea);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Impact Économique"));
+        mainPanel.add(scrollPane, gbc);
+
+        gbc.gridy++;
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+
+        JButton confirmButton = new JButton("Confirmer");
+        confirmButton.setBackground(new Color(76, 175, 80));
+        confirmButton.setForeground(Color.WHITE);
+        confirmButton.addActionListener(this::confirm);
+
+        JButton cancelButton = new JButton("Annuler");
+        cancelButton.setBackground(new Color(244, 67, 54));
+        cancelButton.setForeground(Color.WHITE);
+        cancelButton.addActionListener(this::cancel);
+
+        buttonPanel.add(confirmButton);
+        buttonPanel.add(cancelButton);
+        mainPanel.add(buttonPanel, gbc);
+
+        add(mainPanel);
+        loadExistingData();
+        updateProductionDetails();
+        return mainPanel;
+    }
+    private JPanel createAvailableWorkersPanel() {
+        JPanel panel = new JPanel(new BorderLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Travailleurs Disponibles"));
+
+        if (availableWorkers.isEmpty()) {
+            JLabel noWorkersLabel = new JLabel("Aucun travailleur disponible pour ce type de bâtiment");
+            noWorkersLabel.setForeground(Color.BLUE);
+            noWorkersLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            panel.add(noWorkersLabel, BorderLayout.CENTER);
+            return panel;
+        }
+
+        // **TABLE DES TRAVAILLEURS DISPONIBLES**
+        String[] columns = {"Sélectionner", "Nom", "Métier", "Salaire", "Consommation"};
+        DefaultTableModel tableModel = new DefaultTableModel(columns, 0) {
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                return columnIndex == 0 ? Boolean.class : String.class;
+            }
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                if (column != 0) return false; // Seule la checkbox est éditable
+
+                // **VÉRIFIER LES LIMITES AVANT D'AUTORISER L'ÉDITION**
+                boolean currentlySelected = (Boolean) getValueAt(row, 0);
+
+                if (!currentlySelected) { // Si pas encore sélectionné
+                    int selectedCount = getSelectedWorkers().size();
+                    int maxAllowed = maxWorkersAllowed - currentWorkerCount;
+
+                    if (selectedCount >= maxAllowed) {
+                        // Afficher un message et empêcher la sélection
+                        SwingUtilities.invokeLater(() -> {
+                            JOptionPane.showMessageDialog(ProductionDialog.this,
+                                    String.format("Capacité maximum atteinte!\n" +
+                                                    "Limite: %d travailleurs\n" +
+                                                    "Actuellement assignés: %d\n" +
+                                                    "Disponible: %d",
+                                            maxWorkersAllowed, currentWorkerCount, maxAllowed),
+                                    "Limite de Capacité", JOptionPane.WARNING_MESSAGE);
+                        });
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+        };
+
+        JTable workersTable = new JTable(tableModel);
+        workersTable.getModel().addTableModelListener(e -> updateWorkerSelection());
+
+        // Remplir la table
+        for (PersonnelDataService.HiredPersonnel worker : availableWorkers) {
+            tableModel.addRow(new Object[]{
+                    false, // Checkbox non cochée par défaut
+                    worker.name,
+                    worker.workerType.getJobName(),
+                    String.format("%.2f Po", worker.currentSalary),
+                    String.format("%.1f", worker.foodConsumption)
+            });
+        }
+        JScrollPane scrollPane = new JScrollPane(workersTable);
+        UI.styleScrollPane(scrollPane);
+        panel.add(scrollPane, BorderLayout.CENTER);
+
+        // Stocker la référence pour usage ultérieur
+        this.workersTable = workersTable;
+        this.workersTableModel = tableModel;
+
+        return panel;
+    }
+    private void updateWorkerSelection() {
+        if (workersTable == null) return;
+
+        selectedWorkerCount = getSelectedWorkers().size();
+        int selectedCount = 0;
+
+        // Compter les travailleurs sélectionnés
+        for (int i = 0; i < workersTableModel.getRowCount(); i++) {
+            if ((Boolean) workersTableModel.getValueAt(i, 0)) {
+                selectedCount++;
+            }
+        }
+
+        // **DÉSACTIVER LES CHECKBOX SI LIMITE ATTEINTE**
+        for (int i = 0; i < workersTableModel.getRowCount(); i++) {
+            boolean isSelected = (Boolean) workersTableModel.getValueAt(i, 0);
+            if (!isSelected && selectedCount >= maxWorkersAllowed - currentWorkerCount) {
+                // Désactiver visuellement cette ligne
+                workersTable.setRowSelectionAllowed(false);
+            }
+        }
+
+        updateProductionDetails();
+    }
+    private List<PersonnelDataService.HiredPersonnel> getAvailableWorkersForBuilding() {
+
+        if (personnelService == null) return Collections.emptyList();
+        String faction = MainMenu.getCurrentFactionId();
+        List<PersonnelDataService.HiredPersonnel> unassigned = personnelService.getUnassignedPersonnel(faction);
+        System.out.println("DEBUG: faction=" + faction + ", unassigned total=" + unassigned.size());
+        unassigned.forEach(p -> System.out.println("  • " + p.name + " – " + p.workerType.getJobName()));
+
+        return unassigned.stream()
+                .filter(p -> canWorkerWorkInBuilding(p.workerType, building))
+                .collect(Collectors.toList());
+
+
+    }
+    private List<PersonnelDataService.HiredPersonnel> getSelectedWorkers() {
+        List<PersonnelDataService.HiredPersonnel> selected = new ArrayList<>();
+
+        for (int i = 0; i < workersTableModel.getRowCount(); i++) {
+            if ((Boolean) workersTableModel.getValueAt(i, 0)) {
+                selected.add(availableWorkers.get(i));
+            }
+        }
+
+        return selected;
+    }
+    private boolean canWorkerWorkInBuilding(DATABASE.Workers workerType, DATABASE.JobBuilding building) {
+        return workerType.getWorkBuildings().contains(building);
+    }
     private void performMaintenanceAction(HexResourceData resourceData) {
         List<String> recommendations = resourceData.getMaintenanceRecommendations();
 
@@ -473,7 +778,6 @@ public class ProductionDialog extends JDialog {
             }
         }
     }
-
     private double calculateMaintenanceCost(String maintenanceItem) {
         // Calculer le coût basé sur le type de maintenance
         if (maintenanceItem.contains("bâtiment")) {

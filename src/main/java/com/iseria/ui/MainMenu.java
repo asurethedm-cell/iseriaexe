@@ -269,7 +269,7 @@ public class MainMenu extends JFrame implements ActionListener {
 
         Map<String, SafeHexDetails> hexProdGrid = repo.loadSafeAll();
         enhancedProductionPanelInstance = UIHelpers.createEnhancedProductionPanel(
-                hexProdGrid, currentUserFaction.getId(), repo, economicService);
+                hexProdGrid, currentUserFaction.getId(), repo, economicService, personnelService);
         UI.styleScrollPane(enhancedProductionPanelInstance);
 
 //===================+================================================================================================\\

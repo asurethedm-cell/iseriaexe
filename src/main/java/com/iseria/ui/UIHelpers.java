@@ -4,6 +4,7 @@ import com.iseria.domain.*;
 import com.iseria.infra.FactionRegistry;
 import com.iseria.infra.MoralCalculator;
 import com.iseria.service.EconomicDataService;
+import com.iseria.service.PersonnelDataService;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
@@ -23,7 +24,9 @@ import static com.iseria.domain.DATABASE.MoralAction.ActionType.UNIQUE;
 import static com.iseria.ui.MainMenu.*;
 import static com.iseria.ui.UI.HexSnapshotCache.mapBackground;
 
+
 public class UIHelpers  extends JScrollPane{
+
 
     public static Map<String, JLabel> hexImageLabels = new HashMap<>();
 
@@ -303,8 +306,8 @@ public class UIHelpers  extends JScrollPane{
     }
     public static UI.ProductionPanel createEnhancedProductionPanel(Map<String, SafeHexDetails> hexGrid,
                                                                    String factionName, IHexRepository repo,
-                                                                   EconomicDataService economicService) {
-        return new UI.ProductionPanel(hexGrid, factionName, repo, economicService);
+                                                                   EconomicDataService economicService, PersonnelDataService personnelService) {
+        return new UI.ProductionPanel(hexGrid, factionName, repo, economicService, personnelService);
     }
     public static EconomicDataService initializeEconomicService(IHexRepository repo, String factionName) {
         economicService = new EconomicDataService(repo, factionName);

@@ -563,7 +563,7 @@ public class Mondes extends JFrame {
 
         if (economicService != null) {
             EconomicDataService.ProductionCalculationService prodService =
-                    economicService.new ProductionCalculationService();
+                    new EconomicDataService.ProductionCalculationService();
             Map<String, Double> production = prodService.calculateHexProduction(details);
             if (production.isEmpty()) {
                 prodInfo.append("Aucune production active\n");

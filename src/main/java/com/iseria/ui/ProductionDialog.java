@@ -146,7 +146,7 @@ public class ProductionDialog extends JDialog {
             gbc.gridy++;
             panel.add(new JLabel("Ressources disponibles:"), gbc);
 
-            List<DATABASE.ResourceType> resources = getResourceTypesForBuilding();
+            List<DATABASE.ResourceType> resources = getResourceTypesForBuilding(building);
             if (resources.isEmpty()) {
                 gbc.gridy++;
                 JLabel noResourceLabel = new JLabel("Aucune ressource configurée");
@@ -269,7 +269,7 @@ public class ProductionDialog extends JDialog {
                 currentTurnSalaries.put(worker.getJobName(), worker.getCurrentSalary());
             }
 
-            List<DATABASE.ResourceType> availableResources = getResourceTypesForBuilding();
+            List<DATABASE.ResourceType> availableResources = getResourceTypesForBuilding(building);
             for (DATABASE.ResourceType resource : availableResources) {
                 double modifier = economicService != null ?
                         economicService.getResourceProductionModifier(hexKey, resource) : 1.0;
@@ -353,27 +353,8 @@ public class ProductionDialog extends JDialog {
             return resource.getBaseValue() * workers * 0.8;
         }
     }
-    private List<DATABASE.ResourceType> getResourceTypesForBuilding() {
-        if (building == null) return Collections.emptyList();
-
-        try {
-            // **CORRECTION** - Utiliser la méthode disponible ou créer une logique simple
-            return Arrays.stream(DATABASE.ResourceType.values())
-                    .filter(resource -> canBuildingProduceResource(building, resource))
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            System.err.println("Erreur lors de la récupération des ressources: " + e.getMessage());
-            return Collections.emptyList();
-        }
-    }
-    private boolean canBuildingProduceResource(DATABASE.JobBuilding building, DATABASE.ResourceType resource) {
-        // Logique simple basée sur les types de bâtiments
-        if (building instanceof DATABASE.MainBuilding) {
-            return "Nourriture".equals(resource.getCategory()) || "Matériaux".equals(resource.getCategory());
-        } else if (building instanceof DATABASE.AuxBuilding) {
-            return "Artisanat".equals(resource.getCategory()) || "Nourriture".equals(resource.getCategory());
-        }
-        return false;
+    private List<DATABASE.ResourceType> getResourceTypesForBuilding(DATABASE.JobBuilding building) {
+        return DATABASE.getResourcesForBuilding(building);
     }
     private void updateProductionDetails() {
         StringBuilder details = new StringBuilder();
@@ -520,7 +501,7 @@ public class ProductionDialog extends JDialog {
         resourceTypeCombo = new JComboBox<>();
         resourceTypeCombo.addItem(null);
 
-        List<DATABASE.ResourceType> availableResources = getResourceTypesForBuilding();
+        List<DATABASE.ResourceType> availableResources = getResourceTypesForBuilding(building);
         for (DATABASE.ResourceType resource : availableResources) {
             resourceTypeCombo.addItem(resource);
         }

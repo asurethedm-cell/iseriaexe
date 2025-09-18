@@ -80,9 +80,15 @@ public class ProductionPanel extends JScrollPane
 
         hexGrid.entrySet().stream()
                 .filter(entry -> factionName.equals(entry.getValue().getFactionClaim()))
-                .sorted(Map.Entry.<String, SafeHexDetails>comparingByKey(this::compareHexKeys))
+                .sorted(Map.Entry.comparingByKey(this::compareHexKeys))
                 .forEach(entry -> {
-                    JPanel hexPanel = createEnhancedHexPanel(entry.getKey(), entry.getValue(),
+                    SafeHexDetails freshHex = repository.getHexDetails(entry.getKey());
+                    if (freshHex != null) {
+                        hexGrid.put(entry.getKey(), freshHex);
+                    }
+
+                    JPanel hexPanel = createEnhancedHexPanel(entry.getKey(),
+                            freshHex != null ? freshHex : entry.getValue(),
                             this.repository, personnelService);
                     hexPanels.put(entry.getKey(), hexPanel);
                     contentPanel.add(hexPanel);

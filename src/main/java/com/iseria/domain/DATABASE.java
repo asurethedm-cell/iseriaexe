@@ -1824,7 +1824,8 @@ public class DATABASE {
         public int salaireTotal;
 
     }
-    static { initializeJobBuildingRelations();
+    static {
+        initializeJobBuildingRelations();
         initializeMainBuildingResources();
         initializeAuxBuildingResources();
     }

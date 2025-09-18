@@ -47,7 +47,7 @@ public class EconomicDataService {
         }
 
         public void calculateFaim() {
-            faim = Math.max(0, consommationNourriture - productionNourriture);
+            faim = Math.max(0, productionNourriture- consommationNourriture);
             if (faim > 0) {
                 instabilite += faim * 0.5; // 0.5% d'instabilité par point de faim
             }
@@ -526,7 +526,7 @@ public class EconomicDataService {
 
 
 
-    public class ProductionCalculationService {
+    public static class ProductionCalculationService {
 
         public Map<String, Double> calculateHexProduction(SafeHexDetails hex) {
             Map<String, Double> production = new HashMap<>();

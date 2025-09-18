@@ -223,7 +223,7 @@ public class DATABASE {
 
             MAIN_8_0("Main14", "Scierie",10,0,0,0,0,0,0,0,"Permet de transformer le Bois en Planche."),
             MAIN_8_1("Main15","Scierie Tier 1",100, 5,0,45,10,0,0,1, "Permet de transformer le Bois en Planche."),
-            MAIN_8_2("Main15","Scierie Tier 2",500, 10,0,100,10,25,0,1, "Permet de transformer le Bois en Planche."),
+            MAIN_8_2("Main16","Scierie Tier 2",500, 10,0,100,10,25,0,1, "Permet de transformer le Bois en Planche."),
 
             MAIN_9_0("Main16", "Tenturerie",10,0,0,0,0,0,0,0,"Permet l’élaboration de colorant"),
             MAIN_9_1("Main17", "Tenturerie Tier 1",20,15,0,35,10,0,0,1,"Permet l’élaboration de colorant"),
@@ -300,7 +300,7 @@ public class DATABASE {
             return tag;
         }
             @Override
-            public String getTag() { return tag; }
+            public String getTag() { return "Main" + ordinal(); }
             @Override
             public String getBuildName() {return name;}
             public String getMainTag() { return tag; }

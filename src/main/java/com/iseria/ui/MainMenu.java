@@ -303,6 +303,7 @@ public class MainMenu extends JFrame implements ActionListener {
                 economyButton.addActionListener(e -> {
                     generalCardLayout.show(generalPanel, "Economy");
                     ecoIsShowed = true;
+                    prodIsShowed = false;
                     backToGeneralButton.setVisible(true);
                     economicService.calculateInitialData();
                     updatePanel.setVisible(true);
@@ -310,6 +311,8 @@ public class MainMenu extends JFrame implements ActionListener {
                 productionButton.addActionListener(e -> {
                     generalCardLayout.show(generalPanel, "Production");
                     prodIsShowed = true;
+                    ecoIsShowed =false;
+                    logIsShowed = false;
                     economicService.calculateInitialData();
                     backToGeneralButton.setVisible(true);
                     updatePanel.setVisible(true);
@@ -317,6 +320,8 @@ public class MainMenu extends JFrame implements ActionListener {
                 logisticsButton.addActionListener(e -> {
                     generalCardLayout.show(generalPanel, "Logistics");
                     logIsShowed = true;
+                    prodIsShowed = false;
+                    ecoIsShowed =false;
                     backToGeneralButton.setVisible(true);
                     updatePanel.setVisible(true);
                     if (logisticsService != null) { logisticsService.printTransportNetwork();}
@@ -325,13 +330,23 @@ public class MainMenu extends JFrame implements ActionListener {
                     generalCardLayout.show(generalPanel, "General");
                     prodIsShowed = false;
                     ecoIsShowed = false;
+                    logIsShowed = false;
                     backToGeneralButton.setVisible(false);
                     updatePanel.setVisible(false);
                 });
                 updatePanel.addActionListener(e -> {
-                    if (ecoIsShowed) economicService.calculateInitialData();
-                    if (prodIsShowed)enhancedProductionPanelInstance.refreshContent();
-                    if (logIsShowed) logisticsService.initializeNetwork();
+                    if (ecoIsShowed) {
+                        economicService.calculateInitialData();
+                        System.out.println("ecoIsShowed " + ecoIsShowed);
+                    }
+                    if (prodIsShowed) {
+                        enhancedProductionPanelInstance.refreshContent();
+                        System.out.println("prodIsShowed " + prodIsShowed);
+                    }
+                    if (logIsShowed) {
+                        logisticsService.initializeNetwork();
+                        System.out.println("logIsShowed " + logIsShowed);
+                    }
                 });
 
 

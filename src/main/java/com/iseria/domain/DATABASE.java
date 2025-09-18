@@ -198,98 +198,98 @@ public class DATABASE {
     }
 
     public enum MainBuilding  implements JobBuilding {
-            MAIN_00("Main0", "Free Slot", 0,"Aucun Bâtiment construit ici."),
+            MAIN_00("Free Slot", 0,"Aucun Bâtiment construit ici."),
 
-            MAIN_1_0("Main1", "Donjon", 0,"Le Donjon du Loot"),
+            MAIN_1_0("Donjon", 0,"Le Donjon du Loot"),
 
 
-            MAIN_2_0("Main2","Abbaye",20,0,0,0,0,0,0,0,"Permet la récolte de Ressources de Luxes en plus grande quantité. Accueille 20 Moines."),
-            MAIN_2_1("Main3", "Abbaye Tier 1",60, 30,0,20,15,0,0,1,"Permet la récolte de Ressources de Luxes en plus grande quantité. Accueille 60 Moines."),
+            MAIN_2_0("Abbaye",20,0,0,0,0,0,0,0,"Permet la récolte de Ressources de Luxes en plus grande quantité. Accueille 20 Moines."),
+            MAIN_2_1( "Abbaye Tier 1",60, 30,0,20,15,0,0,1,"Permet la récolte de Ressources de Luxes en plus grande quantité. Accueille 60 Moines."),
 
-            MAIN_3_0("Main4","Carrière - Argile",10,0,0,0,0,0,0,0," Permet de récolter de l'Argile"),
-            MAIN_3_1("Main5", "Carrière - Argile Tier 1",100,45,0,5,10, 0,0,1," Permet de récolter de l'Argile"),
+            MAIN_3_0("Carrière - Argile",10,0,0,0,0,0,0,0," Permet de récolter de l'Argile"),
+            MAIN_3_1( "Carrière - Argile Tier 1",100,45,0,5,10, 0,0,1," Permet de récolter de l'Argile"),
 
-            MAIN_4_0("Main6","Carrière - Pierre",10,0,0,0,0,0,0,0," Permet de récolter de la Pierre"),
-            MAIN_4_1("Main7", "Carrière - Pierre Tier 1", 100,45,0,5,10,0,0,1, " Permet de récolter de la Pierre"),
-            MAIN_4_2("Main8","Carrière - Pierre Tier 2", 500,10,0,100,50,25,0,2, " Permet de récolter de la Pierre"),
+            MAIN_4_0("'Carrière - Pierre",10,0,0,0,0,0,0,0," Permet de récolter de la Pierre"),
+            MAIN_4_1( "Carrière - Pierre Tier 1", 100,45,0,5,10,0,0,1, " Permet de récolter de la Pierre"),
+            MAIN_4_2("Carrière - Pierre Tier 2", 500,10,0,100,50,25,0,2, " Permet de récolter de la Pierre"),
 
-            MAIN_5_0("Main9","Commanderie",1,0,0,0,0,0,0,0,"Donne un bonus de +1 Moral d’Armée à toute armée Allié ou plus passant par la case."),
-            MAIN_5_1("Main10", "Commanderie Tier 1", 1,25,0,25,10,0,0,1, "Donne un bonus de +1 Moral d’Armée à toute armée Allié ou plus passant par la case."),
+            MAIN_5_0("Commanderie",1,0,0,0,0,0,0,0,"Donne un bonus de +1 Moral d’Armée à toute armée Allié ou plus passant par la case."),
+            MAIN_5_1( "Commanderie Tier 1", 1,25,0,25,10,0,0,1, "Donne un bonus de +1 Moral d’Armée à toute armée Allié ou plus passant par la case."),
 
-            MAIN_6_0("Main11","Avant-Poste", 0,10,0,10,0,0,500,1, "Récole  5 Bois | 100 Ors | 10 Pierres au choix à sa construction, redirige les attaques des tuiles adjacentes."),
+            MAIN_6_0("Avant-Poste", 0,10,0,10,0,0,500,1, "Récole  5 Bois | 100 Ors | 10 Pierres au choix à sa construction, redirige les attaques des tuiles adjacentes."),
 
-            MAIN_7_0("Main12", "Couvent",10,0,0,0,0,0,0,0," Permet la récolte de Ressources de Luxes en moins grandes quantités, mais donne un bonus de recherche égale à 50% de la valeur de la Ressource de Luxe"),
-            MAIN_7_1("Main13", "Couvent Tier 1", 20,25,0,15,10,0,0,1, " Permet la récolte de Ressources de Luxes en moins grandes quantités, mais donne un bonus de recherche égale à 60% de la valeur de la Ressource de Luxe"),
+            MAIN_7_0( "Couvent",10,0,0,0,0,0,0,0," Permet la récolte de Ressources de Luxes en moins grandes quantités, mais donne un bonus de recherche égale à 50% de la valeur de la Ressource de Luxe"),
+            MAIN_7_1( "Couvent Tier 1", 20,25,0,15,10,0,0,1, " Permet la récolte de Ressources de Luxes en moins grandes quantités, mais donne un bonus de recherche égale à 60% de la valeur de la Ressource de Luxe"),
 
-            MAIN_8_0("Main14", "Scierie",10,0,0,0,0,0,0,0,"Permet de transformer le Bois en Planche."),
-            MAIN_8_1("Main15","Scierie Tier 1",100, 5,0,45,10,0,0,1, "Permet de transformer le Bois en Planche."),
-            MAIN_8_2("Main16","Scierie Tier 2",500, 10,0,100,10,25,0,1, "Permet de transformer le Bois en Planche."),
+            MAIN_8_0( "Scierie",10,0,0,0,0,0,0,0,"Permet de transformer le Bois en Planche."),
+            MAIN_8_1("Scierie Tier 1",100, 5,0,45,10,0,0,1, "Permet de transformer le Bois en Planche."),
+            MAIN_8_2("Scierie Tier 2",500, 10,0,100,10,25,0,1, "Permet de transformer le Bois en Planche."),
 
-            MAIN_9_0("Main16", "Tenturerie",10,0,0,0,0,0,0,0,"Permet l’élaboration de colorant"),
-            MAIN_9_1("Main17", "Tenturerie Tier 1",20,15,0,35,10,0,0,1,"Permet l’élaboration de colorant"),
+            MAIN_9_0( "Tenturerie",10,0,0,0,0,0,0,0,"Permet l’élaboration de colorant"),
+            MAIN_9_1( "Tenturerie Tier 1",20,15,0,35,10,0,0,1,"Permet l’élaboration de colorant"),
 
-            MAIN_10_0("Main18", "Entrepôt",0,40,0,40,0,0,0,0, "Permet stocker et d’accéder aux Ressources."),
-            MAIN_10_1("Main19", "Entrepôt Tier 1",0,60,0,60,0,0,0,1,"Permet stocker et d’accéder aux Ressources."),
-            MAIN_10_2("Main20", "Entrepôt Tier 2",0,100,0,100,0,0,0,2,"Permet stocker et d’accéder aux Ressources."),
+            MAIN_10_0( "Entrepôt",0,40,0,40,0,0,0,0, "Permet stocker et d’accéder aux Ressources."),
+            MAIN_10_1( "Entrepôt Tier 1",0,60,0,60,0,0,0,1,"Permet stocker et d’accéder aux Ressources."),
+            MAIN_10_2( "Entrepôt Tier 2",0,100,0,100,0,0,0,2,"Permet stocker et d’accéder aux Ressources."),
 
-            MAIN_11_0("Main21","Ferme de Légume",10,0,0,0,0,0,0,0,"Permet de récolter de la nourriture sous forme de Légumes"),
-            MAIN_11_1("Main22", "Ferme de Légume Tier 1", 100,45,0,5,10,0,0,1,"Permet de récolter de la nourriture sous forme de Légumes"),
-            MAIN_11_2("Main23", "Ferme de Légume Tier 2",500,10,0,100,50,25,0,2,"Permet de récolter de la nourriture sous forme de Légumes"),
+            MAIN_11_0("Ferme de Légume",10,0,0,0,0,0,0,0,"Permet de récolter de la nourriture sous forme de Légumes"),
+            MAIN_11_1( "Ferme de Légume Tier 1", 100,45,0,5,10,0,0,1,"Permet de récolter de la nourriture sous forme de Légumes"),
+            MAIN_11_2( "Ferme de Légume Tier 2",500,10,0,100,50,25,0,2,"Permet de récolter de la nourriture sous forme de Légumes"),
 
-            MAIN_12_0("Main24","Mine",10,0,0,0,0,0,0,0,"Permet de récolter du Minerais ou des Pierres Précieuse"),
-            MAIN_12_1("Main25","Mine Tier 1", 10,45,5,0,10,0,0,1,"Permet de récolter du Minerais ou des Pierres Précieuse"),
-            MAIN_12_2("Main26","Mine Tier 2", 10,25,15,50,50,25,0,2,"Permet de récolter du Minerais ou des Pierres Précieuse"),
+            MAIN_12_0("Mine",10,0,0,0,0,0,0,0,"Permet de récolter du Minerais ou des Pierres Précieuse"),
+            MAIN_12_1("Mine Tier 1", 10,45,5,0,10,0,0,1,"Permet de récolter du Minerais ou des Pierres Précieuse"),
+            MAIN_12_2("Mine Tier 2", 10,25,15,50,50,25,0,2,"Permet de récolter du Minerais ou des Pierres Précieuse"),
 
-            MAIN_13_0("Main27","Oratoire",1,0,0,0,0,0,0,0,"Permet de recevoir des faveurs envers le clergé du dieu auquel le bâtiment est dédié."),
-            MAIN_13_1("Main28","Oratoire Tier 1",1,25,0,0,25,0,0,1, EnumSet.of(SpecialResource.REG_ARTWORK), "Permet de recevoir des faveurs envers le clergé du dieu auquel le bâtiment est dédié"),
+            MAIN_13_0("Oratoire",1,0,0,0,0,0,0,0,"Permet de recevoir des faveurs envers le clergé du dieu auquel le bâtiment est dédié."),
+            MAIN_13_1("Oratoire Tier 1",1,25,0,0,25,0,0,1, EnumSet.of(SpecialResource.REG_ARTWORK), "Permet de recevoir des faveurs envers le clergé du dieu auquel le bâtiment est dédié"),
 
-            Main_14_0("Main29", "Thermes",10,0,0,0,0,0,0,0,"Permet d'obtenir de l'eau purifiée à destination des alchimistes ou de le transformer en lieu touristique générant des pièces d'or. Permet d'augmenter la limite de personnel et troupes maximales."),
-            MAIN_14_1("Main30","Thermes Tier 1", 10,20,0,10,5,0,0,1, "Permet d'obtenir de l'eau purifiée à destination des alchimistes ou de le transformer en lieu touristique générant des pièces d'or. Permet d'augmenter la limite de personnel et troupes maximales."),
+            Main_14_0( "Thermes",10,0,0,0,0,0,0,0,"Permet d'obtenir de l'eau purifiée à destination des alchimistes ou de le transformer en lieu touristique générant des pièces d'or. Permet d'augmenter la limite de personnel et troupes maximales."),
+            MAIN_14_1( "Thermes Tier 1", 10,20,0,10,5,0,0,1, "Permet d'obtenir de l'eau purifiée à destination des alchimistes ou de le transformer en lieu touristique générant des pièces d'or. Permet d'augmenter la limite de personnel et troupes maximales."),
 
-            MAIN_15_0("Main31", "Atelier de Marbrier",10,0,0,0,0,0,0,0," Permet le travail du marbre, donne des bonus d’Artisanat aux Sculpteurs, bonus à la constructions des Merveilles."),
-            MAIN_15_1("Main32", "Atelier de Marbrier Tier 1",10,10,0,40,10,0,0,1," Permet le travail du marbre, donne des bonus d’Artisanat aux Sculpteurs, bonus à la constructions des Merveilles." ),
+            MAIN_15_0( "Atelier de Marbrier",10,0,0,0,0,0,0,0," Permet le travail du marbre, donne des bonus d’Artisanat aux Sculpteurs, bonus à la constructions des Merveilles."),
+            MAIN_15_1( "Atelier de Marbrier Tier 1",10,10,0,40,10,0,0,1," Permet le travail du marbre, donne des bonus d’Artisanat aux Sculpteurs, bonus à la constructions des Merveilles." ),
 
-            MAIN_16_0("Main33", "Observatoire",1,0,0,0,0,0,0,0,"Permet des Bonus sur les recherches, bonus sur les jets d’astrologies. 5%/10%/20%"),
-            MAIN_16_1("Main34", "Observatoire Tier 1",1,30,0,5,10,0,0,1,"Permet des Bonus sur les recherches, bonus sur les jets d’astrologies. 5%/10%/20%"),
+            MAIN_16_0( "Observatoire",1,0,0,0,0,0,0,0,"Permet des Bonus sur les recherches, bonus sur les jets d’astrologies. 5%/10%/20%"),
+            MAIN_16_1( "Observatoire Tier 1",1,30,0,5,10,0,0,1,"Permet des Bonus sur les recherches, bonus sur les jets d’astrologies. 5%/10%/20%"),
 
-            MAIN_17_0("Main35", "Saliculture",10,0,0,0,0,0,0,0,"Permet la récolte de Sel Marin."),
-            MAIN_17_1("Main36", "Saliculture Tier 1", 100,20,0,15,5,0,0,1, "Permet la récolte de Sel Marin."),
+            MAIN_17_0( "Saliculture",10,0,0,0,0,0,0,0,"Permet la récolte de Sel Marin."),
+            MAIN_17_1( "Saliculture Tier 1", 100,20,0,15,5,0,0,1, "Permet la récolte de Sel Marin."),
 
-            MAIN_18_0("Main37", "Corderie",10,0,0,0,0,0,0,0,"Permet l’élaboration de cordages plus poussés ou en plus grande quantité."),
-            MAIN_18_1("Main38", "Corderie Tier 1", 10,15,0,35,10,0,0,1,"Permet l’élaboration de cordages plus poussés ou en plus grande quantité."),
+            MAIN_18_0( "Corderie",10,0,0,0,0,0,0,0,"Permet l’élaboration de cordages plus poussés ou en plus grande quantité."),
+            MAIN_18_1( "Corderie Tier 1", 10,15,0,35,10,0,0,1,"Permet l’élaboration de cordages plus poussés ou en plus grande quantité."),
 
-            MAIN_19_0("Main39", "Atelier de Soufflage de Verre",10,0,0,0,0,0,0,0," Permet la manufacture d’objets en verre."),
-            MAIN_19_1("Main40", "Atelier de Soufflage de Verre Tier 1", 100,15,0,35,10,0,0,1," Permet la manufacture d’objets en verre."),
+            MAIN_19_0( "Atelier de Soufflage de Verre",10,0,0,0,0,0,0,0," Permet la manufacture d’objets en verre."),
+            MAIN_19_1( "Atelier de Soufflage de Verre Tier 1", 100,15,0,35,10,0,0,1," Permet la manufacture d’objets en verre."),
 
-            MAIN_20_0("Main41", "Torréfacteur",10,0,0,0,0,0,0,0,"Permet l’élaboration de Malt Torréfié, Café, Maïs, Cacao."),
-            MAIN_20_1("Main42", "Torréfacteur Tier 1", 100,15,0,35,10,0,0,1,"Permet l’élaboration de Malt Torréfié, Café, Maïs, Cacao."),
+            MAIN_20_0( "Torréfacteur",10,0,0,0,0,0,0,0,"Permet l’élaboration de Malt Torréfié, Café, Maïs, Cacao."),
+            MAIN_20_1( "Torréfacteur Tier 1", 100,15,0,35,10,0,0,1,"Permet l’élaboration de Malt Torréfié, Café, Maïs, Cacao."),
 
-            MAIN_21_0("Main43", "Four à Goudron",10,0,0,0,0,0,0,0,"Permet de transformer du Bois en Charbon de Bois et en Goudron, nécessaire à l’entretien des Bâtiments Navals."),
-            MAIN_21_1("Main44","Four à Goudron Tier 1", 100,40,0,5,5,0,0,1,"Permet de transformer du Bois en Charbon de Bois et en Goudron, nécessaire à l’entretien des Bâtiments Navals."),
+            MAIN_21_0( "Four à Goudron",10,0,0,0,0,0,0,0,"Permet de transformer du Bois en Charbon de Bois et en Goudron, nécessaire à l’entretien des Bâtiments Navals."),
+            MAIN_21_1( "Four à Goudron Tier 1", 100,40,0,5,5,0,0,1,"Permet de transformer du Bois en Charbon de Bois et en Goudron, nécessaire à l’entretien des Bâtiments Navals."),
 
-            MAIN_22_0("Main45", "Tréfilerie",10,0,0,0,0,0,0,0," Permet d’élaborer des Fils de métal."),
-            MAIN_22_1("Main46", "Tréfilerie Tier 1", 100,15,0,35,10,0,0,1," Permet d’élaborer des Fils de métal."),
+            MAIN_22_0( "Tréfilerie",10,0,0,0,0,0,0,0," Permet d’élaborer des Fils de métal."),
+            MAIN_22_1( "Tréfilerie Tier 1", 100,15,0,35,10,0,0,1," Permet d’élaborer des Fils de métal."),
 
-            MAIN_23_0("Main47", "Pépinière",10,0,0,0,0,0,0,0,"Réduit les Malus de Production d’Hiver des Fermes de 50%"),
-            MAIN_23_1("Main48", "Pépinière Tier 1",100, 15,15,0,15,0,0,0,20),
+            MAIN_23_0( "Pépinière",10,0,0,0,0,0,0,0,"Réduit les Malus de Production d’Hiver des Fermes de 50%"),
+            MAIN_23_1( "Pépinière Tier 1",100, 15,15,0,15,0,0,0,20),
 
-            MAIN_24_0("Main49", "Vergers",10,0,0,0,0,0,0,0,"Permet la production de Fruits."),
-            MAIN_24_1("Main50", "Vergers Tier 1", 10,20,0,10,20,0,0,1,"Permet la production de Fruits."),
+            MAIN_24_0( "Vergers",10,0,0,0,0,0,0,0,"Permet la production de Fruits."),
+            MAIN_24_1( "Vergers Tier 1", 10,20,0,10,20,0,0,1,"Permet la production de Fruits."),
 
-            MAIN_25_0("Main51", "Place-Forte",0, "Pièce Maitresse de votre Maisonnée"),
+            MAIN_25_0( "Place-Forte",0, "Pièce Maitresse de votre Maisonnée"),
 
-            MAIN_26_0("Main52", "Camp de Bûcheron",10,0,0,0,0,0,0,0,"Permet de récolter du Bois"),
+            MAIN_26_0( "Camp de Bûcheron",10,0,0,0,0,0,0,0,"Permet de récolter du Bois"),
 
-            MAIN_27_0("Main53", "Camp de Pêcheurs",10,0,0,0,0,0,0,0,"Permet de récolter du Poisson"),
+            MAIN_27_0( "Camp de Pêcheurs",10,0,0,0,0,0,0,0,"Permet de récolter du Poisson"),
 
-            MAIN_28_0("Main54", "Ferme de Céréale",10,0,0,0,0,0,0,0,"Permet de récolter de la nourriture sous forme de Céréales"),
-            MAIN_28_1("Main55", "Ferme de Céréale Tier 1", 100,45,0,5,10,0,0,1,"Permet de récolter de la nourriture sous forme de Céréales"),
-            MAIN_28_2("Main56", "Ferme de Céréale Tier 2",500,10,0,100,50,25,0,2,"Permet de récolter de la nourriture sous forme de Céréales"),
+            MAIN_28_0( "Ferme de Céréale",10,0,0,0,0,0,0,0,"Permet de récolter de la nourriture sous forme de Céréales"),
+            MAIN_28_1( "Ferme de Céréale Tier 1", 100,45,0,5,10,0,0,1,"Permet de récolter de la nourriture sous forme de Céréales"),
+            MAIN_28_2( "Ferme de Céréale Tier 2",500,10,0,100,50,25,0,2,"Permet de récolter de la nourriture sous forme de Céréales"),
 
-            MAIN_29_0("Main57","Pâturages", 10,0,0,0,0,0,0,0,""),
-            MAIN_30_0("Main58", "Camp de chasseurs",10,0,0,0,0,0,0,0,"Récolte de la Peau ou de la Nourriture"),
-            MAIN_31_0("Main59", "Monastère", 50,"Permet la récolte de Ressources de Luxes. Accueille 10-50 Moines"),
-            MAIN_31_1("Main59", "Monastère",50,25,15,10,0,0,0,1, "Permet la récolte de Ressources de Luxes. Accueille 10-50 Moines")
+            MAIN_29_0("Pâturages", 10,0,0,0,0,0,0,0,""),
+            MAIN_30_0( "Camp de chasseurs",10,0,0,0,0,0,0,0,"Récolte de la Peau ou de la Nourriture"),
+            MAIN_31_0( "Monastère", 50,"Permet la récolte de Ressources de Luxes. Accueille 10-50 Moines"),
+            MAIN_31_1( "Monastère",50,25,15,10,0,0,0,1, "Permet la récolte de Ressources de Luxes. Accueille 10-50 Moines")
 
 
         ;
@@ -297,20 +297,20 @@ public class DATABASE {
 
             @Override
             public String toString() {
-            return tag;
+            return getTag();
         }
             @Override
             public String getTag() { return "Main" + ordinal(); }
             @Override
             public String getBuildName() {return name;}
-            public String getMainTag() { return tag; }
+            public String getMainTag() { return "Main" + ordinal(); }
             public int getMaxWorker() {return maxWorker;}
             public int getMainCost() { return costPierre; }
             public int getMainTier() { return tier; }
             public String getMainDescription() {return description;}
 
 
-            private final String tag;
+
             private final int maxWorker;
             private final String name;
             private final int costPierre;
@@ -325,9 +325,8 @@ public class DATABASE {
             private EnumSet<SpecialResource> specialResources;
 
 
-            MainBuilding(String tag, String name, int maxWorker, int costPierre, int costFer,  int costBois, int costPop,int costGemWeekly,
+            MainBuilding(String name, int maxWorker, int costPierre, int costFer,  int costBois, int costPop,int costGemWeekly,
                          int costGold, int tier, String description){
-                this.tag = tag;
                 this.name = name;
                 this.maxWorker = maxWorker;
                 this.costPierre = costPierre;
@@ -339,9 +338,9 @@ public class DATABASE {
                 this.tier = tier;
                 this.description = description;}
 
-            MainBuilding(String tag, String name, int maxWorker, int costPierre, int costFer, int costBois, int costPop, int costGemWeekly,
+            MainBuilding(String name, int maxWorker, int costPierre, int costFer, int costBois, int costPop, int costGemWeekly,
                          int costGold, int tier, EnumSet<SpecialResource> specialResources, String description) {
-                this.tag = tag;
+
                 this.name = name;
                 this.maxWorker = maxWorker;
                 this.costPierre = costPierre;
@@ -355,9 +354,9 @@ public class DATABASE {
                 this.description = description;
             }
 
-            MainBuilding(String tag, String name, int maxWorker, int costPierre, int costFer, int costBois, int costPop, int costGemWeekly,
+            MainBuilding(String name, int maxWorker, int costPierre, int costFer, int costBois, int costPop, int costGemWeekly,
                          int costGold, int tier, int costGlass) {
-                this.tag = tag;
+
                 this.name = name;
                 this.maxWorker = maxWorker;
                 this.costPierre = costPierre;
@@ -370,8 +369,8 @@ public class DATABASE {
                 this.costGlass = costGlass;
             }
 
-            MainBuilding(String tag, String name, int maxWorker, String description) {
-                this(tag, name, 0,0, 0, 0, 0, 0, 0, 0,description);
+            MainBuilding(String name, int maxWorker, String description) {
+                this(name, 0,0, 0, 0, 0, 0, 0, 0,description);
             }
 
 

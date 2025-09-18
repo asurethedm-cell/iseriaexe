@@ -1,6 +1,5 @@
 package com.iseria.infra;
 
-import com.iseria.domain.HexDetails;
 import com.iseria.domain.IHexRepository;
 import com.iseria.domain.SafeHexDetails;
 

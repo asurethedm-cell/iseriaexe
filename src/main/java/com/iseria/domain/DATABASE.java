@@ -968,6 +968,7 @@ public class DATABASE {
             return turnSalaries.getOrDefault(this, baseSalary);
         }
         public double getCurrentFoodConsumption() { return turnFoodConsumption.getOrDefault(this, bFC); }
+
         // Getters pour les valeurs de base (constantes)
         public double getBaseSalary() { return baseSalary; }
         public double getBaseFoodConsumption() { return bFC; }
@@ -982,8 +983,6 @@ public class DATABASE {
             }
             return null;
     }
-
-
     public Set<JobBuilding> getWorkBuildings() { return workBuildings; }
         public boolean isFactionSpecific() { return isFactionSpecific; }
         public String getWorkerFactionId() { return factionId; }

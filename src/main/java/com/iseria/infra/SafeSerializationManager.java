@@ -1,6 +1,8 @@
 package com.iseria.infra;
 
-import com.iseria.domain.HexDetails;
+
+
+import com.iseria.domain.SafeHexDetails;
 
 import java.io.*;
 import java.nio.file.*;
@@ -357,14 +359,14 @@ public class SafeSerializationManager {
         private final SafeSerializationManager serializer = new SafeSerializationManager();
 
         // Sauvegarde des données hex
-        public boolean saveHexData(Map<String, HexDetails> hexData) {
+        public boolean saveHexData(Map<String, SafeHexDetails> hexData) {
             Path filePath = Paths.get("gamedata", "hexes.dat");
             return serializer.saveSecurely(hexData, filePath, "HEX_DATA");
         }
 
         // Chargement des données hex
         @SuppressWarnings("unchecked")
-        public Map<String, HexDetails> loadHexData() {
+        public Map<String, SafeHexDetails> loadHexData() {
             Path filePath = Paths.get("gamedata", "hexes.dat");
             return serializer.loadSecurely(filePath, "HEX_DATA", Map.class);
         }

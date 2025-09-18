@@ -10,7 +10,6 @@ import java.util.stream.Collectors;
 
 public class PersonnelDataService {
 
-    // **STRUCTURES DE DONNÉES INTÉGRÉES**
     private static class PersonnelSaveData implements Serializable {
         @Serial
         private static final long serialVersionUID = 2L;
@@ -32,8 +31,6 @@ public class PersonnelDataService {
             public SavedPersonnel() {}
         }
     }
-
-    // **CLASSE HIREDPERSONNEL (RUNTIME)**
     public static class HiredPersonnel {
         public final String personnelId;
         public final DATABASE.Workers workerType;
@@ -155,14 +152,13 @@ public class PersonnelDataService {
         savePersonnelData();
     }
 
-    public boolean firePersonnel(String personnelId) {
+    public void firePersonnel(String personnelId) {
         for (List<HiredPersonnel> personnelList : factionPersonnel.values()) {
             personnelList.removeIf(p -> p.personnelId.equals(personnelId));
         }
 
         notifyPersonnelFired(personnelId);
         savePersonnelData();
-        return true;
     }
 
     public List<DATABASE.Workers> getAvailableWorkersForRecruitment(String factionId) {
@@ -287,7 +283,7 @@ public class PersonnelDataService {
              ObjectOutputStream oos = new ObjectOutputStream(fos)) {
             oos.writeObject(data);
             oos.flush();
-            fos.getChannel().force(true); // force l’écriture sur disque
+            fos.getChannel().force(true);
             System.out.println("Personnel data saved: " + fileName);
         } catch (IOException e) {
             System.err.println("Erreur sauvegarde personnel: " + e.getMessage());

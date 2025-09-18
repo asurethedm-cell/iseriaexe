@@ -3,6 +3,9 @@ package com.iseria.ui;
 import javax.swing.*;
 import java.awt.*;
 
+import static com.iseria.ui.UIHelpers.configureScrollSpeed;
+import static com.iseria.ui.UIHelpers.styleScrollPane;
+
 public class WorkDetailsPopup extends JPanel {
     private JTextPane contentPane;
     private boolean isVisible = false;
@@ -25,8 +28,8 @@ public class WorkDetailsPopup extends JPanel {
         JScrollPane scrollPane = new JScrollPane(contentPane,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        UI.styleScrollPane(scrollPane);
-        UI.configureScrollSpeed(scrollPane,20,80);
+        styleScrollPane(scrollPane);
+        configureScrollSpeed(scrollPane,20,80);
         scrollPane.setOpaque(true);
         scrollPane.getViewport().setOpaque(true);
         add(scrollPane, BorderLayout.CENTER);

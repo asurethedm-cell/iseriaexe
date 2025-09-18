@@ -12,6 +12,9 @@ import java.awt.*;
 import java.awt.event.ActionListener;
 import java.util.*;
 
+import static com.iseria.ui.UIHelpers.configureScrollSpeed;
+import static com.iseria.ui.UIHelpers.styleScrollPane;
+
 public class TradeMarketPanel extends JPanel {
 
     javax.swing.Timer refreshTimer;
@@ -229,8 +232,8 @@ public class TradeMarketPanel extends JPanel {
         scrollPane.getViewport().setOpaque(false);
         scrollPane.setPreferredSize(new Dimension(0, 300));
         scrollPane.setBorder(null);
-        UI.styleScrollPane(scrollPane);
-        UI.configureScrollSpeed(scrollPane, 20, 80);
+        styleScrollPane(scrollPane);
+        configureScrollSpeed(scrollPane, 20, 80);
 
         panel.add(scrollPane, BorderLayout.CENTER);
         return panel;
@@ -395,7 +398,7 @@ public class TradeMarketPanel extends JPanel {
         textArea.setFont(new Font("Monospaced", Font.PLAIN, 12));
 
         JScrollPane scrollPane = new JScrollPane(textArea);
-        UI.styleScrollPane(scrollPane);
+        styleScrollPane(scrollPane);
 
         JOptionPane.showMessageDialog(this, scrollPane,
                 "📊 Live Market Report", JOptionPane.INFORMATION_MESSAGE);

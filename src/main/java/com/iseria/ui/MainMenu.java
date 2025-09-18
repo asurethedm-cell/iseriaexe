@@ -1,10 +1,8 @@
 package com.iseria.ui;
 
 import com.iseria.domain.*;
-import com.iseria.domain.DATABASE;
 import com.iseria.service.*;
 import com.iseria.infra.FactionRegistry;
-import com.iseria.service.MarketDataService;
 
 import javax.swing.*;
 import javax.swing.JButton;
@@ -20,12 +18,14 @@ import javax.swing.event.DocumentListener;
 import javax.swing.filechooser.FileSystemView;
 import java.io.*;
 import java.net.URL;
-import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.iseria.ui.LoadingWindow.splash;
+import static com.iseria.ui.MoralPanel.createModernMoralPanel;
+import static com.iseria.ui.UIHelpers.configureScrollSpeed;
+import static com.iseria.ui.UIHelpers.styleScrollPane;
 
 
 public class MainMenu extends JFrame implements ActionListener {
@@ -73,7 +73,7 @@ public class MainMenu extends JFrame implements ActionListener {
 
     public static Faction currentUserFaction;
     private final IAudioService audio;
-    private UI.ProductionPanel enhancedProductionPanelInstance;
+    private ProductionPanel enhancedProductionPanelInstance;
     private PersonnelDataService personnelService;
     public static EconomicDataService economicService;
 
@@ -183,7 +183,7 @@ public class MainMenu extends JFrame implements ActionListener {
 
 //=====================================================OPENING PANEL==================================================\\
                 JTextArea myNoteArea = new JTextArea(5, 30);
-                JPanel gIP = UI.createGeneralInfoPanel(myNoteArea);
+                JPanel gIP = GeneralInfoPanel.createGeneralInfoPanel(myNoteArea);
                 generalMenuPanel.add(gIP, gMPgbc);
 
 //====================================================================================================================\\
@@ -192,7 +192,7 @@ public class MainMenu extends JFrame implements ActionListener {
 
 
 
-                UI.MoralPanelResult result = UI.createModernMoralPanel(moralService, currentUserFaction);
+                MoralPanel.MoralPanelResult result = createModernMoralPanel(moralService, currentUserFaction);
 
                 JPanel miscellaneousPanel = new JPanel(new GridBagLayout());
                 miscellaneousPanel.setPreferredSize(new Dimension(1000, 1200));
@@ -216,8 +216,8 @@ public class MainMenu extends JFrame implements ActionListener {
                 } else {
                 JScrollPane rumorScrollPane = new JScrollPane(rumorDisplayPanel);
                 rumorScrollPane.setPreferredSize(new Dimension(980, 300));
-                UI.styleScrollPane(rumorScrollPane);
-                UI.configureScrollSpeed(rumorScrollPane,20,80);
+                styleScrollPane(rumorScrollPane);
+                configureScrollSpeed(rumorScrollPane,20,80);
                 rumorScrollPane.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.white, 2),
                 "Rumeurs circulants chez : " + currentUserFaction.getDisplayName(),
@@ -243,7 +243,7 @@ public class MainMenu extends JFrame implements ActionListener {
 //===============================================Economic Panel=======================================================\\
 
 
-        UI.EnhancedEconomicPanel enhancedEconomyPanel = new UI.EnhancedEconomicPanel(economicService, repo);
+        EconomicPanel enhancedEconomyPanel = new EconomicPanel(economicService, repo);
         JPanel populationSummary = UIHelpers.createPopulationSummaryPanel(repo, currentUserFaction.getDisplayName());
         JPanel combinedEcoPanel = new JPanel(new GridBagLayout());
         combinedEcoPanel.setOpaque(false);
@@ -259,8 +259,8 @@ public class MainMenu extends JFrame implements ActionListener {
 
         JScrollPane economyScrollPane = new JScrollPane(combinedEcoPanel);
         economyScrollPane.setOpaque(false);
-        UI.styleScrollPane(economyScrollPane);
-        UI.configureScrollSpeed(economyScrollPane,20,80);
+        styleScrollPane(economyScrollPane);
+        configureScrollSpeed(economyScrollPane,20,80);
         economyScrollPane.getViewport().setOpaque(false);
 
 //====================================================================================================================\\
@@ -270,15 +270,15 @@ public class MainMenu extends JFrame implements ActionListener {
         Map<String, SafeHexDetails> hexProdGrid = repo.loadSafeAll();
         enhancedProductionPanelInstance = UIHelpers.createEnhancedProductionPanel(
                 hexProdGrid, currentUserFaction.getId(), repo, economicService, personnelService);
-        UI.styleScrollPane(enhancedProductionPanelInstance);
+        styleScrollPane(enhancedProductionPanelInstance);
 
 //===================+================================================================================================\\
 //================================================Logistics Panel=====================================================\\
         LogisticsService logisticsService = economicService.getLogisticsService();
         LogisticsPanel logisticsPanel = new LogisticsPanel(logisticsService, repo);
         JScrollPane logisticsScrollPane = new JScrollPane(logisticsPanel);
-        UI.styleScrollPane(logisticsScrollPane);
-        UI.configureScrollSpeed(logisticsScrollPane,20,80);
+        styleScrollPane(logisticsScrollPane);
+        configureScrollSpeed(logisticsScrollPane,20,80);
         logisticsScrollPane.setOpaque(false);
         logisticsScrollPane.getViewport().setOpaque(false);
 

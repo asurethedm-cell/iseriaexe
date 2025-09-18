@@ -14,6 +14,9 @@ import java.util.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.iseria.ui.UIHelpers.configureScrollSpeed;
+import static com.iseria.ui.UIHelpers.styleScrollPane;
+
 public class ProductionDialog extends JDialog {
     private final PersonnelDataService personnelService;
     private final List<PersonnelDataService.HiredPersonnel> availableWorkers;
@@ -103,7 +106,6 @@ public class ProductionDialog extends JDialog {
         JScrollPane scrollPane = new JScrollPane(personnelTable);
         assignedPanel.add(scrollPane, BorderLayout.CENTER);
 
-        // Panel de contrôles avec reassignation
         JPanel controlPanel = new JPanel(new FlowLayout());
 
         JButton reassignButton = new JButton("↔️ Reassigner");
@@ -565,8 +567,8 @@ public class ProductionDialog extends JDialog {
         JScrollPane infoResourcescrollPane = new JScrollPane(infoResourcePanel);
         infoResourcescrollPane.setPreferredSize(new Dimension(300, 200)); // adjust as needed
         infoResourcescrollPane.setBorder(BorderFactory.createEmptyBorder());
-        UI.styleScrollPane(infoResourcescrollPane);
-        UI.configureScrollSpeed(infoResourcescrollPane, 20,80);
+        styleScrollPane(infoResourcescrollPane);
+        configureScrollSpeed(infoResourcescrollPane, 20,80);
         gbc.fill = GridBagConstraints.BOTH;
         gbc.weightx = 1.0;
         gbc.weighty = 1.0;
@@ -673,7 +675,7 @@ public class ProductionDialog extends JDialog {
             });
         }
         JScrollPane scrollPane = new JScrollPane(workersTable);
-        UI.styleScrollPane(scrollPane);
+        styleScrollPane(scrollPane);
         panel.add(scrollPane, BorderLayout.CENTER);
 
         // Stocker la référence pour usage ultérieur

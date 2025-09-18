@@ -36,14 +36,8 @@ public class PopulationManagementPanel extends JPanel implements PersonnelDataSe
     private void initializePanel() {
         setLayout(new BorderLayout());
         setBackground(new Color(50, 50, 50, 200));
-
-        // **HEADER AVEC STATISTIQUES**
         add(createStatsHeader(), BorderLayout.NORTH);
-
-        // **TABLE PRINCIPALE**
         add(createPopulationTable(), BorderLayout.CENTER);
-
-        // **PANEL DE CONTRÔLES**
         add(createControlPanel(), BorderLayout.SOUTH);
     }
 
@@ -77,13 +71,12 @@ public class PopulationManagementPanel extends JPanel implements PersonnelDataSe
     }
 
     private JScrollPane createPopulationTable() {
-        // **MODIFICATION:** Add "Personnel" as first hidden column
         String[] columns = {"Personnel", "Nom", "Métier", "Salaire", "Consommation", "Affectation", "Localisation", "Gérer"};
 
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return column == 7; // Only "Gérer" column is editable
+                return column == 7;
             }
 
             @Override
@@ -97,12 +90,10 @@ public class PopulationManagementPanel extends JPanel implements PersonnelDataSe
 
         populationTable = new JTable(tableModel);
 
-        // **HIDE the Personnel column**
         populationTable.getColumnModel().getColumn(0).setMinWidth(0);
         populationTable.getColumnModel().getColumn(0).setMaxWidth(0);
         populationTable.getColumnModel().getColumn(0).setWidth(0);
 
-        // Set other column widths...
         populationTable.getColumn("Nom").setPreferredWidth(120);
         populationTable.getColumn("Métier").setPreferredWidth(100);
         populationTable.getColumn("Salaire").setPreferredWidth(80);
@@ -111,7 +102,6 @@ public class PopulationManagementPanel extends JPanel implements PersonnelDataSe
         populationTable.getColumn("Localisation").setPreferredWidth(100);
         populationTable.getColumn("Gérer").setPreferredWidth(100);
 
-        // Renderer pour la colonne "Gérer"
         populationTable.getColumn("Gérer").setCellRenderer(new ButtonRenderer());
         populationTable.getColumn("Gérer").setCellEditor(new ManageButtonEditor());
 
@@ -154,8 +144,6 @@ public class PopulationManagementPanel extends JPanel implements PersonnelDataSe
         for (PersonnelDataService.HiredPersonnel personnel : allPersonnel) {
             String affectation = personnel.isAssigned ? personnel.assignedBuilding : "Non assigné";
             String localisation = personnel.isAssigned ? personnel.assignedHex : "-";
-
-            // **MODIFICATION:** Store the HiredPersonnel object in column 0 (hidden)
             tableModel.addRow(new Object[]{
                     personnel,                          // Hidden: HiredPersonnel object
                     personnel.name,                     // Column 1: Name
@@ -164,7 +152,7 @@ public class PopulationManagementPanel extends JPanel implements PersonnelDataSe
                     personnel.foodConsumption,          // Column 4: Food
                     affectation,                        // Column 5: Assignment
                     localisation,                       // Column 6: Location
-                    "Gérer"                            // Column 7: Button
+                    "Gérer"                             // Column 7: Button
             });
 
             totalSalary += personnel.currentSalary;
@@ -189,14 +177,286 @@ public class PopulationManagementPanel extends JPanel implements PersonnelDataSe
     }
 
     private void showMassFireDialog() {
-        // Dialog pour licenciement massif avec filtres
         JDialog dialog = new JDialog((Frame) SwingUtilities.getWindowAncestor(this),
                 "Licenciement Massif", true);
-        // TODO: Implémenter interface de licenciement massif
+        dialog.setLayout(new BorderLayout());
+        dialog.setSize(800, 600);
+        dialog.setLocationRelativeTo(this);
+
+        JPanel filterPanel = createMassFireFilterPanel();
+
+        DefaultTableModel massFireTableModel = new DefaultTableModel(
+                new String[]{"Sélectionner", "Nom", "Métier", "Salaire", "Consommation", "Affectation"}, 0) {
+            @Override
+            public Class<?> getColumnClass(int columnIndex) {
+                return columnIndex == 0 ? Boolean.class : String.class;
+            }
+
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return column == 0;
+            }
+        };
+
+        JTable massFireTable = new JTable(massFireTableModel);
+        massFireTable.getColumnModel().getColumn(0).setPreferredWidth(80);
+        massFireTable.getColumnModel().getColumn(1).setPreferredWidth(120);
+        massFireTable.getColumnModel().getColumn(2).setPreferredWidth(100);
+        massFireTable.getColumnModel().getColumn(3).setPreferredWidth(80);
+        massFireTable.getColumnModel().getColumn(4).setPreferredWidth(80);
+        massFireTable.getColumnModel().getColumn(5).setPreferredWidth(120);
+
+        JScrollPane scrollPane = new JScrollPane(massFireTable);
+        scrollPane.setPreferredSize(new Dimension(750, 300));
+
+        JLabel selectedCountLabel = new JLabel("Sélectionnés: 0");
+        JLabel totalSavingsLabel = new JLabel("Économies: 0 Pos/sem");
+
+        JPanel statsPanel = new JPanel(new FlowLayout());
+        statsPanel.add(selectedCountLabel);
+        statsPanel.add(new JLabel(" | "));
+        statsPanel.add(totalSavingsLabel);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+
+        JButton selectAllButton = new JButton("Tout Sélectionner");
+        JButton selectNoneButton = new JButton("Tout Désélectionner");
+        JButton applyFiltersButton = new JButton("Appliquer Filtres");
+        JButton fireSelectedButton = new JButton("Licencier Sélectionnés");
+        JButton cancelButton = new JButton("Annuler");
+
+        fireSelectedButton.setBackground(new Color(220, 53, 69));
+        fireSelectedButton.setForeground(Color.WHITE);
+        applyFiltersButton.setBackground(new Color(0, 123, 255));
+        applyFiltersButton.setForeground(Color.WHITE);
+
+        buttonPanel.add(selectAllButton);
+        buttonPanel.add(selectNoneButton);
+        buttonPanel.add(applyFiltersButton);
+        buttonPanel.add(fireSelectedButton);
+        buttonPanel.add(cancelButton);
+
+        dialog.add(filterPanel, BorderLayout.NORTH);
+        dialog.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel southPanel = new JPanel(new BorderLayout());
+        southPanel.add(statsPanel, BorderLayout.NORTH);
+        southPanel.add(buttonPanel, BorderLayout.SOUTH);
+        dialog.add(southPanel, BorderLayout.SOUTH);
+
+        setupMassFireActions(dialog, massFireTableModel, massFireTable,
+                selectedCountLabel, totalSavingsLabel,
+                selectAllButton, selectNoneButton, applyFiltersButton,
+                fireSelectedButton, cancelButton, filterPanel);
+
+        applyMassFireFilters(massFireTableModel, filterPanel);
+
         dialog.setVisible(true);
     }
 
-    // **CLASSES INTERNES**
+    private JPanel createMassFireFilterPanel() {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createTitledBorder("Filtres de Licenciement"));
+        panel.setBackground(new Color(60, 60, 60, 200));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+
+        gbc.gridx = 0; gbc.gridy = 0;
+        panel.add(new JLabel("Métier:"), gbc);
+
+        JComboBox<String> jobFilterCombo = new JComboBox<>();
+        jobFilterCombo.setName("jobFilter");
+        jobFilterCombo.addItem("Tous");
+
+        List<PersonnelDataService.HiredPersonnel> allPersonnel =
+                personnelService.getFactionPersonnel(currentFaction);
+        Set<String> uniqueJobs = allPersonnel.stream()
+                .map(p -> p.workerType.getJobName())
+                .collect(Collectors.toSet());
+        uniqueJobs.forEach(jobFilterCombo::addItem);
+
+        gbc.gridx = 1;
+        panel.add(jobFilterCombo, gbc);
+
+        gbc.gridx = 2; gbc.gridy = 0;
+        panel.add(new JLabel("Affectation:"), gbc);
+
+        JComboBox<String> assignmentFilterCombo = new JComboBox<>();
+        assignmentFilterCombo.setName("assignmentFilter");
+        assignmentFilterCombo.addItem("Tous");
+        assignmentFilterCombo.addItem("Non Assignés");
+        assignmentFilterCombo.addItem("Assignés");
+
+        gbc.gridx = 3;
+        panel.add(assignmentFilterCombo, gbc);
+
+        gbc.gridx = 0; gbc.gridy = 1;
+        panel.add(new JLabel("Salaire Min:"), gbc);
+
+        JSpinner minSalarySpinner = new JSpinner(new SpinnerNumberModel(0.0, 0.0, 999.0, 0.1));
+        minSalarySpinner.setName("minSalary");
+        gbc.gridx = 1;
+        panel.add(minSalarySpinner, gbc);
+
+        gbc.gridx = 2;
+        panel.add(new JLabel("Salaire Max:"), gbc);
+
+        JSpinner maxSalarySpinner = new JSpinner(new SpinnerNumberModel(999.0, 0.0, 999.0, 0.1));
+        maxSalarySpinner.setName("maxSalary");
+        gbc.gridx = 3;
+        panel.add(maxSalarySpinner, gbc);
+
+        return panel;
+    }
+
+    private void setupMassFireActions(JDialog dialog, DefaultTableModel tableModel, JTable table,
+                                      JLabel selectedCountLabel, JLabel totalSavingsLabel,
+                                      JButton selectAllButton, JButton selectNoneButton,
+                                      JButton applyFiltersButton, JButton fireSelectedButton,
+                                      JButton cancelButton, JPanel filterPanel) {
+        Runnable updateStats = () -> {
+            int selectedCount = 0;
+            double totalSavings = 0.0;
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                Boolean selected = (Boolean) tableModel.getValueAt(i, 0);
+                if (selected != null && selected) {
+                    selectedCount++;
+                    String salaryStr = (String) tableModel.getValueAt(i, 3);
+                    try {
+                        totalSavings += Double.parseDouble(salaryStr);
+                    } catch (NumberFormatException e) {
+                    }
+                }
+            }
+
+            selectedCountLabel.setText("Sélectionnés: " + selectedCount);
+            totalSavingsLabel.setText(String.format("Économies: %.1f Pos/sem", totalSavings));
+            fireSelectedButton.setEnabled(selectedCount > 0);
+        };
+        tableModel.addTableModelListener(e -> updateStats.run());
+        selectAllButton.addActionListener(e -> {
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                tableModel.setValueAt(true, i, 0);
+            }
+        });
+        selectNoneButton.addActionListener(e -> {
+            for (int i = 0; i < tableModel.getRowCount(); i++) {
+                tableModel.setValueAt(false, i, 0);
+            }
+        });
+        applyFiltersButton.addActionListener(e -> applyMassFireFilters(tableModel, filterPanel));
+        fireSelectedButton.addActionListener(e -> executeMassFiring(dialog, tableModel));
+        cancelButton.addActionListener(e -> dialog.dispose());
+        fireSelectedButton.setEnabled(false);
+    }
+
+    private void applyMassFireFilters(DefaultTableModel tableModel, JPanel filterPanel) {
+        JComboBox<String> jobFilter = (JComboBox<String>) findComponentByName(filterPanel, "jobFilter");
+        JComboBox<String> assignmentFilter = (JComboBox<String>) findComponentByName(filterPanel, "assignmentFilter");
+        JSpinner minSalarySpinner = (JSpinner) findComponentByName(filterPanel, "minSalary");
+        JSpinner maxSalarySpinner = (JSpinner) findComponentByName(filterPanel, "maxSalary");
+
+        String selectedJob = (String) jobFilter.getSelectedItem();
+        String selectedAssignment = (String) assignmentFilter.getSelectedItem();
+        Double minSalary = (Double) minSalarySpinner.getValue();
+        Double maxSalary = (Double) maxSalarySpinner.getValue();
+
+        tableModel.setRowCount(0);
+        List<PersonnelDataService.HiredPersonnel> allPersonnel =
+                personnelService.getFactionPersonnel(currentFaction);
+
+        for (PersonnelDataService.HiredPersonnel personnel : allPersonnel) {
+            if (!"Tous".equals(selectedJob) && !personnel.workerType.getJobName().equals(selectedJob)) {
+                continue;
+            }
+            if (!"Tous".equals(selectedAssignment)) {
+                if ("Non Assignés".equals(selectedAssignment) && personnel.isAssigned) continue;
+                if ("Assignés".equals(selectedAssignment) && !personnel.isAssigned) continue;
+            }
+            if (personnel.currentSalary < minSalary || personnel.currentSalary > maxSalary) {
+                continue;
+            }
+            String affectation = personnel.isAssigned ? personnel.assignedBuilding : "Non assigné";
+            tableModel.addRow(new Object[]{
+                    false, // Non sélectionné par défaut
+                    personnel.name,
+                    personnel.workerType.getJobName(),
+                    String.format("%.1f", personnel.currentSalary),
+                    String.format("%.1f", personnel.foodConsumption),
+                    affectation
+            });
+        }
+    }
+
+    private void executeMassFiring(JDialog dialog, DefaultTableModel tableModel) {
+        List<String> selectedNames = new ArrayList<>();
+        List<PersonnelDataService.HiredPersonnel> selectedPersonnel = new ArrayList<>();
+
+        List<PersonnelDataService.HiredPersonnel> allPersonnel =
+                personnelService.getFactionPersonnel(currentFaction);
+
+        for (int i = 0; i < tableModel.getRowCount(); i++) {
+            Boolean selected = (Boolean) tableModel.getValueAt(i, 0);
+            if (selected != null && selected) {
+                String name = (String) tableModel.getValueAt(i, 1);
+                selectedNames.add(name);
+                allPersonnel.stream()
+                        .filter(p -> p.name.equals(name))
+                        .findFirst()
+                        .ifPresent(selectedPersonnel::add);
+            }
+        }
+        if (selectedPersonnel.isEmpty()) {
+            JOptionPane.showMessageDialog(dialog,
+                    "Aucun employé sélectionné.",
+                    "Erreur", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        String message = String.format(
+                "Êtes-vous sûr de vouloir licencier %d employé(s) ?\n\n%s",
+                selectedPersonnel.size(),
+                String.join(", ", selectedNames.subList(0, Math.min(5, selectedNames.size()))) +
+                        (selectedNames.size() > 5 ? "..." : "")
+        );
+
+        int confirm = JOptionPane.showConfirmDialog(dialog, message,
+                "Confirmation de Licenciement Massif",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
+        if (confirm == JOptionPane.YES_OPTION) {
+            int successCount = 0;
+            for (PersonnelDataService.HiredPersonnel personnel : selectedPersonnel) {
+                try {
+                    personnelService.firePersonnel(personnel.personnelId);
+                    successCount++;
+                } catch (Exception e) {
+                    System.err.println("Erreur lors du licenciement de " + personnel.name + ": " + e.getMessage());
+                }
+            }
+            JOptionPane.showMessageDialog(dialog,
+                    String.format("%d employé(s) licencié(s) avec succès.", successCount),
+                    "Licenciement Terminé",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            dialog.dispose();
+        }
+    }
+    private Component findComponentByName(Container parent, String name) {
+        for (Component component : parent.getComponents()) {
+            if (name.equals(component.getName())) {
+                return component;
+            }
+            if (component instanceof Container) {
+                Component found = findComponentByName((Container) component, name);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
     private class ButtonRenderer extends JButton implements TableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value,

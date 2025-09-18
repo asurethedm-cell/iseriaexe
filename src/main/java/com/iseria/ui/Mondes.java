@@ -24,6 +24,9 @@ import java.awt.geom.AffineTransform;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
+
+import static com.iseria.ui.UIHelpers.configureScrollSpeed;
+import static com.iseria.ui.UIHelpers.styleScrollPane;
 import static javax.swing.BorderFactory.createLineBorder;
 
 public class Mondes extends JFrame {
@@ -673,8 +676,8 @@ public class Mondes extends JFrame {
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setPreferredSize(new Dimension(780, 600));
-        UI.configureScrollSpeed(scrollPane, 80,20);
-        UI.styleScrollPane(scrollPane);
+        configureScrollSpeed(scrollPane, 80,20);
+        styleScrollPane(scrollPane);
         iconMenu.add(scrollPane, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel();

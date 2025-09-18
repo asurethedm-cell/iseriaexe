@@ -21,8 +21,9 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 import static com.iseria.domain.DATABASE.MoralAction.ActionType.UNIQUE;
+import static com.iseria.ui.HexSnapshotCache.mapBackground;
 import static com.iseria.ui.MainMenu.*;
-import static com.iseria.ui.UI.HexSnapshotCache.mapBackground;
+
 
 
 public class UIHelpers  extends JScrollPane{
@@ -32,7 +33,7 @@ public class UIHelpers  extends JScrollPane{
 
     public static BufferedImage loadImage(String path) {
         try {
-            return ImageIO.read(Objects.requireNonNull(UI.class.getResource(path)));
+            return ImageIO.read(Objects.requireNonNull(UIHelpers.class.getResource(path)));
         } catch (IOException e) {
             e.printStackTrace();
             return null;
@@ -69,7 +70,7 @@ public class UIHelpers  extends JScrollPane{
     }
 
 
-    public static void attachIntelligentMoralUpdater(JLabel moralEndValue, UI.MoralPanelResult result) {
+    public static void attachIntelligentMoralUpdater(JLabel moralEndValue, MoralPanel.MoralPanelResult result) {
         ActionListener listener = e -> {
             try {
                 List<DATABASE.MoralAction> selectedActions = new ArrayList<>();
@@ -300,20 +301,20 @@ public class UIHelpers  extends JScrollPane{
     public static void preloadHexSnapshots(Map<String, SafeHexDetails> hexGrid, IHexRepository repo) {
         CompletableFuture.runAsync(() -> {
             for (String hexKey : hexGrid.keySet()) {
-                UI.HexSnapshotCache.getHexSnapshot(hexKey, repo);
+                HexSnapshotCache.getHexSnapshot(hexKey, repo);
             }
         });
     }
-    public static UI.ProductionPanel createEnhancedProductionPanel(Map<String, SafeHexDetails> hexGrid,
+    public static ProductionPanel createEnhancedProductionPanel(Map<String, SafeHexDetails> hexGrid,
                                                                    String factionName, IHexRepository repo,
                                                                    EconomicDataService economicService, PersonnelDataService personnelService) {
-        return new UI.ProductionPanel(hexGrid, factionName, repo, economicService, personnelService);
+        return new ProductionPanel(hexGrid, factionName, repo, economicService, personnelService);
     }
     public static EconomicDataService initializeEconomicService(IHexRepository repo, String factionName) {
         economicService = new EconomicDataService(repo, factionName);
         return economicService;
     }
-    public static void connectMoralPanelToEconomicService(UI.MoralPanelResult result, EconomicDataService economicService) {
+    public static void connectMoralPanelToEconomicService(MoralPanel.MoralPanelResult result, EconomicDataService economicService) {
         for (JComboBox<DATABASE.MoralAction> dropdown : result.dropdownMap.values()) {
             dropdown.addActionListener(e -> {
                 int totalInstability = 0;
@@ -437,7 +438,7 @@ public class UIHelpers  extends JScrollPane{
     }
     public static boolean checkWaterProximity(String hexKey, IHexRepository repo) {
         try {
-            BufferedImage hexSnapshot = UI.HexSnapshotCache.getHexSnapshot(hexKey, repo);
+            BufferedImage hexSnapshot = HexSnapshotCache.getHexSnapshot(hexKey, repo);
             if (hexSnapshot == null) return false;
 
             return analyzeImageForWater(hexSnapshot);
@@ -512,6 +513,52 @@ public class UIHelpers  extends JScrollPane{
         // Détection RGB spécifique pour eau turquoise/bleue claire
         if (b > r + 20 && b > g && b > 80 && b < 220) return true; // Bleu dominant
         return b > 100 && g > 100 && r < 150 && (b + g) > 1.5 * r; // Cyan/turquoise
+    }
+
+    public static void styleScrollPane(JScrollPane scrollPane) {
+        scrollPane.getVerticalScrollBar().setUI(new javax.swing.plaf.basic.BasicScrollBarUI() {
+            @Override
+            protected void configureScrollBarColors() {
+                this.thumbColor = new Color(100, 100, 100);
+                this.trackColor = new Color(50, 50, 50);
+            }
+
+            @Override
+            protected JButton createDecreaseButton(int orientation) {
+                JButton button = super.createDecreaseButton(orientation);
+                button.setBackground(new Color(70, 70, 70));
+                button.setBorder(null);
+                return button;
+            }
+
+            @Override
+            protected JButton createIncreaseButton(int orientation) {
+                JButton button = super.createIncreaseButton(orientation);
+                button.setBackground(new Color(70, 70, 70));
+                button.setBorder(null);
+                return button;
+            }
+        });
+        scrollPane.getVerticalScrollBar().setPreferredSize(new Dimension(12, 0));
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        scrollPane.getVerticalScrollBar().setBlockIncrement(64);
+    }
+
+    public static void configureScrollSpeed(JScrollPane scrollPane, int unitIncrement, int blockIncrement) {
+        scrollPane.getVerticalScrollBar().setUnitIncrement(unitIncrement);
+        scrollPane.getVerticalScrollBar().setBlockIncrement(blockIncrement);
+
+        scrollPane.addMouseWheelListener(e -> {
+            JScrollBar scrollBar = scrollPane.getVerticalScrollBar();
+            int currentValue = scrollBar.getValue();
+            int scrollAmount = e.getScrollAmount() * unitIncrement;
+
+            if (e.getWheelRotation() < 0) {
+                scrollBar.setValue(currentValue - scrollAmount);
+            } else {
+                scrollBar.setValue(currentValue + scrollAmount);
+            }
+        });
     }
 
 }

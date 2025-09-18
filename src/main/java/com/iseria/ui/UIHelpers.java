@@ -333,7 +333,7 @@ public class UIHelpers  extends JScrollPane{
         String auxName = getEnumNameSafely(DATABASE.AuxBuilding.values(), auxIdx);
         String fortName = getEnumNameSafely(DATABASE.FortBuilding.values(), fortIdx);
 
-        return String.format("Main: %s | Aux: %s | Fort: %s", mainName, auxName, fortName);
+        return String.format("%s | %s | %s", mainName, auxName, fortName);
     }
     private static <T extends Enum<T>> String getEnumNameSafely(T[] enumValues, int index) {
         try {

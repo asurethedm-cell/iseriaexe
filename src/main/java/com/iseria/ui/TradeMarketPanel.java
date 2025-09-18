@@ -33,21 +33,19 @@ public class TradeMarketPanel extends JPanel {
         setOpaque(true);
         setBackground(new Color(50, 50, 50, 200));
 
-        // Panel de titre
         JPanel titlePanel = createTitlePanel();
         add(titlePanel, BorderLayout.NORTH);
 
-        // Contenu principal
         JPanel contentPanel = createContentPanel();
         add(contentPanel, BorderLayout.CENTER);
     }
 
     private JPanel createTitlePanel() {
         JPanel titlePanel = new JPanel(new BorderLayout());
-        titlePanel.setOpaque(true);
+        titlePanel.setOpaque(false);
         titlePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 10, 20));
 
-        JLabel titleLabel = new JLabel("🏪 Live Market Data", SwingConstants.CENTER);
+        JLabel titleLabel = new JLabel("Live Market Data", SwingConstants.CENTER);
         titleLabel.setFont(new Font("Arial", Font.BOLD, 28));
         titleLabel.setForeground(Color.WHITE);
         titlePanel.add(titleLabel, BorderLayout.CENTER);
@@ -60,26 +58,23 @@ public class TradeMarketPanel extends JPanel {
 
     private JPanel createContentPanel() {
         JPanel contentPanel = new JPanel(new GridBagLayout());
-        contentPanel.setOpaque(true);
+        contentPanel.setOpaque(false);
         contentPanel.setBorder(BorderFactory.createEmptyBorder(20, 40, 20, 40));
 
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(15, 15, 15, 15);
         gbc.fill = GridBagConstraints.BOTH;
 
-        // Section des ressources tendance
         JPanel trendingPanel = createTrendingResourcesSection();
         gbc.gridx = 0; gbc.gridy = 0;
         gbc.weightx = 1.0; gbc.weighty = 0.3;
         contentPanel.add(trendingPanel, gbc);
 
-        // Grille des prix en direct
         JPanel priceGridPanel = createLivePriceGrid();
         gbc.gridy = 1;
         gbc.weighty = 0.5;
         contentPanel.add(priceGridPanel, gbc);
 
-        // Panel de contrôles
         JPanel controlPanel = createMarketControlSection();
         gbc.gridy = 2;
         gbc.weighty = 0.2;
@@ -104,7 +99,7 @@ public class TradeMarketPanel extends JPanel {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.WHITE, 2),
-                "📈 Top Market Movers",
+                "Top Market Movers",
                 0, 0,
                 new Font("Arial", Font.BOLD, 16),
                 Color.WHITE
@@ -124,20 +119,17 @@ public class TradeMarketPanel extends JPanel {
             JPanel trendCard = createTrendingResourceCard(resource);
             trendingGrid.add(trendCard);
         }
-
-        // Remplir les cases vides
         while (trendingGrid.getComponentCount() < 5) {
             JPanel emptyCard = createEmptyTrendCard();
             trendingGrid.add(emptyCard);
         }
-
         panel.add(trendingGrid, BorderLayout.CENTER);
         return panel;
     }
 
     private JPanel createTrendingResourceCard(MarketDataService.MarketResourceData resource) {
         JPanel card = new JPanel(new BorderLayout());
-        card.setOpaque(true);
+        card.setOpaque(false);
         card.setBackground(new Color(40, 40, 40, 200));
         card.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
 
@@ -182,7 +174,7 @@ public class TradeMarketPanel extends JPanel {
 
     private JPanel createEmptyTrendCard() {
         JPanel card = new JPanel(new BorderLayout());
-        card.setOpaque(true);
+        card.setOpaque(false);
         card.setBackground(new Color(30, 30, 30, 150));
         card.setBorder(BorderFactory.createLineBorder(Color.DARK_GRAY, 1));
 
@@ -197,7 +189,7 @@ public class TradeMarketPanel extends JPanel {
         JPanel panel = new JPanel(new BorderLayout());
         panel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.WHITE, 2),
-                "💰 Live Resource Prices",
+                "Live Resource Prices",
                 0, 0,
                 new Font("Arial", Font.BOLD, 16),
                 Color.WHITE
@@ -248,7 +240,6 @@ public class TradeMarketPanel extends JPanel {
         JPanel infoPanel = new JPanel(new GridLayout(3, 1, 2, 2));
         infoPanel.setOpaque(false);
 
-        // Nom avec icône
         JLabel nameLabel = new JLabel(
                 DATABASE.ResourceType.getIconForResource(resource.category) + " " + resource.name,
                 SwingConstants.CENTER
@@ -257,7 +248,6 @@ public class TradeMarketPanel extends JPanel {
         nameLabel.setForeground(Color.WHITE);
         infoPanel.add(nameLabel);
 
-        // Prix
         JLabel priceLabel = new JLabel(
                 String.format("%.1f Po", resource.currentPrice),
                 SwingConstants.CENTER
@@ -266,14 +256,12 @@ public class TradeMarketPanel extends JPanel {
         priceLabel.setForeground(Color.CYAN);
         infoPanel.add(priceLabel);
 
-        // Changement
         JLabel changeLabel = createDetailedChangeLabel(resource);
         infoPanel.add(changeLabel);
 
         card.add(infoPanel, BorderLayout.CENTER);
         return card;
     }
-
     private JLabel createDetailedChangeLabel(MarketDataService.MarketResourceData resource) {
         double changePercent = resource.getChangePercent();
         String trendIcon = getTrendIcon(resource.trend);
@@ -292,7 +280,6 @@ public class TradeMarketPanel extends JPanel {
 
         return changeLabel;
     }
-
     private String getTrendIcon(String trend) {
         return switch (trend) {
             case "UP" -> "↗";
@@ -300,20 +287,18 @@ public class TradeMarketPanel extends JPanel {
             default -> "→";
         };
     }
-
     private JPanel createMarketControlSection() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.CENTER, 20, 10));
         panel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(Color.WHITE, 2),
-                "🎛️ Market Controls",
+                "Market Controls",
                 0, 0,
                 new Font("Arial", Font.BOLD, 16),
                 Color.WHITE
         ));
-        panel.setOpaque(true);
+        panel.setOpaque(false);
         panel.setBackground(new Color(0, 0, 0, 150));
 
-        // Boutons selon les permissions
         if ("Admin".equals(Login.currentUser)) {
             JButton adminBtn = createMarketButton(
                     "🔧 Market Admin Panel",
@@ -322,21 +307,18 @@ public class TradeMarketPanel extends JPanel {
             );
             panel.add(adminBtn);
         }
-
         JButton refreshBtn = createMarketButton(
-                "🔄 Refresh Market Data",
+                "Refresh Market Data",
                 new Color(76, 175, 80),
                 e -> refreshMarketData()
         );
         panel.add(refreshBtn);
-
         JButton reportBtn = createMarketButton(
-                "📊 Market Report",
+                "Market Report",
                 new Color(156, 39, 176),
                 e -> showMarketReport()
         );
         panel.add(reportBtn);
-
         return panel;
     }
 
@@ -401,7 +383,7 @@ public class TradeMarketPanel extends JPanel {
         styleScrollPane(scrollPane);
 
         JOptionPane.showMessageDialog(this, scrollPane,
-                "📊 Live Market Report", JOptionPane.INFORMATION_MESSAGE);
+                "Live Market Report", JOptionPane.INFORMATION_MESSAGE);
     }
 
     // **MÉTHODES DE MISE À JOUR**

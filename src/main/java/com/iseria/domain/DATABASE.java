@@ -1008,7 +1008,6 @@ public class DATABASE {
         private final int animauxParBerger;
         private final boolean attirePredateurs;
 
-        // Constructeur et getters...
         LivestockData(String name, String condition, double prixUnite, double besoinMin,
                       double besoinMax, double sdnSemaine, double semainesGrossesse, int toursPourMaturite,
                       int bergersParGroupe, int animauxParBerger, boolean attirePredateurs) {
@@ -1025,7 +1024,6 @@ public class DATABASE {
             this.attirePredateurs = attirePredateurs;
         }
 
-        // Getters
         public String getName() {
             return name;
         }
@@ -1057,9 +1055,7 @@ public class DATABASE {
         public boolean isAttirePredateurs() {
             return attirePredateurs;
         }
-        public double getCoutReproducteur() {
-            return prixUnite * 10.0; // Le reproducteur coûte 10x le prix d'une bête
-        }
+        public double getCoutReproducteur() { return prixUnite * 10.0; }
 
         public boolean canEstablishIn(SafeHexDetails hex, IHexRepository repo) {
             // Parse les conditions multiples (ex: "FB/Biome montagne")
@@ -1103,9 +1099,7 @@ public class DATABASE {
 
         // Méthodes de vérification spécifiques
         private boolean hasWheatFarm(SafeHexDetails hex) {
-            // Vérifier si l'hex a une ferme de céréales (blé/riz)
             DATABASE.JobBuilding mainBuilding = UIHelpers.getBuildingFromHex(hex, "main");
-
             if (mainBuilding instanceof DATABASE.MainBuilding) {
                 String buildingName = mainBuilding.getBuildName().toLowerCase();
                 return buildingName.contains("ferme de céréale") ||
@@ -1115,9 +1109,7 @@ public class DATABASE {
             return false;
         }
         private boolean hasVegetableFarm(SafeHexDetails hex) {
-            // Vérifier si l'hex a une ferme de légumes
             DATABASE.JobBuilding mainBuilding = UIHelpers.getBuildingFromHex(hex, "main");
-
             if (mainBuilding instanceof DATABASE.MainBuilding) {
                 String buildingName = mainBuilding.getBuildName().toLowerCase();
                 return buildingName.contains("ferme de légume") ||
@@ -1126,10 +1118,7 @@ public class DATABASE {
             return false;
         }
         private boolean hasWaterAccess(SafeHexDetails hex, IHexRepository repo) {
-            // Option 1: Vérifier par la clé de l'hex si c'est près d'eau
             String hexKey = hex.getHexKey();
-
-            // Option 2: Vérifier s'il y a un camp de pêcheurs ou accès eau
             DATABASE.JobBuilding mainBuilding = UIHelpers.getBuildingFromHex(hex, "main");
             if (mainBuilding instanceof DATABASE.MainBuilding) {
                 String buildingName = mainBuilding.getBuildName().toLowerCase();
@@ -1138,31 +1127,20 @@ public class DATABASE {
                     return true;
                 }
             }
-
-            // Option 3: Logique basée sur les coordonnées de l'hex
             return isNearWater(hexKey, repo);
         }
         private boolean isMountainBiome(SafeHexDetails hex) {
-            // Logique pour détecter si l'hex est en montagne
-            // Vous pourriez utiliser une Map de biomes ou analyser la clé de l'hex
             String hexKey = hex.getHexKey();
-
-            // Exemple basé sur les coordonnées (à adapter selon votre système)
             if (hexKey.matches(".*[Mm]ont.*") || hexKey.matches(".*[Hh]ill.*")) {
                 return true;
             }
-
-            // Ou utiliser une méthode dans votre système de monde
             return checkBiomeType(hexKey, "mountain");
         }
         private boolean isPlainBiome(SafeHexDetails hex) {
-            // Logique similaire pour les plaines
             String hexKey = hex.getHexKey();
-
             if (hexKey.matches(".*[Pp]lain.*") || hexKey.matches(".*[Pp]rairie.*")) {
                 return true;
             }
-
             return checkBiomeType(hexKey, "plain");
         }
         private boolean isNearWater(String hexKey, IHexRepository repo) {
@@ -1190,43 +1168,6 @@ public class DATABASE {
     public static Map<JobBuilding, BuildingProduction> buildProductionData() {
 
         return null;
-    }
-
-    private static void initializeJobBuildingRelations() {
-        addJobToBuildings("Compagnie de Mineur",
-                MAIN_12_0, MAIN_12_1, MAIN_12_2,
-                MainBuilding.MAIN_3_0, MainBuilding.MAIN_3_1);
-
-        addJobToBuildings("Fermier (serf)",
-                MainBuilding.MAIN_11_0, MainBuilding.MAIN_11_1, MainBuilding.MAIN_11_2);
-
-        addJobToBuildings("Fermier (libre)",
-                MainBuilding.MAIN_11_0, MainBuilding.MAIN_11_1, MainBuilding.MAIN_11_2);
-
-        addJobToBuildings("Fermier (serf)",
-                MainBuilding.MAIN_28_0, MainBuilding.MAIN_28_1, MainBuilding.MAIN_28_2);
-
-        addJobToBuildings("Fermier (libre)",
-                MainBuilding.MAIN_28_0, MainBuilding.MAIN_28_1, MainBuilding.MAIN_28_2);
-
-        addJobToBuildings("Astrologiste",
-                MainBuilding.MAIN_16_0, MainBuilding.MAIN_16_1);
-
-        addJobToBuildings("Tailleur de Pierre",
-                MainBuilding.MAIN_4_0, MainBuilding.MAIN_4_1, MainBuilding.MAIN_4_2);
-
-        addJobToBuildings("Plancheur", MainBuilding.MAIN_8_0, MainBuilding.MAIN_8_1);
-        addJobToBuildings("Bûcheron", MainBuilding.MAIN_26_0);
-        addJobToBuildings("Maçon", MainBuilding.MAIN_15_0, MainBuilding.MAIN_15_1);
-        addJobToBuildings("Verrier", MainBuilding.MAIN_19_0, MainBuilding.MAIN_19_1);
-        addJobToBuildings("Récupérateur", MainBuilding.MAIN_1_0);
-        addJobToBuildings("Pécheur", MainBuilding.MAIN_27_0);
-        addJobToBuildings("Berger",MainBuilding.MAIN_29_0);
-        addJobToBuildings("Chasseur", MainBuilding.MAIN_30_0);
-        addJobToBuildings("Forestier",MainBuilding.MAIN_26_0);
-        addJobToBuildings("Jardinier",
-                MainBuilding.MAIN_24_0,MainBuilding.MAIN_24_1, MainBuilding.MAIN_23_0,MainBuilding.MAIN_23_1);
-
     }
 
     public static class BuildingProduction {
@@ -1460,7 +1401,42 @@ public class DATABASE {
         // Atelier - AUX_17_0
         AUX_BUILDING_RESOURCES.put(AUX_17_0, Arrays.asList(OUTILS, VÊTEMENTS, MEUBLES));
     }
+    private static void initializeJobBuildingRelations() {
+        addJobToBuildings("Compagnie de Mineur",
+                MAIN_12_0, MAIN_12_1, MAIN_12_2,
+                MainBuilding.MAIN_3_0, MainBuilding.MAIN_3_1);
 
+        addJobToBuildings("Fermier (serf)",
+                MainBuilding.MAIN_11_0, MainBuilding.MAIN_11_1, MainBuilding.MAIN_11_2);
+
+        addJobToBuildings("Fermier (libre)",
+                MainBuilding.MAIN_11_0, MainBuilding.MAIN_11_1, MainBuilding.MAIN_11_2);
+
+        addJobToBuildings("Fermier (serf)",
+                MainBuilding.MAIN_28_0, MainBuilding.MAIN_28_1, MainBuilding.MAIN_28_2);
+
+        addJobToBuildings("Fermier (libre)",
+                MainBuilding.MAIN_28_0, MainBuilding.MAIN_28_1, MainBuilding.MAIN_28_2);
+
+        addJobToBuildings("Astrologiste",
+                MainBuilding.MAIN_16_0, MainBuilding.MAIN_16_1);
+
+        addJobToBuildings("Tailleur de Pierre",
+                MainBuilding.MAIN_4_0, MainBuilding.MAIN_4_1, MainBuilding.MAIN_4_2);
+
+        addJobToBuildings("Plancheur", MainBuilding.MAIN_8_0, MainBuilding.MAIN_8_1);
+        addJobToBuildings("Bûcheron", MainBuilding.MAIN_26_0);
+        addJobToBuildings("Maçon", MainBuilding.MAIN_15_0, MainBuilding.MAIN_15_1);
+        addJobToBuildings("Verrier", MainBuilding.MAIN_19_0, MainBuilding.MAIN_19_1);
+        addJobToBuildings("Récupérateur", MainBuilding.MAIN_1_0);
+        addJobToBuildings("Pécheur", MainBuilding.MAIN_27_0);
+        addJobToBuildings("Berger",MainBuilding.MAIN_29_0);
+        addJobToBuildings("Chasseur", MainBuilding.MAIN_30_0);
+        addJobToBuildings("Forestier",MainBuilding.MAIN_26_0);
+        addJobToBuildings("Jardinier",
+                MainBuilding.MAIN_24_0,MainBuilding.MAIN_24_1, MainBuilding.MAIN_23_0,MainBuilding.MAIN_23_1);
+
+    }
 
 //================================================== MÉTHODES UTILITAIRES ==============================================
 

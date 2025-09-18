@@ -78,20 +78,35 @@ public class ProductionPanel extends JScrollPane
         JPanel controlPanel = createControlPanel();
         contentPanel.add(controlPanel);
 
-        for (Map.Entry<String, SafeHexDetails> entry : hexGrid.entrySet()) {
-            SafeHexDetails hex = entry.getValue();
-
-            if (factionName.equals(hex.getFactionClaim())) {
-
-                JPanel hexPanel = createEnhancedHexPanel(entry.getKey(), hex, this.repository, personnelService);
-                hexPanels.put(entry.getKey(), hexPanel);
-                contentPanel.add(hexPanel);
-                contentPanel.add(Box.createVerticalStrut(5));
-            }
-        }
-
+        hexGrid.entrySet().stream()
+                .filter(entry -> factionName.equals(entry.getValue().getFactionClaim()))
+                .sorted(Map.Entry.<String, SafeHexDetails>comparingByKey(this::compareHexKeys))
+                .forEach(entry -> {
+                    JPanel hexPanel = createEnhancedHexPanel(entry.getKey(), entry.getValue(),
+                            this.repository, personnelService);
+                    hexPanels.put(entry.getKey(), hexPanel);
+                    contentPanel.add(hexPanel);
+                    contentPanel.add(Box.createVerticalStrut(5));
+                });
         contentPanel.revalidate();
         contentPanel.repaint();
+    }
+
+    private int compareHexKeys(String hex1, String hex2) {
+        return compareAlphanumeric(hex1, hex2);
+    }
+    private int compareAlphanumeric(String s1, String s2) {
+        try {
+            String num1 = s1.replaceAll("\\D+", "");
+            String num2 = s2.replaceAll("\\D+", "");
+
+            if (!num1.isEmpty() && !num2.isEmpty()) {
+                int n1 = Integer.parseInt(num1);
+                int n2 = Integer.parseInt(num2);
+                return Integer.compare(n1, n2);
+            }
+        } catch (NumberFormatException e) {}
+        return s1.compareToIgnoreCase(s2);
     }
     private JPanel createControlPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
@@ -119,8 +134,10 @@ public class ProductionPanel extends JScrollPane
 
         if (showHexPreview) {
             gbc.gridx = 0; gbc.gridy = 0; gbc.gridwidth = 3;
+            gbc.fill = GridBagConstraints.HORIZONTAL;
             JPanel hexPreview = createHexPreview(hexKey, hex, repo);
             panel.add(hexPreview, gbc);
+            gbc.fill = GridBagConstraints.CENTER;
             gbc.gridy++;
             gbc.gridwidth = 1;
         }
@@ -149,9 +166,13 @@ public class ProductionPanel extends JScrollPane
             return hexLabel;
         });
 
-        JPanel preview = new JPanel(new FlowLayout());
+        JPanel preview = new JPanel(new GridBagLayout());
         preview.setBorder(BorderFactory.createTitledBorder("Aperçu Hexagone"));
         preview.setOpaque(false);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(5, 5, 5, 5);
+        gbc.anchor = GridBagConstraints.CENTER;
 
         String buildingNames = UIHelpers.getBuildingNamesSafe(
                 hex.getMainBuildingIndex(),
@@ -159,10 +180,33 @@ public class ProductionPanel extends JScrollPane
                 hex.getFortBuildingIndex()
         );
 
-        JLabel info = new JLabel(String.format("Faction: %s | %s",
-                hex.getFactionClaim(), buildingNames));
-        preview.add(info);
-        preview.add(hexImageLabel);
+
+        JLabel factionName = new JLabel(String.format("Faction: %s", hex.getFactionClaim()));
+        factionName.setFont(factionName.getFont().deriveFont(Font.BOLD, 12f));
+        factionName.setForeground(new Color(220, 53, 69)); // Rouge pour ressortir
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.CENTER;
+        preview.add(factionName, gbc);
+
+
+        gbc.gridx = 0;
+        gbc.gridy = 1;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.CENTER;
+        preview.add(hexImageLabel, gbc);
+
+        JLabel info = new JLabel(String.format("%s", buildingNames));
+        info.setFont(info.getFont().deriveFont(Font.BOLD, 10f));
+        info.setForeground(Color.BLACK);
+        gbc.gridx = 0;
+        gbc.gridy = 2;
+        gbc.gridwidth = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.CENTER;
+        preview.add(info, gbc);
 
         return preview;
     }
@@ -184,7 +228,7 @@ public class ProductionPanel extends JScrollPane
         JPanel workerPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 2, 0));
         workerPanel.setOpaque(false);
 
-        JLabel workerLabel = new JLabel("👥 " + workerCount);
+        JLabel workerLabel = new JLabel("Travailleurs " + workerCount);
         workerPanel.add(workerLabel);
 
         JButton pullButton = new JButton("↑");
@@ -200,7 +244,7 @@ public class ProductionPanel extends JScrollPane
         panel.add(workerPanel, gbc);
 
         gbc.gridy = 1;
-        JCheckBox lockCheckbox = new JCheckBox("🔒", hex.isSlotLocked(buildingType));
+        JCheckBox lockCheckbox = new JCheckBox("LOCK", hex.isSlotLocked(buildingType));
         lockCheckbox.setOpaque(false);
         lockCheckbox.setToolTipText("Verrouiller ce slot");
         lockCheckbox.addActionListener(e -> {
@@ -213,27 +257,28 @@ public class ProductionPanel extends JScrollPane
         });
         panel.add(lockCheckbox, gbc);
 
-        gbc.gridy = 2;
-        String resourceInfo = getResourceProductionInfo(hexKey, buildingType);
-        JLabel resourceLabel = new JLabel(resourceInfo);
-
-        panel.add(resourceLabel, gbc);
-
         gbc.gridy = 3;
+        gbc.gridx = 0;  // Reset gridx
+        gbc.gridwidth = 2;  // Span across 2 columns
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));  // 5px gap
+        buttonPanel.setOpaque(false);
+
         JButton configButton = new JButton("Config");
         configButton.addActionListener(e -> openProductionDialog(hexKey, hex, buildingType, label, personnelService));
-        panel.add(configButton, gbc);
+        buttonPanel.add(configButton);
 
-        gbc.gridy = 3; gbc.gridx++;
         JButton livestockButton = new JButton("Élevage");
-        livestockButton.setPreferredSize(new Dimension(120, 30));
         livestockButton.setBackground(new Color(139, 69, 19));
         livestockButton.setForeground(Color.WHITE);
         livestockButton.setVisible(false);
         livestockButton.addActionListener(e -> openLivestockDialog(hexKey, hex));
-        if(UIHelpers.isFarmBuilding(hex, buildingType)) {livestockButton.setVisible(true);}
-        panel.add(livestockButton, gbc);
+        if(UIHelpers.isFarmBuilding(hex, buildingType)) {
+            livestockButton.setVisible(true);
+        }
+        buttonPanel.add(livestockButton);
 
+        panel.add(buttonPanel, gbc);
         return panel;
     }
     private void pullWorkers(String hexKey, SafeHexDetails hex, String buildingType) {

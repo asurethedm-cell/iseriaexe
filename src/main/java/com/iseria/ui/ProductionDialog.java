@@ -63,7 +63,10 @@ public class ProductionDialog extends JDialog {
 
     }
 
-    private void initializeDialog() {  setSize(1200, 800);
+    private void initializeDialog() {
+        setSize(1200, 800);
+        setLocationRelativeTo(getParent());
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 
         JTabbedPane tabbedPane = new JTabbedPane();
 
@@ -374,14 +377,18 @@ public class ProductionDialog extends JDialog {
     }
     private void updateProductionDetails() {
         StringBuilder details = new StringBuilder();
-
-        int newWorkers = getSelectedWorkers().size();
+        int newWorkers;
+        if (getSelectedWorkers() != null) {
+            newWorkers = getSelectedWorkers().size();
+        }
+        else {newWorkers = 0;}
         DATABASE.ResourceType resourceType = (DATABASE.ResourceType) resourceTypeCombo.getSelectedItem();
         double production = (Double) resourceProductionSpinner.getValue();
 
         details.append("=== CONFIGURATION ACTUELLE ===\n");
         details.append(String.format("Hexagone: %s\n", hexKey));
         details.append(String.format("Bâtiment: %s (%s)\n", buildingName, buildingType));
+
         details.append(String.format("Personnel: %d -> %d (%+d)\n", currentWorkerCount, newWorkers, newWorkers - currentWorkerCount));
 
         details.append("\n=== PRODUCTION HEBDOMADAIRE ===\n");
@@ -724,14 +731,15 @@ public class ProductionDialog extends JDialog {
     }
     private List<PersonnelDataService.HiredPersonnel> getSelectedWorkers() {
         List<PersonnelDataService.HiredPersonnel> selected = new ArrayList<>();
-
-        for (int i = 0; i < workersTableModel.getRowCount(); i++) {
-            if ((Boolean) workersTableModel.getValueAt(i, 0)) {
-                selected.add(availableWorkers.get(i));
+        if(workersTableModel != null) {
+            for (int i = 0; i < workersTableModel.getRowCount(); i++) {
+                if ((Boolean) workersTableModel.getValueAt(i, 0)) {
+                    selected.add(availableWorkers.get(i));
+                }
             }
+            return selected;
         }
-
-        return selected;
+        else return null;
     }
     private boolean canWorkerWorkInBuilding(DATABASE.Workers workerType, DATABASE.JobBuilding building) {
         return workerType.getWorkBuildings().contains(building);

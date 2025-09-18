@@ -233,7 +233,7 @@ public class MarketDataService {
         }
 
         public String getSummaryText() {
-            return String.format("Market: %.0f resources | 📈 %d up | 📉 %d down | Avg: %.1f%%",
+            return String.format("Market: %.0f resources | %d up | %d down | Avg: %.1f%%",
                     totalResources, upTrending, downTrending, averageChange);
         }
     }
